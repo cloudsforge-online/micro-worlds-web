@@ -1,0 +1,55 @@
+import react from '@vitejs/plugin-react'
+import { defineConfig } from 'vite'
+
+/**
+ * There is deliberately no `define`, no `envPrefix` and no `.env` file in this repository.
+ *
+ * A build-time constant is an environment baked into an image, and an image with an environment
+ * baked into it has to be rebuilt to be promoted — which means the artefact that reaches
+ * production is not the artefact that passed CI. Every host this app talks to is resolved at
+ * RUNTIME from `window.location.hostname` by `cloudsforgeHosts()`, so one image serves localhost,
+ * staging, a preview deployment and production. `test/no-build-time-config.test.ts` fails the
+ * build if `import.meta.env.VITE_` ever reappears, and the `rules` job in CI greps for it again
+ * so deleting the test does not delete the rule.
+ */
+export default defineConfig({
+  plugins: [react()],
+  resolve: {
+    // @cloudsforge/ui is a `link:` dependency, so its own node_modules holds a second copy of
+    // React. Two copies means two dispatchers, and the shared bar would throw on its first
+    // useState.
+    dedupe: ['react', 'react-dom'],
+  },
+  optimizeDeps: {
+    // The linked package is shipped as TypeScript source until it is published; pre-bundling it
+    // would freeze a stale copy of a package that is edited in the same working tree.
+    exclude: ['@cloudsforge/ui'],
+  },
+  build: {
+    // Named chunks and a real manifest of hashes: the assets are immutable-cached by nginx, and
+    // that is only safe when every rebuild produces a new filename.
+    sourcemap: true,
+  },
+  // ════════════════════════════════════════════════════════════════════════════════════════════
+  // 3001 IS THE REGISTRY'S OWN NUMBER FOR THIS BUNDLE, AND IT IS NOT THE API'S PORT.
+  //
+  // `ui/packages/ui/src/surfaces.ts:245` gives the `worlds` surface devPort **3001**, and that is
+  // where this app is SERVED. It is used here rather than invented, because the surface registry
+  // is the estate's one list of where things live and a second number in this file would be a
+  // second, unversioned copy of it.
+  //
+  // The API is a DIFFERENT surface. `worlds-api` says devPort **4002**
+  // (`ui/packages/ui/src/surfaces.ts:501`) and `micro-worlds` binds **4000**:
+  // `worlds/src/env.ts:171` defaults `PORT` to 4000 and `worlds/.env.example:38` sets it to 4000.
+  // So under `pnpm dev` this bundle resolves `http://localhost:4002` and a `worlds` started from
+  // its own example environment is not there. That is NOT papered over with a literal host in
+  // src/lib/hosts.ts — a hard-coded host is a second copy of the registry and the copy is the one
+  // that goes stale. Run worlds with `PORT=4002`; the README says so in one line, and the finding
+  // is reported to micro-ui, whose file the registry is.
+  //
+  // See the long note at the top of src/lib/hosts.ts, which also records that no gateway router
+  // exists for `worlds-api.<apex>` yet.
+  // ════════════════════════════════════════════════════════════════════════════════════════════
+  server: { port: 3001 },
+  preview: { port: 3001 },
+})

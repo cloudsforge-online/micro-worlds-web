@@ -1,0 +1,955 @@
+/**
+ * This app's own layer, on top of @cloudsforge/ui.
+ *
+ * Two prefixes, deliberately. `wt-` is the shell inherited from the web template — the sub-nav,
+ * the four states, the spinner — and is left alone so a fix upstream can be taken without a
+ * merge. `ww-` is this app's own layer. Neither can collide with, or quietly override, a `cf-`
+ * class from the design system: `.cf-btn` is used as the design system defines it and is never
+ * redeclared here, which is why the quiet variant is `.cf-btn.ww-btn-quiet` rather than an
+ * invented `.cf-btn--quiet`.
+ *
+ * EVERY COLOUR, SPACE AND FONT IS A TOKEN. A literal hex here is a colour that will not follow
+ * the substrate, and a page that does not follow the substrate is the one page in the estate that
+ * looks wrong on a dark display.
+ *
+ * The token names are the REAL ones, checked against `ui/packages/ui/src/tokens.css`:
+ * `--cf-line` and `--cf-line-strong` (`:186-187`), `--cf-danger` (`:111`), `--cf-warn` (`:110`),
+ * `--cf-success` (`:109`), `--cf-font-sans` (`:62`). There is no `--cf-border`, no `--cf-critical`,
+ * no `--cf-warning` and no `--cf-font`; a rule written against one of those declares nothing and
+ * fails silently, which is the failure mode that makes an invented token name worse than a hex.
+ *
+ * The ground is the WARM ash ramp set by `data-cf-substrate="warm"` in index.html — the family the
+ * brand marks in `brand/assets/worlds/` are drawn on, so the favicon has no visible plate around
+ * it. The accent is moss, `#6d9a49`, which comes from `[data-cf-product='worlds']`
+ * (`ui/packages/ui/src/tokens.css:372-377`) and is never written down here.
+ *
+ * ── State is never colour alone ───────────────────────────────────────────────────────────────
+ *
+ * Every `.ww-badge` carries a glyph AND a word; the tone class only tints them. The estate's
+ * reserved status hues sit dE 4.6 apart under protanopia, so a reader who cannot separate them
+ * still reads DELIVERED / UNDELIVERABLE / FAILED. The same rule holds for `.ww-item--bound`,
+ * where the fact that an item can never be sold must survive the colour being lost entirely — it
+ * is carried by a word ("BOUND"), a glyph, a border, AND the absence of a control.
+ */
+
+
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--cf-bg);
+  color: var(--cf-fg);
+  font-family: var(--cf-font-sans);
+  /* The bar is dark on every surface; the page follows the substrate. */
+  color-scheme: dark;
+}
+
+/* ----------------------------- sub-nav ----------------------------- */
+
+/*
+ * Docked at exactly the bar's height. `--cf-bar-h` is the token the bar itself is sized with, so
+ * the two cannot drift; a copied `46px` would leave a gap or an overlap the day the bar changes,
+ * on every surface at once and on none of the ones anybody rechecked.
+ */
+.wt-subnav {
+  position: sticky;
+  top: var(--cf-bar-h);
+  z-index: 40;
+  background: var(--cf-bg-raised);
+  border-bottom: 1px solid var(--cf-line);
+}
+
+.wt-subnav__inner {
+  display: flex;
+  gap: 0.25rem;
+  align-items: stretch;
+  max-width: 76rem;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.wt-subnav__link {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.7rem 0.85rem;
+  color: var(--cf-fg-dim);
+  text-decoration: none;
+  font-size: 0.875rem;
+  /* The active marker is a 2px underline in the accent, and the LABEL also changes weight and
+     colour: colour is never the only channel. */
+  border-bottom: 2px solid transparent;
+}
+
+.wt-subnav__link:hover {
+  color: var(--cf-fg);
+  background: var(--cf-surface-hover);
+}
+
+.wt-subnav__link.is-active {
+  color: var(--cf-fg);
+  font-weight: 600;
+  border-bottom-color: var(--cf-accent);
+}
+
+.wt-subnav__link:focus-visible {
+  outline: 2px solid var(--cf-accent);
+  outline-offset: -2px;
+}
+
+/* ------------------------------ page ------------------------------- */
+
+.wt-main {
+  max-width: 76rem;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 4rem;
+}
+
+.wt-page__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.wt-page__title {
+  margin: 0;
+  font-size: 1.35rem;
+  letter-spacing: -0.01em;
+}
+
+.wt-panel {
+  background: var(--cf-surface-solid);
+  border: 1px solid var(--cf-line);
+  border-radius: 10px;
+  padding: 1rem 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.wt-panel__title {
+  margin: 0 0 0.75rem;
+  font-size: 0.95rem;
+  color: var(--cf-fg-dim);
+  font-weight: 600;
+}
+
+.wt-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.wt-banner {
+  margin: 0 0 1rem;
+  padding: 0.6rem 0.8rem;
+  border-radius: 8px;
+  border: 1px dashed var(--cf-line-strong);
+  color: var(--cf-fg-dim);
+  font-size: 0.85rem;
+}
+
+.wt-note {
+  color: var(--cf-fg-dim);
+  font-size: 0.85rem;
+  margin: 0.5rem 0 0;
+}
+
+.wt-link {
+  color: var(--cf-accent);
+}
+
+.wt-facts {
+  display: grid;
+  grid-template-columns: minmax(8rem, auto) 1fr;
+  gap: 0.35rem 1rem;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.wt-facts dt {
+  color: var(--cf-fg-mute);
+}
+
+.wt-facts dd {
+  margin: 0;
+}
+
+.wt-facts--mono dd {
+  font-family: var(--cf-font-mono);
+  font-size: 0.82rem;
+}
+
+/* ------------------------- the four states ------------------------- */
+
+/*
+ * Loading, empty, failed and forbidden differ in SHAPE and WORDS as well as colour: a reader who
+ * cannot separate two hues still has two other channels telling them which of the four they are
+ * looking at.
+ */
+.wt-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  text-align: center;
+  padding: 3rem 1rem;
+  border-radius: 10px;
+}
+
+.wt-state__icon {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.wt-state__title {
+  margin: 0;
+  font-weight: 600;
+}
+
+.wt-state__hint,
+.wt-state__meta {
+  margin: 0;
+  color: var(--cf-fg-dim);
+  font-size: 0.875rem;
+  max-width: 34rem;
+}
+
+.wt-state--empty {
+  /* --cf-line and --cf-danger, not --cf-border and --cf-critical. The template names two custom
+     properties that tokens.css does not define, so every failure and forbidden state in every
+     frontend cut from it falls back to a hard-coded hex and a hard-coded rgba — which is exactly
+     the "does not follow the substrate" defect the header of this file forbids, shipped in the
+     template itself. Reported to micro-web-template; corrected here, and pinned by the
+     "names no literal colour" test in test/render.test.ts. */
+  border: 1px dashed var(--cf-line);
+  color: var(--cf-fg-dim);
+}
+
+.wt-state--failed {
+  border: 1px solid var(--cf-danger);
+}
+
+.wt-state--failed .wt-state__icon,
+.wt-state--forbidden .wt-state__icon {
+  color: var(--cf-danger);
+}
+
+.wt-state--forbidden {
+  border: 1px solid var(--cf-line);
+  background: var(--cf-bg-sunken);
+}
+
+/*
+ * The request id is the string a user reads down a phone line or pastes into a support form, so
+ * it is monospace, selectable and on a line of its own.
+ */
+.wt-reqid {
+  user-select: all;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  background: var(--cf-bg-sunken);
+  font-family: var(--cf-font-mono);
+}
+
+.wt-spinner {
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 50%;
+  border: 2px solid var(--cf-line-strong);
+  border-top-color: var(--cf-accent);
+  animation: wt-spin 0.7s linear infinite;
+}
+
+@keyframes wt-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* A spinner is decoration; a reader who asked for less motion gets a static ring. */
+@media (prefers-reduced-motion: reduce) {
+  .wt-spinner {
+    animation: none;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Forge Worlds’ own layer.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+
+
+/* ----------------------------- chrome ------------------------------ */
+
+/*
+ * The skip link. Off-screen until focused, then the first thing on the page — the inventory list
+ * is long and a keyboard user should not have to tab the navigation to reach it.
+ */
+.ww-skip {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  padding: var(--cf-space-sm) var(--cf-space-lg);
+  background: var(--cf-accent);
+  color: var(--cf-accent-ink);
+  font-weight: 600;
+  border-radius: 0 0 var(--cf-radius-sm) 0;
+}
+
+.ww-skip:focus-visible {
+  left: 0;
+}
+
+/*
+ * The quiet button. An ADDITIONAL class on `.cf-btn`, never a `--modifier` on it: `.cf-btn--quiet`
+ * does not exist in @cloudsforge/ui, and declaring one here would put a `cf-` class in a file the
+ * design system does not own — which is how two definitions of one class end up in one cascade.
+ */
+.cf-btn.ww-btn-quiet {
+  background: transparent;
+  border-color: var(--cf-line-strong);
+  color: var(--cf-fg-dim);
+}
+
+.cf-btn.ww-btn-quiet:hover {
+  background: var(--cf-surface-hover);
+  color: var(--cf-fg);
+}
+
+.ww-link {
+  color: var(--cf-accent);
+  text-decoration: none;
+}
+
+.ww-link:hover {
+  text-decoration: underline;
+}
+
+/* ------------------------------ heads ------------------------------ */
+
+.ww-head {
+  margin: 0 0 var(--cf-space-2xl);
+}
+
+.ww-head__eyebrow {
+  margin: 0 0 var(--cf-space-2xs);
+  font-size: var(--cf-text-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cf-fg-mute);
+}
+
+.ww-head__title {
+  margin: 0;
+  font-family: var(--cf-font-display);
+  font-size: var(--cf-text-3xl);
+  line-height: 1.1;
+}
+
+.ww-head__lede {
+  margin: var(--cf-space-sm) 0 0;
+  max-width: 62ch;
+  color: var(--cf-fg-dim);
+  line-height: 1.6;
+}
+
+/* ----------------------------- panels ------------------------------ */
+
+.ww-panel {
+  margin: 0 0 var(--cf-space-2xl);
+  padding: var(--cf-space-xl);
+  background: var(--cf-surface);
+  border: 1px solid var(--cf-line);
+  border-radius: var(--cf-radius);
+}
+
+.ww-panel__title {
+  margin: 0 0 var(--cf-space-xs);
+  font-family: var(--cf-font-display);
+  font-size: var(--cf-text-xl);
+}
+
+.ww-panel__subtitle {
+  margin: 0 0 var(--cf-space-lg);
+  max-width: 68ch;
+  color: var(--cf-fg-dim);
+  line-height: 1.6;
+}
+
+.ww-panel__note {
+  margin: var(--cf-space-lg) 0 0;
+  padding-top: var(--cf-space-lg);
+  border-top: 1px solid var(--cf-line);
+  max-width: 68ch;
+  color: var(--cf-fg-dim);
+  font-size: var(--cf-text-sm);
+  line-height: 1.6;
+}
+
+/*
+ * A panel about something that does not work. The left rule is `--cf-danger`, and it is the THIRD
+ * channel: the heading carries a ⊘, the badge carries the words NOT BUILT, and only then the
+ * colour.
+ */
+.ww-panel--gap {
+  border-left: 3px solid var(--cf-danger);
+}
+
+/* ------------------------------ notes ------------------------------ */
+
+.ww-note {
+  display: flex;
+  gap: var(--cf-space-sm);
+  align-items: flex-start;
+  margin: var(--cf-space-md) 0;
+  padding: var(--cf-space-md) var(--cf-space-lg);
+  background: var(--cf-bg-raised);
+  border: 1px solid var(--cf-line);
+  border-radius: var(--cf-radius-sm);
+  font-size: var(--cf-text-sm);
+  line-height: 1.6;
+}
+
+.ww-note__icon {
+  flex: none;
+}
+
+.ww-note--warn {
+  border-color: var(--cf-warn);
+  color: var(--cf-fg);
+}
+
+/* ------------------------- what it owns ---------------------------- */
+
+.ww-owns {
+  display: grid;
+  gap: var(--cf-space-lg);
+  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+}
+
+.ww-owns__item {
+  padding: var(--cf-space-lg);
+  background: var(--cf-bg-raised);
+  border: 1px solid var(--cf-line);
+  border-radius: var(--cf-radius-sm);
+}
+
+.ww-owns__heading {
+  margin: 0 0 var(--cf-space-xs);
+  font-size: var(--cf-text-md);
+  color: var(--cf-accent);
+}
+
+.ww-owns__body {
+  margin: 0;
+  color: var(--cf-fg-dim);
+  font-size: var(--cf-text-sm);
+  line-height: 1.6;
+}
+
+.ww-owns__cite {
+  margin: var(--cf-space-sm) 0 0;
+  font-size: var(--cf-text-2xs);
+  color: var(--cf-fg-mute);
+}
+
+/* ------------------------- the registry ---------------------------- */
+
+.ww-titles,
+.ww-items,
+.ww-provisions,
+.ww-achievements,
+.ww-seasons,
+.ww-sanctions,
+.ww-slots,
+.ww-caps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ww-title,
+.ww-item,
+.ww-provision,
+.ww-season {
+  padding: var(--cf-space-lg);
+  border: 1px solid var(--cf-line);
+  border-radius: var(--cf-radius-sm);
+  background: var(--cf-bg-raised);
+}
+
+.ww-title + .ww-title,
+.ww-item + .ww-item,
+.ww-provision + .ww-provision,
+.ww-season + .ww-season {
+  margin-top: var(--cf-space-md);
+}
+
+.ww-title__head,
+.ww-item__head,
+.ww-provision__head,
+.ww-season__head {
+  display: flex;
+  gap: var(--cf-space-md);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.ww-title__name,
+.ww-provision__sku,
+.ww-season__name {
+  font-family: var(--cf-font-display);
+  font-size: var(--cf-text-lg);
+  color: var(--cf-fg);
+  text-decoration: none;
+}
+
+.ww-title__name:hover,
+.ww-provision__sku:hover {
+  color: var(--cf-accent);
+}
+
+.ww-title__slug,
+.ww-season__slug {
+  margin: var(--cf-space-2xs) 0 0;
+  font-size: var(--cf-text-xs);
+  color: var(--cf-fg-mute);
+}
+
+.ww-title__meaning,
+.ww-provision__meaning {
+  margin: var(--cf-space-xs) 0 var(--cf-space-md);
+  color: var(--cf-fg-dim);
+  font-size: var(--cf-text-sm);
+}
+
+.ww-caps {
+  display: grid;
+  gap: var(--cf-space-xs);
+}
+
+.ww-cap {
+  display: flex;
+  gap: var(--cf-space-md);
+  align-items: baseline;
+  flex-wrap: wrap;
+  font-size: var(--cf-text-sm);
+}
+
+.ww-cap__key {
+  min-width: 9rem;
+  color: var(--cf-accent);
+}
+
+.ww-cap__meaning {
+  color: var(--cf-fg-dim);
+}
+
+/* ------------------------------ facts ------------------------------ */
+
+.ww-facts {
+  display: grid;
+  gap: var(--cf-space-md);
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  margin: var(--cf-space-md) 0;
+}
+
+.ww-fact__label {
+  font-size: var(--cf-text-2xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cf-fg-mute);
+}
+
+.ww-fact__value {
+  margin: var(--cf-space-3xs) 0 0;
+  font-size: var(--cf-text-sm);
+  color: var(--cf-fg);
+  word-break: break-word;
+}
+
+/*
+ * ABSENCE, RENDERED AS A SENTENCE. Italic and dimmed so it does not read as a value, but never a
+ * bare dash: "nothing has been raised for this" and "—" are different statements, and only one of
+ * them tells a customer what happened to their purchase.
+ */
+.ww-absent {
+  color: var(--cf-fg-mute);
+  font-style: italic;
+}
+
+.ww-absent--block {
+  display: block;
+  margin: var(--cf-space-md) 0 0;
+  line-height: 1.6;
+}
+
+/* ----------------------------- badges ------------------------------ */
+
+.ww-badge {
+  display: inline-flex;
+  gap: 0.4em;
+  align-items: center;
+  padding: 0.15em 0.6em;
+  border: 1px solid currentColor;
+  border-radius: var(--cf-radius-sm);
+  font-size: var(--cf-text-2xs);
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.ww-badge__word {
+  font-weight: 600;
+}
+
+.ww-badge--good {
+  color: var(--cf-success);
+}
+
+.ww-badge--warn {
+  color: var(--cf-warn);
+}
+
+.ww-badge--crit {
+  color: var(--cf-danger);
+}
+
+.ww-badge--busy {
+  color: var(--cf-accent);
+}
+
+.ww-badge--mute {
+  color: var(--cf-fg-mute);
+}
+
+/* --------------------------- the gap ------------------------------- */
+
+.ww-gap {
+  margin: var(--cf-space-lg) 0 0;
+  padding: var(--cf-space-lg);
+  background: var(--cf-bg-sunken);
+  border: 1px solid var(--cf-line-strong);
+  border-radius: var(--cf-radius-sm);
+}
+
+.ww-gap__title {
+  display: flex;
+  gap: var(--cf-space-md);
+  align-items: baseline;
+  flex-wrap: wrap;
+  margin: 0 0 var(--cf-space-sm);
+  font-size: var(--cf-text-md);
+}
+
+.ww-gap__badge {
+  padding: 0.15em 0.6em;
+  border: 1px solid var(--cf-danger);
+  border-radius: var(--cf-radius-sm);
+  color: var(--cf-danger);
+  font-size: var(--cf-text-2xs);
+  letter-spacing: 0.06em;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.ww-gap__finding {
+  margin: 0;
+  max-width: 72ch;
+  color: var(--cf-fg);
+  line-height: 1.7;
+}
+
+.ww-gap__closes {
+  margin: var(--cf-space-lg) 0 0;
+  padding: var(--cf-space-md) var(--cf-space-lg);
+  border-left: 2px solid var(--cf-accent);
+  background: var(--cf-surface);
+}
+
+.ww-gap__closes-title {
+  margin: 0 0 var(--cf-space-2xs);
+  font-size: var(--cf-text-2xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cf-fg-mute);
+}
+
+.ww-gap__closes p {
+  margin: 0;
+  color: var(--cf-fg-dim);
+  font-size: var(--cf-text-sm);
+  line-height: 1.6;
+}
+
+.ww-gap__cites {
+  margin: var(--cf-space-md) 0 0;
+  font-size: var(--cf-text-2xs);
+  color: var(--cf-fg-mute);
+  line-height: 1.8;
+}
+
+/*
+ * The service's own words, set apart so they cannot be mistaken for this app's. Monospace and a
+ * rule down the side: what is inside this block arrived over the wire and was not written here.
+ */
+.ww-refusal {
+  margin: var(--cf-space-lg) 0 0;
+  padding: var(--cf-space-md) var(--cf-space-lg);
+  border-left: 3px solid var(--cf-danger);
+  background: var(--cf-bg-sunken);
+  border-radius: 0 var(--cf-radius-sm) var(--cf-radius-sm) 0;
+}
+
+.ww-refusal__title {
+  margin: 0 0 var(--cf-space-2xs);
+  font-size: var(--cf-text-2xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cf-fg-mute);
+}
+
+.ww-refusal__text {
+  margin: 0;
+  color: var(--cf-fg);
+  line-height: 1.6;
+  word-break: break-word;
+}
+
+.ww-refusal__meta {
+  margin: var(--cf-space-sm) 0 0;
+  font-size: var(--cf-text-xs);
+  color: var(--cf-fg-mute);
+  line-height: 1.6;
+}
+
+/* -------------------------- entitlements --------------------------- */
+
+.ww-provision--terminal {
+  border-color: var(--cf-danger);
+}
+
+.ww-provision__aside,
+.ww-provision__urn {
+  margin: var(--cf-space-md) 0 0;
+  font-size: var(--cf-text-sm);
+  color: var(--cf-fg-dim);
+  line-height: 1.6;
+}
+
+.ww-provision__urn-label {
+  font-size: var(--cf-text-2xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cf-fg-mute);
+}
+
+.ww-empty-lede {
+  margin: 0;
+  color: var(--cf-fg);
+  line-height: 1.6;
+}
+
+/* ---------------------------- inventory ---------------------------- */
+
+/*
+ * A bound row. FOUR channels, because this one must survive every kind of loss: the word BOUND,
+ * the ⊘ glyph, this border, and — the one that cannot be missed — no sell control anywhere on the
+ * row. A disabled button would have been a fifth channel saying the wrong thing.
+ */
+.ww-item--bound {
+  border-color: var(--cf-line-strong);
+  border-left: 3px solid var(--cf-fg-mute);
+}
+
+.ww-item__urn {
+  font-size: var(--cf-text-md);
+}
+
+.ww-item__badge {
+  display: inline-flex;
+  gap: 0.4em;
+  align-items: center;
+  padding: 0.15em 0.6em;
+  border: 1px solid var(--cf-fg-mute);
+  border-radius: var(--cf-radius-sm);
+  color: var(--cf-fg-mute);
+  font-size: var(--cf-text-2xs);
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+
+.ww-item__rule {
+  margin: var(--cf-space-md) 0 0;
+  font-size: var(--cf-text-sm);
+  color: var(--cf-fg-dim);
+  line-height: 1.6;
+}
+
+.ww-item__rule--bound {
+  color: var(--cf-fg);
+}
+
+.ww-listing {
+  margin: var(--cf-space-lg) 0 0;
+  padding-top: var(--cf-space-lg);
+  border-top: 1px solid var(--cf-line);
+}
+
+.ww-listing__state {
+  margin: 0 0 var(--cf-space-md);
+  font-size: var(--cf-text-sm);
+  color: var(--cf-fg-dim);
+}
+
+/* ---------------------- account and wardrobe ----------------------- */
+
+.ww-wardrobe + .ww-wardrobe {
+  margin-top: var(--cf-space-lg);
+}
+
+.ww-wardrobe__scope {
+  margin: 0 0 var(--cf-space-sm);
+  font-size: var(--cf-text-sm);
+  color: var(--cf-fg-mute);
+}
+
+.ww-slots {
+  display: grid;
+  gap: var(--cf-space-xs);
+}
+
+.ww-slot {
+  display: flex;
+  gap: var(--cf-space-md);
+  align-items: center;
+  flex-wrap: wrap;
+  padding: var(--cf-space-sm) var(--cf-space-md);
+  background: var(--cf-bg-raised);
+  border: 1px solid var(--cf-line);
+  border-radius: var(--cf-radius-sm);
+}
+
+.ww-slot__name {
+  min-width: 9rem;
+  font-size: var(--cf-text-sm);
+}
+
+.ww-slot__urn {
+  flex: 1 1 14rem;
+  font-size: var(--cf-text-xs);
+  color: var(--cf-fg-dim);
+  word-break: break-all;
+}
+
+.ww-sanction {
+  padding: var(--cf-space-md) var(--cf-space-lg);
+  border-left: 2px solid var(--cf-warn);
+  background: var(--cf-bg-raised);
+}
+
+.ww-sanction + .ww-sanction {
+  margin-top: var(--cf-space-sm);
+}
+
+.ww-sanction__kind {
+  margin: 0;
+  font-weight: 600;
+}
+
+.ww-sanction__reason {
+  margin: var(--cf-space-2xs) 0 0;
+  color: var(--cf-fg-dim);
+  line-height: 1.6;
+}
+
+.ww-sanction__meta {
+  margin: var(--cf-space-xs) 0 0;
+  font-size: var(--cf-text-xs);
+  color: var(--cf-fg-mute);
+}
+
+/* ------------------- achievements and seasons ---------------------- */
+
+.ww-achievement {
+  padding: var(--cf-space-md) 0;
+  border-bottom: 1px solid var(--cf-line);
+}
+
+.ww-achievement:last-child {
+  border-bottom: none;
+}
+
+.ww-achievement__name {
+  margin: 0;
+  font-size: var(--cf-text-md);
+}
+
+.ww-achievement__desc {
+  margin: var(--cf-space-2xs) 0 0;
+  max-width: 68ch;
+  color: var(--cf-fg-dim);
+  font-size: var(--cf-text-sm);
+  line-height: 1.6;
+}
+
+.ww-achievement__meta {
+  margin: var(--cf-space-xs) 0 0;
+  font-size: var(--cf-text-xs);
+  color: var(--cf-fg-mute);
+}
+
+/* ------------------------------ forms ------------------------------ */
+
+.ww-form {
+  display: grid;
+  gap: var(--cf-space-lg);
+  max-width: 40rem;
+  margin: var(--cf-space-lg) 0 0;
+}
+
+.ww-field {
+  display: grid;
+  gap: var(--cf-space-3xs);
+}
+
+.ww-field__label {
+  font-size: var(--cf-text-sm);
+  font-weight: 600;
+}
+
+.ww-field__hint {
+  max-width: 60ch;
+  font-size: var(--cf-text-xs);
+  color: var(--cf-fg-mute);
+  line-height: 1.6;
+}
+
+.ww-field__error {
+  font-size: var(--cf-text-xs);
+  color: var(--cf-danger);
+}
+
+.ww-field__input {
+  margin-top: var(--cf-space-2xs);
+  padding: var(--cf-space-sm) var(--cf-space-md);
+  background: var(--cf-bg-sunken);
+  color: var(--cf-fg);
+  border: 1px solid var(--cf-line-strong);
+  border-radius: var(--cf-radius-sm);
+  font-family: var(--cf-font-sans);
+  font-size: var(--cf-text-sm);
+}
+
+.ww-field__input.cf-num {
+  font-family: var(--cf-font-mono);
+}
+
+.ww-field__input:focus-visible {
+  outline: 2px solid var(--cf-accent);
+  outline-offset: 1px;
+}

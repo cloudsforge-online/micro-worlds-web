@@ -1,0 +1,592 @@
+# Continuous integration.
+#
+# ────────────────────────────────────────────────────────────────────────────────────────────────
+# THE `check` AND `image` JOBS BELOW ARE TEMPORARY, exactly as they are in `micro-admin-web`,
+# `micro-mint-web` and `micro-hub-web`. The org's reusable `web-ci.yml` is the target and the
+# `hygiene` job already calls the org repository; the two local jobs exist for one reason and
+# disappear with it:
+#
+#   @cloudsforge/ui is unpublished, and this repository consumes it as `link:../ui/packages/ui`.
+#   The reusable workflow does a single checkout and then `pnpm install --frozen-lockfile`, which
+#   cannot resolve a sibling directory that is not there. The day the design system is published
+#   and the specifier in package.json becomes `^1.0.0`, everything from `check:` to the end of
+#   `image:` is deleted and replaced by:
+#
+#     jobs:
+#       ci:
+#         uses: cloudsforge-online/micro-org/.github/workflows/web-ci.yml@main
+#         with:
+#           app: worlds-web
+#           deep-link-path: /entitlements/5c1d2e3f-4a5b-4c6d-8e7f-9a0b1c2d3e4f
+#         permissions:
+#           contents: read
+#           packages: read
+#
+#   — the calling convention in `org/templates/web/_github/workflows/ci.yml`. The measured target
+#   in docs/ecosystem/03 §5 is zero repositories with a bespoke CI file, so treat every line from
+#   `check:` down as a liability with a deletion date rather than as something to extend.
+#
+# ONE INPUT OF THE REUSABLE WORKFLOW WILL STILL NOT SUIT THIS REPOSITORY: its `image` job probes a
+# deep route and requires a 200 for ANY address. This app's nginx.conf enumerates its real routes
+# and answers 404 for everything else ON PURPOSE. So `build-image: false` will be passed and the
+# image is checked here, where the probe can assert the honest answer as well as the deep link.
+#
+# `deep-link-path` is `/entitlements/<uuid>` — a REAL route, declared as a wildcard in
+# `src/lib/routes.ts` and exported as `DEEP_LINK_PATH`, which `test/routes.test.ts` checks this
+# file against. A probe against a path the app does not own proves only that the 404 page renders.
+# ────────────────────────────────────────────────────────────────────────────────────────────────
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Typecheck, test, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { path: worlds-web }
+
+      # Temporary, for the same reason as the Dockerfile's second build context: the design system
+      # is unpublished and resolves through `link:../ui/packages/ui`.
+      - uses: actions/checkout@v4
+        with:
+          repository: cloudsforge-online/micro-ui
+          path: ui
+          # micro-ui is private; without a contents:read token this checkout 404s and the job dies
+          # before install. Same wiring as the service repos' runtime checkout.
+          token: ${{ secrets.ESTATE_READ_TOKEN }}
+
+      # ══════════════════════════════════════════════════════════════════════════════════════════
+      # THE SERVICE THIS CLIENT IS BUILT AGAINST, CHECKED OUT SO THE CITATIONS CAN BE VERIFIED.
+      #
+      # `test/worlds.test.ts` reads `worlds/src/server.ts` and requires that every route this
+      # bundle calls — and every route it DECLINES — is registered at the line its citation names,
+      # that the three routes called without a bearer really make no `authenticate()` call, and
+      # that worlds still requires no `Idempotency-Key`. Eight clients in this estate were built
+      # against a surface somebody imagined; one made every on-chain escrow activation fail with a
+      # false diagnosis.
+      #
+      # It also reads `worlds/src/titleclient.ts` and pins the two lines where worlds calls into a
+      # title — the gap this product exists to represent honestly.
+      #
+      # Only `src/` is fetched — the citations are line numbers in source, and nothing here builds
+      # or runs the service.
+      # ══════════════════════════════════════════════════════════════════════════════════════════
+      - uses: actions/checkout@v4
+        with:
+          repository: cloudsforge-online/micro-worlds
+          path: worlds
+          token: ${{ secrets.ESTATE_READ_TOKEN }}
+          sparse-checkout: |
+            src
+
+      # The two title services, so the claim "neither serves /v1/title or /v1/provision" is CHECKED
+      # rather than asserted from a README. This app renders that gap to customers; a stale claim
+      # here would be this repository telling somebody their purchase cannot be delivered when it
+      # can.
+      - uses: actions/checkout@v4
+        with:
+          repository: cloudsforge-online/micro-emberkin
+          path: emberkin
+          token: ${{ secrets.ESTATE_READ_TOKEN }}
+          sparse-checkout: |
+            src
+      - uses: actions/checkout@v4
+        with:
+          repository: cloudsforge-online/micro-nda
+          path: nda
+          token: ${{ secrets.ESTATE_READ_TOKEN }}
+          sparse-checkout: |
+            src
+
+      # Pinned, because the checkout lives at worlds-web/ and the action looks for the
+      # packageManager field in the workspace root, where there is no package.json.
+      - uses: pnpm/action-setup@v4
+        with: { version: 11.9.0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm, cache-dependency-path: worlds-web/pnpm-lock.yaml }
+
+      # `link:` resolves to the sibling's own node_modules, so the design system must be installed
+      # before this repository is — without this, `tsc` cannot resolve ../ui's own imports (react,
+      # react/jsx-runtime) when it typechecks the linked sources.
+      - name: Install the sibling design system
+        run: pnpm --dir ui install --frozen-lockfile
+
+      - name: Install
+        working-directory: worlds-web
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        working-directory: worlds-web
+        run: pnpm typecheck
+
+      - name: Test
+        working-directory: worlds-web
+        run: pnpm test
+
+      # ── The route cross-check must have RUN, not merely not failed ────────────────────────────
+      #
+      # `test/worlds.test.ts` skips its cross-repository half when there is no micro-worlds
+      # checkout, so that `pnpm test` passes for somebody who cloned only this repository. A skipped
+      # test is an unmeasured one, so on the runner the absence has to be fatal — otherwise a
+      # checkout that silently produced nothing would look exactly like a client whose citations are
+      # all correct.
+      - name: The citations were checked against the real service
+        working-directory: worlds-web
+        run: |
+          set -euo pipefail
+          test -f ../worlds/src/server.ts || {
+            echo "::error::micro-worlds was not checked out; the route citations were never verified"
+            exit 1
+          }
+          test -f ../worlds/src/titleclient.ts || {
+            echo "::error::micro-worlds/src/titleclient.ts is missing; the title-bridge claim was never verified"
+            exit 1
+          }
+          out=$(node --import tsx --test test/worlds.test.ts 2>&1 || true)
+          if printf '%s\n' "$out" | grep -q 'SKIPPED: no micro-worlds checkout'; then
+            echo "::error::the route cross-check skipped itself while micro-worlds was present"
+            exit 1
+          fi
+          printf '%s\n' "$out" | grep -qE 'is registered at worlds/src/server\.ts:[0-9]+' || {
+            echo "::error::the route cross-check did not run against worlds/src/server.ts"
+            exit 1
+          }
+          # And the title-side half, which is the claim this product renders to customers.
+          printf '%s\n' "$out" | grep -q "neither micro-emberkin nor micro-nda serves either of them" || {
+            echo "::error::the title-bridge check did not run"
+            exit 1
+          }
+          echo "ok: every cited route was verified against the service that serves it"
+
+      # …and the cross-check can fail. Bend one citation and require the suite to go red, so a
+      # `worlds.test.ts` reduced to assertions that always pass cannot look like a verified client.
+      - name: …and it would have noticed a wrong citation
+        working-directory: worlds-web
+        run: |
+          set -euo pipefail
+          cp test/worlds.test.ts "$RUNNER_TEMP/worlds.test.ts.orig"
+          # ══════════════════════════════════════════════════════════════════════════════════════
+          # THE LINE NUMBER IS READ, NEVER WRITTEN HERE.
+          #
+          # micro-mint-web's version of this step used to HARDCODE it. The day micro-mint's route
+          # table moved, the sed matched nothing, the mutation did not happen, the suite passed
+          # UNMUTATED, and this step reported "the cross-check passed a citation off by one line"
+          # when the truth was that no citation had been bent. A mutation test that names the value
+          # it mutates goes stale exactly when the thing it guards changes.
+          #
+          # So: read the number, then REFUSE TO GRADE AN UNMUTATED FILE. Both halves are needed —
+          # reading the number without checking that the write landed is the same failure with an
+          # extra step.
+          # ══════════════════════════════════════════════════════════════════════════════════════
+          line=$(grep -oE "path: '/v1/titles', line: [0-9]+" test/worlds.test.ts | head -1 | grep -oE '[0-9]+$')
+          if [ -z "${line:-}" ]; then
+            echo "::error::no '/v1/titles' citation to bend — SURFACE has been renamed and this step is reading nothing"
+            exit 1
+          fi
+          sed -i "s|path: '/v1/titles', line: $line|path: '/v1/titles', line: $((line + 1))|" test/worlds.test.ts
+          if ! grep -q "path: '/v1/titles', line: $((line + 1))" test/worlds.test.ts; then
+            echo "::error::the mutation did not apply; this step would grade an unmutated file"
+            cp "$RUNNER_TEMP/worlds.test.ts.orig" test/worlds.test.ts
+            exit 1
+          fi
+          if node --import tsx --test test/worlds.test.ts >/dev/null 2>&1; then
+            echo "::error::the cross-check passed a citation off by one line — it is not reading the service"
+            cp "$RUNNER_TEMP/worlds.test.ts.orig" test/worlds.test.ts
+            exit 1
+          fi
+          cp "$RUNNER_TEMP/worlds.test.ts.orig" test/worlds.test.ts
+          echo "ok: a citation off by one line turns the suite red, so a pass is evidence"
+
+      # The same treatment for the TITLE-SIDE citation, because it is a different assertion in a
+      # different file and the first mutation does not exercise it.
+      - name: …and it would have noticed a wrong titleclient citation
+        working-directory: worlds-web
+        run: |
+          set -euo pipefail
+          cp test/worlds.test.ts "$RUNNER_TEMP/worlds.test.ts.orig"
+          line=$(grep -oE "line: [0-9]+, fragment: \"'/v1/title'\"" test/worlds.test.ts | grep -oE '[0-9]+' | head -1)
+          if [ -z "${line:-}" ]; then
+            echo "::error::no '/v1/title' citation to bend — TITLE_CALLS has been renamed and this step is reading nothing"
+            exit 1
+          fi
+          sed -i "s|line: $line, fragment: \"'/v1/title'\"|line: $((line + 1)), fragment: \"'/v1/title'\"|" test/worlds.test.ts
+          if ! grep -q "line: $((line + 1)), fragment: \"'/v1/title'\"" test/worlds.test.ts; then
+            echo "::error::the mutation did not apply; this step would grade an unmutated file"
+            cp "$RUNNER_TEMP/worlds.test.ts.orig" test/worlds.test.ts
+            exit 1
+          fi
+          if node --import tsx --test test/worlds.test.ts >/dev/null 2>&1; then
+            echo "::error::the title-bridge check passed a citation off by one line"
+            cp "$RUNNER_TEMP/worlds.test.ts.orig" test/worlds.test.ts
+            exit 1
+          fi
+          cp "$RUNNER_TEMP/worlds.test.ts.orig" test/worlds.test.ts
+          echo "ok: the titleclient citations are read from the real file too"
+
+      - name: Build
+        working-directory: worlds-web
+        run: pnpm build
+
+      # A frontend that builds to nothing is a blank page, not a build failure. The previous estate
+      # served SPAs from the API process and shipped an image with no dist in it.
+      - name: The bundle exists
+        working-directory: worlds-web
+        run: |
+          set -euo pipefail
+          test -f dist/index.html || { echo "::error::dist/index.html is missing after a successful build"; exit 1; }
+          echo "ok: $(find dist -type f | wc -l | tr -d ' ') files in dist"
+
+      # The brand chrome must survive the BUILD as well as be present in the source tree.
+      # test/brand-chrome.test.ts asserts the source; this asserts the artefact, because Vite copies
+      # publicDir at build time and a misconfigured publicDir would pass the first and fail the
+      # second. The og card is in the list: on this surface a missing one is a blank preview on
+      # every shared title page.
+      - name: The brand chrome reached the bundle
+        working-directory: worlds-web
+        run: |
+          set -euo pipefail
+          for asset in favicon-32x32.png favicon-192x192.png favicon-512x512.png og-1200x630.png; do
+            test -f "dist/$asset" || { echo "::error::dist/$asset is missing from the build output"; exit 1; }
+          done
+          echo "ok: the favicons and the og card are in dist"
+
+  rules:
+    name: Estate rules
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: No build-time configuration
+        # The same rule as test/no-build-time-config.test.ts, checked again here so it fails even
+        # if somebody deletes the test along with the line it forbids. A `VITE_` variable is read
+        # at build time and frozen into the artefact, and an artefact with an environment frozen
+        # into it has to be rebuilt to be promoted — which means the thing that reaches production
+        # is not the thing that passed CI.
+        run: |
+          set -uo pipefail
+          if grep -rn --include='*.ts' --include='*.tsx' --include='*.html' \
+               -e 'import\.meta\.env' -e 'VITE_' src index.html; then
+            echo "::error::this bundle must read no build-time environment; hosts come from cloudsforgeHosts() at runtime"
+            exit 1
+          fi
+          echo "ok: no build-time environment"
+
+      - name: No hard-coded CloudsForge hostname
+        # A literal hostname is a second, unversioned copy of the surface registry, and the copy is
+        # the one that will be wrong. It matters more here than elsewhere: this app resolves TWO
+        # surfaces (`worlds` and `worlds-api`), and the gateway has no router for the second yet —
+        # so the temptation to "just point at api." is live rather than theoretical.
+        run: |
+          set -uo pipefail
+          if grep -rn --include='*.ts' --include='*.tsx' 'cloudsforge\.online' src; then
+            echo "::error::resolve hosts through cloudsforgeHosts() rather than naming them"
+            exit 1
+          fi
+          echo "ok: no literal hostnames in src"
+
+      - name: The SPA fallback keeps its 404
+        # Comments are stripped first. nginx.conf's own header QUOTES the directive it forbids, in
+        # order to explain why the routes are enumerated by hand, so a grep over the raw file
+        # matches the warning and would fail a correct config. Every copy of this step in the estate
+        # strips first — checked, not assumed.
+        run: |
+          set -uo pipefail
+          directives=$(grep -v '^[[:space:]]*#' nginx.conf)
+          if printf '%s\n' "$directives" | grep -nE 'try_files[[:space:]]+\$uri[[:space:]]+(\$uri/[[:space:]]+)?/index\.html'; then
+            echo "::error::unknown paths must 404; serve the shell through error_page 404 /index.html"
+            exit 1
+          fi
+          printf '%s\n' "$directives" | grep -q 'error_page 404 /index.html'
+          echo "ok: unknown paths answer 404"
+
+      - name: The auth callback is redeemed before the app renders
+        # The hand-off code has to leave the address bar before the exchange goes over the wire,
+        # and that only happens if bootstrapSession() runs before React mounts.
+        run: grep -q 'bootstrapSession' src/main.tsx
+
+      - name: The route table, the navigation and nginx agree
+        # Already asserted by test/routes.test.ts; repeated here so deleting the test does not
+        # silently delete the rule.
+        run: test -f test/routes.test.ts && grep -q 'nginx.conf' test/routes.test.ts
+
+      - name: Every route this client calls cites the line that serves it
+        # The rule test/worlds.test.ts enforces, restated so that deleting the test does not delete
+        # it. Every `/v1/...` path in the client must live in a file that also carries a
+        # `worlds/src/server.ts:<line>` citation, and no page may call /v1 directly.
+        run: |
+          set -uo pipefail
+          cites=$(grep -coE 'worlds/src/server\.ts:[0-9]+' src/lib/worlds.ts || true)
+          # Eleven called plus eight declined. Below nineteen, a route has lost its citation.
+          if [ "${cites:-0}" -lt 19 ]; then
+            echo "::error::src/lib/worlds.ts carries ${cites:-0} route citations; the surface has nineteen"
+            exit 1
+          fi
+          if grep -rn --include='*.tsx' -E "api<[^>]*>\(\s*[\`'\"]/v1/" src; then
+            echo "::error::a page calls /v1 directly; every call goes through src/lib/worlds.ts, where it is cited"
+            exit 1
+          fi
+          echo "ok: ${cites:-0} citations, and no uncited call site"
+
+      - name: No act-as-anyone parameter
+        # Every player-scoped route on worlds derives the account from the token with
+        # `subjectUserId` (worlds/src/server.ts:527, :554, :579, :603, :623, :634, :655). There is no
+        # userId parameter to send and there must be no primitive here that looks like one.
+        # deploy/gateway/dynamic/policy.yml refuses the /internal routes that took a userId as a
+        # parameter for the same reason.
+        run: |
+          set -uo pipefail
+          if grep -rnE "(onBehalfOf|actAs|impersonat)" --include='*.ts' --include='*.tsx' src; then
+            echo "::error::a player acts as themselves; this app has no act-as primitive"
+            exit 1
+          fi
+          if grep -rnE "searchParams.*userId|query:.*userId" --include='*.ts' --include='*.tsx' src; then
+            echo "::error::worlds derives the account from the token; a userId parameter must not be sent"
+            exit 1
+          fi
+          echo "ok: no act-as-anyone primitive"
+
+      - name: The design tokens are real ones
+        # ══════════════════════════════════════════════════════════════════════════════════════
+        # A CSS custom property that does not exist DECLARES NOTHING AND FAILS SILENTLY.
+        #
+        # `--cf-border`, `--cf-critical`, `--cf-warning` and `--cf-font` are not tokens in
+        # @cloudsforge/ui. The real names are `--cf-line` / `--cf-line-strong`, `--cf-danger`,
+        # `--cf-warn` and `--cf-font-sans`. A rule written against one of the first four renders
+        # with no border, no colour and no font, and nothing anywhere reports it — which is what
+        # makes an invented token name worse than a literal hex.
+        # ══════════════════════════════════════════════════════════════════════════════════════
+        run: |
+          set -uo pipefail
+          if grep -nE 'var\(--cf-(border|critical|warning|font)[),]' src/styles.css; then
+            echo "::error::src/styles.css uses a token that does not exist; see ui/packages/ui/src/tokens.css"
+            exit 1
+          fi
+          grep -q 'var(--cf-line' src/styles.css || { echo "::error::--cf-line is unused; the borders are not tokenised"; exit 1; }
+          grep -q 'var(--cf-danger)' src/styles.css || { echo "::error::--cf-danger is unused; the terminal states are not tokenised"; exit 1; }
+          echo "ok: every token name is one the design system declares"
+
+      - name: No pay-to-win language, and no advantage attached to a purchase
+        # ══════════════════════════════════════════════════════════════════════════════════════
+        # docs/ecosystem/01-product-vision.md principle 6: purchasable means cosmetic, convenience
+        # or access — NEVER power. `bound` is where the platform enforces it
+        # (worlds/src/players.ts:390-391), and this surface must not undo it in prose.
+        #
+        # A grep cannot judge meaning, so it targets the specific vocabulary that would have to
+        # appear for this app to be selling an advantage. It is a floor, not the rule.
+        # ══════════════════════════════════════════════════════════════════════════════════════
+        run: |
+          set -uo pipefail
+          if grep -rniE "(pay.to.win|buy (power|an advantage)|stronger|more powerful|boost your|competitive edge|unfair advantage)" \
+               --include='*.tsx' --include='*.ts' src; then
+            echo "::error::nothing purchasable on this platform confers power; see 01-product-vision.md principle 6"
+            exit 1
+          fi
+          # And the positive half: the inventory screen must draw NO control on a bound row.
+          grep -q '{!item.bound && <Listing' src/pages/inventory.tsx || {
+            echo "::error::the inventory screen must render no listing control at all for a bound item"
+            exit 1
+          }
+          if grep -nE 'disabled=\{[^}]*bound' src/pages/inventory.tsx; then
+            echo "::error::a bound item gets NO control, not a disabled one — a disabled button reads as 'not yet'"
+            exit 1
+          fi
+          echo "ok: no advantage is attached to a purchase, and a bound item has no control"
+
+      - name: The known gaps are stated, with citations, and never as a loading state
+        # The reason this repository exists in the shape it does. The gap entries are DATA
+        # (src/lib/worlds.ts) so they can be asserted; the screens render them; and neither may be
+        # softened into "coming soon".
+        # NOTE ON EVERY GREP BELOW: they run over RAW source, so they may only look for things that
+        # must be PRESENT, or for language that must not appear even in a comment. The absence
+        # checks that would match this repository's own explanatory prose — "not a disabled
+        # button", the cited `/retry` route it declines — live in test/gap.test.ts, which strips
+        # comments first. A checker that cannot tell a control from a sentence about one is not a
+        # checker, and the first run of that test file failed on exactly this.
+        run: |
+          set -uo pipefail
+          for id in title-bridge-unimplemented registry-unpopulated; do
+            grep -q "$id" src/lib/worlds.ts || { echo "::error::the $id gap is no longer declared"; exit 1; }
+          done
+          grep -q 'gap={TITLE_BRIDGE_GAP}' src/pages/platform.tsx || {
+            echo "::error::the front page must render the title-bridge gap"; exit 1; }
+          grep -q 'gap={EMPTY_REGISTRY_GAP}' src/pages/platform.tsx || {
+            echo "::error::the front page must render the empty-registry gap"; exit 1; }
+          # An empty registry is a 200 and a true answer. It must never be drawn as loading — and
+          # this phrasing must not appear anywhere, comment included.
+          if grep -nE "(coming soon|any moment|check back|under construction|we.re working on|stay tuned)" \
+               --include='*.tsx' -ri src; then
+            echo "::error::a gap must be stated as a finding, never as something on its way"
+            exit 1
+          fi
+          # And the service's own refusal is rendered verbatim rather than paraphrased.
+          grep -q 'ServiceRefusal' src/pages/entitlements.tsx || {
+            echo "::error::an undeliverable entitlement must render worlds' own lastError"; exit 1; }
+          # The retry route requires role:admin and must not be CALLED. Checked in
+          # test/gap.test.ts against comment-stripped source; here we assert the client has no
+          # wrapper for it at all, which is a presence check and safe over raw text.
+          if grep -qE "export function (retry|reopen)" src/lib/worlds.ts; then
+            echo "::error::the retry route requires an administrator and must not be wrapped in a player app"
+            exit 1
+          fi
+          echo "ok: both gaps are stated with citations, and neither is drawn as loading"
+
+      - name: Forge Worlds is presented as a platform, not as two games
+        # ══════════════════════════════════════════════════════════════════════════════════════
+        # The category error this estate has already made twice on its own front page. The
+        # registry is DATA read from GET /v1/titles at runtime; a title named in source would be
+        # this app asserting which games exist — an assertion the registry exists to remove from
+        # source, and one that is false today anyway.
+        # ══════════════════════════════════════════════════════════════════════════════════════
+        #
+        # A title may be NAMED once, in the front page's lede — "Ninety Days After and Emberkin are
+        # titles that run here" is the CORRECTION of the category error, not an instance of it.
+        # What must never exist is a title as STRUCTURE: a route, a nav entry, a card, or an array
+        # in source. test/gap.test.ts asserts that precisely, by cutting the lede out and requiring
+        # no title name to remain. This step covers the parts of the shape a grep can judge.
+        run: |
+          set -uo pipefail
+          # No title anywhere in the route table, the navigation or the shell.
+          if grep -rniE "(emberkin|ninety days|kindred)" src/lib/routes.ts src/components; then
+            echo "::error::no title may appear in the route table or the shell; the registry is data"
+            exit 1
+          fi
+          # No title on any page other than the front one, where the lede explains what a title is.
+          if grep -rlniE "(emberkin|ninety days|kindred)" --include='*.tsx' src/pages \
+               | grep -v 'src/pages/platform.tsx'; then
+            echo "::error::a page other than the front page names a title"
+            exit 1
+          fi
+          grep -q 'The platform' src/lib/routes.ts || {
+            echo "::error::the index route must be the platform, not a game"; exit 1; }
+          # The registry is fetched, never listed.
+          grep -q 'listTitles' src/pages/platform.tsx || {
+            echo "::error::the registry must be read from GET /v1/titles at runtime"; exit 1; }
+          echo "ok: the surface is the platform; titles are rows"
+
+  image:
+    name: Docker image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { path: worlds-web }
+      - uses: actions/checkout@v4
+        with:
+          repository: cloudsforge-online/micro-ui
+          path: ui
+          token: ${{ secrets.ESTATE_READ_TOKEN }}
+
+      - uses: docker/setup-buildx-action@v3
+      - name: Build
+        uses: docker/build-push-action@v6
+        with:
+          context: worlds-web
+          build-contexts: uipkg=ui
+          build-args: RELEASE=${{ github.sha }}
+          push: false
+          load: true
+          tags: worlds-web:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # PROBED, NOT READ. Both defects this step guards were invisible in the config and obvious in
+      # a response: nginx's `add_header` is all-or-nothing per level, so a location that sets
+      # Cache-Control silently loses every inherited security header; and `try_files` is a file
+      # lookup rather than an internal redirect, so serving /index.html from `location = /` never
+      # enters `location = /index.html`. Reading the file suggests both are fine. Curling it does
+      # not.
+      - name: The image serves the app, 404s what it does not own, and sends the headers it promises
+        run: |
+          set -uo pipefail
+          docker run -d --name ci-worlds-web -p 127.0.0.1:8080:8080 worlds-web:ci
+          for _ in $(seq 1 30); do
+            code=$(curl -s -m 5 -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/ || true)
+            [ "$code" = "200" ] && break
+            sleep 1
+          done
+          [ "${code:-}" = "200" ] || { echo "::error::the image returned ${code:-no answer} for /"; docker logs --tail 60 ci-worlds-web; exit 1; }
+
+          fail=0
+
+          # A route this app OWNS must survive a hard refresh. The path is DEEP_LINK_PATH in
+          # src/lib/routes.ts, and test/routes.test.ts checks this file against it.
+          deep=$(curl -s -m 5 -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/entitlements/5c1d2e3f-4a5b-4c6d-8e7f-9a0b1c2d3e4f || true)
+          [ "$deep" = "200" ] || { echo "::error::an owned route returned $deep — it must be served the shell"; fail=1; }
+
+          # The public title page, which is an address people are SENT. Same requirement.
+          shared=$(curl -s -m 5 -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/titles/5c1d2e3f-4a5b-4c6d-8e7f-9a0b1c2d3e4f || true)
+          [ "$shared" = "200" ] || { echo "::error::a shared title page returned $shared"; fail=1; }
+
+          # A route it does NOT own must answer 404 while still serving the shell, so the reader
+          # gets a real page and the status line tells the truth. This is the assertion the org's
+          # reusable image job cannot make, because it requires a 200 for any deep link.
+          unknown=$(curl -s -m 5 -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/nope/not/a/route || true)
+          [ "$unknown" = "404" ] || { echo "::error::an unknown address returned $unknown; it must be 404"; fail=1; }
+          curl -s -m 5 http://127.0.0.1:8080/nope/not/a/route | grep -q '<div id="root">' \
+            || { echo "::error::the 404 did not serve the app shell"; fail=1; }
+
+          check() { # url, header, expected-substring, label
+            got=$(curl -sI "$1" | tr -d '\r' | grep -i "^$2:" | cut -d' ' -f2- || true)
+            case "${got:-}" in
+              "") echo "::error::$4 is missing $2"; fail=1 ;;
+              *"$3"*) echo "  ok   $4: $2: $got" ;;
+              *) echo "::error::$4 has the wrong $2 (got '${got:-nothing}', wanted '$3')"; fail=1 ;;
+            esac
+          }
+
+          asset=$(curl -s http://127.0.0.1:8080/ | grep -oE '/assets/[^"]+\.js' | head -1)
+          for target in "http://127.0.0.1:8080/" "http://127.0.0.1:8080/inventory" "http://127.0.0.1:8080$asset"; do
+            [ -n "$asset" ] || [ "$target" != "http://127.0.0.1:8080" ] || continue
+            check "$target" X-Content-Type-Options "nosniff" "$target"
+            # SAMEORIGIN, not DENY: this is a public product surface with legitimate embeds inside
+            # Hub. The operator console is the one that uses DENY, and for a stated reason.
+            check "$target" X-Frame-Options "SAMEORIGIN" "$target"
+            check "$target" Referrer-Policy "strict-origin" "$target"
+          done
+          check "http://127.0.0.1:8080/" Cache-Control "no-store" "the shell"
+          check "http://127.0.0.1:8080/inventory" Cache-Control "no-store" "an enumerated route"
+          [ -n "$asset" ] && check "http://127.0.0.1:8080$asset" Cache-Control "immutable" "a hashed asset"
+
+          # This surface must NOT be kept out of an index: its title pages exist to be found.
+          robots=$(curl -sI http://127.0.0.1:8080/ | tr -d '\r' | grep -ci '^X-Robots-Tag:' || true)
+          [ "${robots:-0}" = "0" ] || { echo "::error::this public surface sends X-Robots-Tag"; fail=1; }
+
+          # ════════════════════════════════════════════════════════════════════════════════════
+          # THE BRAND CHROME IS SERVED BY THE IMAGE, not merely committed to the repository.
+          #
+          # The web template's Dockerfile once did not copy public/ into the build context, so four
+          # frontends shipped an image with no icon in it while their own brand test passed —
+          # because that test reads the SOURCE tree. Fixed upstream at
+          # micro-web-template/Dockerfile:39; this probe is what would have caught it, and here a
+          # missing asset would also blank the link preview on every shared title page.
+          # ════════════════════════════════════════════════════════════════════════════════════
+          for asset in favicon-32x32.png favicon-192x192.png favicon-512x512.png og-1200x630.png; do
+            code=$(curl -s -m 5 -o /dev/null -w '%{http_code}' "http://127.0.0.1:8080/$asset" || true)
+            [ "$code" = "200" ] || { echo "::error::/$asset returned $code from the image"; fail=1; }
+          done
+
+          docker rm -f ci-worlds-web >/dev/null 2>&1 || true
+          exit $fail
+      - name: Down
+        if: always()
+        run: docker rm -f ci-worlds-web || true
+
+  hygiene:
+    # The org's reusable secret check. Cheap, and it catches the failure that cannot be undone: a
+    # secret pushed to a repository is compromised the moment it lands, and rotating it is the only
+    # remedy.
+    uses: cloudsforge-online/micro-org/.github/workflows/secret-hygiene.yml@main
+    permissions:
+      contents: read
