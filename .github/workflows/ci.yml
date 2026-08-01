@@ -269,6 +269,48 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # ══════════════════════════════════════════════════════════════════════════════════════════
+      # ONE COMMENT-STRIPPED COPY OF src/, FOR EVERY CHECK BELOW THAT FORBIDS A STRING.
+      #
+      # Run 30710626131 went red on three of them at once, and every failure was this repository's
+      # own prose:
+      #
+      #   * the pay-to-win grep matched `src/lib/format.ts`, which QUOTES worlds/src/players.ts —
+      #     "`bound` is the anti-pay-to-win control";
+      #   * the "implies loading" grep matched `src/components/gap.tsx`, whose header says a gap
+      #     must never imply "any moment now";
+      #   * the "no title named" grep matched `src/lib/routes.ts`, whose comment explains that
+      #     Ninety Days After and Emberkin are titles that RUN on the platform.
+      #
+      # All three files were correct. This is the sixth guard in the estate to fire on the sentence
+      # explaining it, and every previous one was worked around by REWORDING THE COMMENT — which
+      # means the rule quietly deleted its own documentation. A guard that fires on its own
+      # explanation trains people to delete the explanation.
+      #
+      # So the prose is stripped once, here, and the absence checks read the result. Each line
+      # keeps its `path:` prefix so a match still names the file, and the step refuses to produce
+      # an empty file — a stripper that silently output nothing would make every check below pass
+      # vacuously, which is a worse failure than the one it fixes.
+      #
+      # Presence checks ("this string must appear") still read the raw source: a comment cannot
+      # make one of those pass that should have failed.
+      # ══════════════════════════════════════════════════════════════════════════════════════════
+      - name: Strip the prose once, so no rule fires on its own explanation
+        run: |
+          set -euo pipefail
+          find src -type f \( -name '*.ts' -o -name '*.tsx' \) -print0 \
+            | while IFS= read -r -d '' f; do
+                perl -0pe 's{/\*.*?\*/}{}gs; s{^\s*//.*$}{}gm;' "$f" | sed "s|^|$f:|"
+              done > "$RUNNER_TEMP/src-nocomments.txt"
+          lines=$(wc -l < "$RUNNER_TEMP/src-nocomments.txt")
+          # A floor, not a presence check: an empty or truncated file would make every absence
+          # check below pass for the wrong reason.
+          if [ "$lines" -lt 1000 ]; then
+            echo "::error::the comment stripper produced $lines lines; the checks below would pass vacuously"
+            exit 1
+          fi
+          echo "ok: $lines lines of comment-free source for the absence checks"
+
       - name: No build-time configuration
         # The same rule as test/no-build-time-config.test.ts, checked again here so it fails even
         # if somebody deletes the test along with the line it forbids. A `VITE_` variable is read
@@ -386,11 +428,15 @@ jobs:
         #
         # A grep cannot judge meaning, so it targets the specific vocabulary that would have to
         # appear for this app to be selling an advantage. It is a floor, not the rule.
+        #
+        # It reads the comment-stripped copy: `src/lib/format.ts` QUOTES worlds/src/players.ts —
+        # "`bound` is the anti-pay-to-win control" — and this rule is about what the app says to a
+        # PLAYER. See the stripper step above.
         # ══════════════════════════════════════════════════════════════════════════════════════
         run: |
           set -uo pipefail
-          if grep -rniE "(pay.to.win|buy (power|an advantage)|stronger|more powerful|boost your|competitive edge|unfair advantage)" \
-               --include='*.tsx' --include='*.ts' src; then
+          if grep -niE "(pay.to.win|buy (power|an advantage)|stronger|more powerful|boost your|competitive edge|unfair advantage)" \
+               "$RUNNER_TEMP/src-nocomments.txt"; then
             echo "::error::nothing purchasable on this platform confers power; see 01-product-vision.md principle 6"
             exit 1
           fi
@@ -424,10 +470,11 @@ jobs:
             echo "::error::the front page must render the title-bridge gap"; exit 1; }
           grep -q 'gap={EMPTY_REGISTRY_GAP}' src/pages/platform.tsx || {
             echo "::error::the front page must render the empty-registry gap"; exit 1; }
-          # An empty registry is a 200 and a true answer. It must never be drawn as loading — and
-          # this phrasing must not appear anywhere, comment included.
-          if grep -nE "(coming soon|any moment|check back|under construction|we.re working on|stay tuned)" \
-               --include='*.tsx' -ri src; then
+          # An empty registry is a 200 and a true answer, and must never be drawn as loading.
+          # Comment-stripped: src/components/gap.tsx's header says a gap must not imply "any moment
+          # now", which is the rule rather than a breach of it.
+          if grep -niE "(coming soon|any moment|check back|under construction|we.re working on|stay tuned)" \
+               "$RUNNER_TEMP/src-nocomments.txt"; then
             echo "::error::a gap must be stated as a finding, never as something on its way"
             exit 1
           fi
@@ -458,14 +505,18 @@ jobs:
         # no title name to remain. This step covers the parts of the shape a grep can judge.
         run: |
           set -uo pipefail
+          # Comment-stripped, and each line still carries its path. src/lib/routes.ts's comment
+          # explains that Ninety Days After and Emberkin are titles that RUN on the platform —
+          # which is the correction of the category error, not an instance of it.
+          nc="$RUNNER_TEMP/src-nocomments.txt"
           # No title anywhere in the route table, the navigation or the shell.
-          if grep -rniE "(emberkin|ninety days|kindred)" src/lib/routes.ts src/components; then
+          if grep -iE "^(src/lib/routes\.ts|src/components/)[^:]*:.*(emberkin|ninety days|kindred)" "$nc"; then
             echo "::error::no title may appear in the route table or the shell; the registry is data"
             exit 1
           fi
-          # No title on any page other than the front one, where the lede explains what a title is.
-          if grep -rlniE "(emberkin|ninety days|kindred)" --include='*.tsx' src/pages \
-               | grep -v 'src/pages/platform.tsx'; then
+          # No title on any page other than the front one, whose lede explains what a title is.
+          if grep -iE "^src/pages/[^:]*:.*(emberkin|ninety days|kindred)" "$nc" \
+               | grep -v '^src/pages/platform.tsx:'; then
             echo "::error::a page other than the front page names a title"
             exit 1
           fi
