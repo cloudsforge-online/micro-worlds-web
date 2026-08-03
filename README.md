@@ -1,5 +1,11 @@
 # micro-worlds-web
 
+[![ci](https://github.com/cloudsforge-online/micro-worlds-web/actions/workflows/ci.yml/badge.svg)](https://github.com/cloudsforge-online/micro-worlds-web/actions/workflows/ci.yml)
+![node](https://img.shields.io/badge/node-%3E%3D22-5FA04E?logo=node.js&logoColor=white)
+![typescript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)
+![module](https://img.shields.io/badge/module-ESM-F7DF1E?logo=javascript&logoColor=black)
+![tests](https://img.shields.io/badge/tests-in--process%20DOM-6E56CF)
+
 The browser client for **Forge Worlds** — the title registry, one player account that crosses every
 title, the inventory that account carries, the achievements and seasons titles report into, and the
 entitlement bridge between what somebody bought and what a title raises. It is the customer-facing
@@ -374,3 +380,10 @@ route the app declines. Six guards in this estate have made that mistake, and ev
 around by rewording the comment — which means the rule quietly deleted its own documentation. The
 tests here strip comments first, and the CI greps that run over raw source are restricted to things
 that must be *present*.
+
+---
+
+## Provenance
+
+The code in this repository was written by **Claude Opus 5** and **Claude Fable 5**, assets
+generated with **FLUX 2 Pro**, under human direction and review.
