@@ -125,6 +125,51 @@ describe('two events in one tick — the guard, not the disabled attribute', () 
   })
 
   /*
+   * THE OTHER HALF OF THE LATCH: it must be RELEASED, and released on the failure path too.
+   *
+   * A latch is only a guard while it comes off. Released anywhere but a `finally` and a write that
+   * throws leaves it set for the life of the component — so the control is wedged shut, silently,
+   * and the failure path is exactly the one a user retries from. That trades a double submit for a
+   * screen that has stopped working, which is the worse of the two.
+   */
+  it('a listing that failed can be tried again — the latch comes off on the error path', async () => {
+    await both(
+      page(h(InventoryPage), '/inventory'),
+      signedIn({
+        'GET /v1/players/me/inventory': { body: { items: [fx.item({ bound: false })] } },
+        [LIST]: (_w, n) =>
+          n === 1
+            ? { status: 503, body: fx.error('unavailable', 'the market is unreachable') }
+            : {
+                status: 201,
+                body: { item: fx.item({ listedAt: '2026-08-03T09:00:00.000Z', listingUrn: 'urn:cf:market:1' }) },
+              },
+      }),
+      `${ORIGIN}/inventory`,
+      async (s) => {
+        await s.settle(20)
+        const urn = s.allByRole('textbox')[0]
+        assert.ok(urn, 'no listing-reference field')
+        await s.type(urn, 'urn:cf:market:listing:1')
+
+        await s.click(s.byRole('button', 'Offer it to the market'))
+        await s.settle(20)
+        assert.equal(s.api.matching(LIST).length, 1, 'the first attempt was not sent')
+
+        // Same control, second press, after the failure has been rendered.
+        await s.click(s.byRole('button', 'Offer it to the market'))
+        await s.settle(20)
+        assert.equal(
+          s.api.matching(LIST).length,
+          2,
+          'the retry never left the browser: the latch was not released when the write threw, so ' +
+            'the control is wedged shut and the player cannot list the item at all',
+        )
+      },
+    )
+  })
+
+  /*
    * `DELETE .../list` is NOT idempotent, whatever the method implies. `unlist` updates
    * `where ... and listed_at is not null` (`worlds/src/players.ts:467`) and returns null when
    * nothing matched, and the route turns that null into a 404 (`worlds/src/server.ts:675`). So the
@@ -235,6 +280,131 @@ describe('two events in one tick — the guard, not the disabled attribute', () 
           'a double click cleared the same slot twice',
         )
       },
+    )
+  })
+})
+
+/*
+ * ══════════════════════════════════════════════════════════════════════════════════════════════
+ * THE AFFORDANCE, WHICH IS A SEPARATE CLAIM FROM THE GUARD
+ *
+ * The ref stops the second request. It does not tell anybody it stopped it. A control that swallows
+ * a press in silence reads as a control that did nothing, and the reader presses it again — so
+ * `disabled` is not redundant with the latch, it is the half of the answer the user can see.
+ *
+ * These are asserted separately because a mutation run found them unasserted: dropping `disabled`
+ * from three of the four buttons changed nothing in the suite. Only the listing control was covered
+ * (`journeys.test.ts:336`).
+ * ══════════════════════════════════════════════════════════════════════════════════════════════
+ */
+describe('the disabled affordance — what the user can see while a write is in flight', () => {
+  it('the withdraw control is disabled while its own request is in flight', async () => {
+    await both(
+      page(h(InventoryPage), '/inventory'),
+      signedIn({
+        'GET /v1/players/me/inventory': {
+          body: {
+            items: [fx.item({ listedAt: '2026-08-01T09:00:00.000Z', listingUrn: 'urn:cf:market:1' })],
+          },
+        },
+        [UNLIST]: { status: 200, body: { item: fx.item() }, delayMs: 30 },
+      }),
+      `${ORIGIN}/inventory`,
+      async (s) => {
+        await s.settle(20)
+        const withdraw = s.byRole('button', 'Withdraw the offer')
+        s.clickNoFlush(withdraw)
+        await s.settle(0)
+        assert.ok(
+          withdraw.hasAttribute('disabled'),
+          'the withdraw control stayed live while its own request was in flight',
+        )
+        await s.settle(60)
+      },
+    )
+  })
+
+  it('the profile save control is disabled while its own request is in flight', async () => {
+    await both(
+      page(h(PlayerPage), '/player'),
+      signedIn({
+        'GET /v1/players/me': { body: fx.snapshot() },
+        'PUT /v1/players/me': { status: 200, body: { profile: fx.snapshot().profile }, delayMs: 30 },
+      }),
+      `${ORIGIN}/player`,
+      async (s) => {
+        await s.settle(20)
+        const save = s.byRole('button', 'Save')
+        s.clickNoFlush(save)
+        await s.settle(0)
+        assert.ok(
+          save.hasAttribute('disabled'),
+          'the save control stayed live while its own request was in flight',
+        )
+        await s.settle(60)
+      },
+    )
+  })
+
+  it('the take-off control is disabled while its own request is in flight', async () => {
+    const worn = fx.snapshot()
+    const dressed = {
+      ...worn,
+      profile: { ...worn.profile!, equippedCosmetics: { '*': { head_frame: 'urn:cf:cosmetic:1' } } },
+    }
+    await both(
+      page(h(PlayerPage), '/player'),
+      signedIn({
+        'GET /v1/players/me': { body: dressed },
+        'PUT /v1/players/me/cosmetics': { status: 200, body: { profile: worn.profile }, delayMs: 30 },
+      }),
+      `${ORIGIN}/player`,
+      async (s) => {
+        await s.settle(20)
+        const off = s.byRole('button', 'Take off')
+        s.clickNoFlush(off)
+        await s.settle(0)
+        assert.ok(
+          off.hasAttribute('disabled'),
+          'the take-off control stayed live while its own request was in flight',
+        )
+        await s.settle(60)
+      },
+    )
+  })
+})
+
+/*
+ * ══════════════════════════════════════════════════════════════════════════════════════════════
+ * AND A CHECK ON THE CHECK: `strict: true` MUST REALLY MOUNT UNDER StrictMode
+ *
+ * Every proof above runs twice and claims one of the runs is the mount `src/main.tsx` really uses.
+ * If `strict` were quietly ignored, all of that would be decoration — the suite would stay green
+ * and the second run would prove nothing, which is precisely the "guards reported working against
+ * a suite that never exercised them" failure this work exists to avoid.
+ *
+ * StrictMode's observable signature is that it double-invokes the render function. So: a component
+ * that counts its own render calls, mounted both ways, must count more under `strict`.
+ * ══════════════════════════════════════════════════════════════════════════════════════════════
+ */
+describe('the harness option itself', () => {
+  it('strict: true really double-invokes render, so the runs above are not decoration', async () => {
+    const renders: number[] = []
+    for (const strict of [false, true]) {
+      let n = 0
+      const Counter = () => {
+        n += 1
+        return h('p', null, 'A paragraph long enough to satisfy the forty-character mount assertion.')
+      }
+      await withScreen(h(Counter), { url: `${ORIGIN}/`, strict }, async () => {
+        renders.push(n)
+      })
+    }
+    const [relaxed, underStrict] = renders as [number, number]
+    assert.ok(
+      underStrict > relaxed,
+      `strict: true is not wrapping anything — render ran ${underStrict} time(s) under it and ` +
+        `${relaxed} without, so every "under StrictMode" run in this file is the relaxed run again`,
     )
   })
 })

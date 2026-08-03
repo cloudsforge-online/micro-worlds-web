@@ -16,7 +16,8 @@
  * spinner, a skeleton or an empty state that implies "any moment now" is a lie with a specific
  * cost here — a customer who paid for a private world would sit and wait for something that is
  * never going to arrive. `useResource` already ranks failure above emptiness
- * (`src/lib/resource.ts:370-386`); this component is what emptiness renders AS.
+ * (`src/lib/resource.ts:14-30` — that file is 111 lines long, and the citation here read
+ * `:370-386` until it was checked); this component is what emptiness renders AS.
  * ══════════════════════════════════════════════════════════════════════════════════════════════
  */
 import type { KnownGap } from '../lib/worlds.ts'
