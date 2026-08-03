@@ -5,22 +5,86 @@
  * asks, only one may be in flight at a time, and its failure belongs beside the control that
  * caused it rather than in place of the page.
  *
- * ── Why `busy` is not merely cosmetic here ────────────────────────────────────────────────────
+ * ══════════════════════════════════════════════════════════════════════════════════════════════
+ * THE FOUR WRITES THIS APP MAKES, AND WHAT A SECOND ONE ACTUALLY DOES
  *
- * The two writes this app makes both spend or commit something that cannot be taken back:
- * `POST /v1/tokens/:id/pay` debits a customer's Shards through the ledger in one transaction
- * (`mint/src/server.ts:478-507`), and `POST /v1/tokens/:id/deploy` queues a job that puts a
- * contract on a chain (`mint/src/server.ts:515-568`).
+ * This file arrived as a verbatim copy from another surface, doc comment included, and that comment
+ * described `POST /v1/tokens/:id/pay` and `POST /v1/tokens/:id/deploy` on `mint`. **This app calls
+ * neither, and `worlds` serves neither.** Every claim below was re-read out of `worlds/src/` rather
+ * than carried forward.
  *
- * Neither takes an `Idempotency-Key` — mint has none — so the safety net is the service's own
- * state machine: `payForDeploy` updates `where status = 'awaiting_payment'` and answers 200 with
- * `replayed: true` if it finds the work done (`mint/src/tokens.ts:326-332`), and `deploy` enqueues
- * with `onConflict: 'keep'` so three clicks produce one run (`mint/src/server.ts:547-552`). Those
- * make a double click survivable; they are not a reason to cause one. So the hook refuses to start
- * a second run while one is in flight, and the buttons read the same flag so they are DISABLED
- * rather than merely ignored.
+ *   | Write                                     | Client            | A DUPLICATE DOES            |
+ *   | ----------------------------------------- | ----------------- | --------------------------- |
+ *   | `PUT /v1/players/me`                      | `putProfile`      | nothing — upsert            |
+ *   | `PUT /v1/players/me/cosmetics`            | `equipCosmetic`   | nothing — same slot, again  |
+ *   | `POST /v1/players/me/inventory/:id/list`  | `listForSale`     | **409, over a success**     |
+ *   | `DELETE /v1/players/me/inventory/:id/list`| `unlist`          | **404, over a success**     |
+ *
+ * **No `worlds` route reads an `Idempotency-Key`.** There is no `withIdempotentRoute` wrapper and
+ * no such header read anywhere in `worlds/src/server.ts`; the `idempotency` matches in that package
+ * are the title conformance suite (`worlds/src/conformance.ts:236`), the provisioning bridge where
+ * the entitlement id IS the key and never passes through a browser (`worlds/src/jobs.ts:15`,
+ * `worlds/src/titleclient.ts:15-16`), and the keys `worlds` sends DOWNSTREAM
+ * (`worlds/src/outbox.ts:285`). So this client sends none, and `test/worlds.test.ts` asserts the
+ * service still reads none. There is no header that can make a second click safe here.
+ *
+ * ── The two PUTs are idempotent by method, and really are ──────────────────────────────────────
+ *
+ * `putProfile` is a full replace ending in `on conflict (user_id) do update set`
+ * (`worlds/src/players.ts:127`). `equipCosmetic` reads, modifies and writes the wardrobe inside one
+ * transaction (`worlds/src/players.ts:168-194`) and setting a slot to the value it already holds is
+ * a no-op. A duplicate of either is harmless. The guard on those is a nicety.
+ *
+ * ── The two inventory writes are where a second request DOES damage ───────────────────────────
+ *
+ * Neither creates a duplicate. Both REFUSE — and the refusal is the defect, because it is delivered
+ * to somebody whose action SUCCEEDED.
+ *
+ *   * `listForSale` updates `where ... and listed_at is null and bound = false`
+ *     (`worlds/src/players.ts:423-424`). A second concurrent call matches no row, reads the row back
+ *     to say which of three reasons it was, and throws `InventoryError('this item is already
+ *     listed')` (`worlds/src/players.ts:442`) — a 409 `inventory_state`
+ *     (`worlds/src/server.ts:332-333`). So no second listing is created; instead the player is shown
+ *     "Item … was not listed" while their item is live on the market. They then withdraw an offer
+ *     that was doing exactly what they asked.
+ *
+ *   * `unlist` updates `where ... and listed_at is not null` and returns null when nothing matched
+ *     (`worlds/src/players.ts:463-471`); the route turns that null into a 404
+ *     (`worlds/src/server.ts:675`). DELETE being idempotent by convention does not make THIS delete
+ *     idempotent: the second one is an error on screen over a withdrawal that worked.
+ *
+ * A component that reports failure for an action that succeeded is worse than one that reports a
+ * duplicate, because the reader's correct response to it is to undo the thing they wanted. Not
+ * sending the second request is therefore the whole repair, and it has to happen in this hook —
+ * there is no server-side state machine underneath that can absorb it, only one that will complain.
+ * ══════════════════════════════════════════════════════════════════════════════════════════════
+ *
+ * ── THE LATCH IS A REF, AND THE STATE IS ONLY THE AFFORDANCE ──────────────────────────────────
+ *
+ * There was a comment here that defended reading `busy` out of state, and it argued: "React batches
+ * the `setBusy(true)` below before the next click can be processed, and a ref here would make this
+ * hook's behaviour depend on scheduling rather than on state anybody can see."
+ *
+ * **That is exactly backwards, and it was the bug.** `setBusy(true)` only SCHEDULES a render. Two
+ * clicks dispatched in the same tick — a double click, an impatient press, a trackpad reporting one
+ * press twice — both run their handlers before any render commits. Each reads `busy` out of the
+ * render closure it was created in, which is still `false`, and each proceeds. `disabled={busy}` has
+ * precisely the same hole for precisely the same reason: the attribute is not on the DOM node until
+ * the render commits, and no render has committed.
+ *
+ * Reading a ref is not "depending on scheduling" — it is refusing to. A ref is the only value in
+ * React that a second event in the same tick can observe, because it is the only one written
+ * synchronously. So the latch is taken BEFORE the first `await` and released in a `finally`, and it
+ * is the correctness guarantee. `busy` stays as state because a human needs to see that something
+ * is happening, and the `disabled` attributes stay because a control that ignores a press without
+ * saying so is its own defect. State is the affordance; the ref is the guard.
+ *
+ * `test/double-submit.test.ts` dispatches both events with no await between them — the only
+ * arrangement in which the guard is the thing under test — and runs each proof under `<StrictMode>`
+ * as well, because `src/main.tsx` mounts that way and a ref is the one guard StrictMode's
+ * double-invocation could plausibly disturb.
  */
-import { useCallback, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { noticeFor, type ErrorNotice } from './api.ts'
 
 export interface Mutation<A extends unknown[], T> {
@@ -39,13 +103,19 @@ export function useMutation<A extends unknown[], T>(
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<ErrorNotice | null>(null)
   const [result, setResult] = useState<T | null>(null)
+  /**
+   * The latch. Not a mirror of `busy` — the guard itself.
+   *
+   * A ref is the only value a second event in the SAME TICK can observe, because it is the only one
+   * written synchronously. `busy` is a render away and so is `disabled`; see the file header.
+   */
+  const inFlight = useRef(false)
 
   const run = useCallback(
     async (...args: A): Promise<T | null> => {
-      // Read from state rather than a ref on purpose: React batches the `setBusy(true)` below
-      // before the next click can be processed, and a ref here would make this hook's behaviour
-      // depend on scheduling rather than on state anybody can see.
-      if (busy) return null
+      // Taken before the first `await`, so nothing can interleave between the read and the write.
+      if (inFlight.current) return null
+      inFlight.current = true
       setBusy(true)
       setError(null)
       try {
@@ -56,10 +126,16 @@ export function useMutation<A extends unknown[], T>(
         setError(noticeFor(err, fallbackMessage))
         return null
       } finally {
+        // In `finally`, so a throw releases it too. A latch that leaked on the failure path would
+        // wedge the control shut for the rest of the page's life, which is a worse failure than the
+        // one it exists to prevent — and the failure path is the one a user retries from.
+        inFlight.current = false
         setBusy(false)
       }
     },
-    [busy, fn, fallbackMessage],
+    // `busy` is deliberately NOT a dependency any more: it is the affordance, not the guard, and
+    // keeping it here rebuilt `run` on every transition for no benefit.
+    [fn, fallbackMessage],
   )
 
   const reset = useCallback(() => {

@@ -334,6 +334,12 @@ describe('BJ-ADV — the adversarial matrix', () => {
         const list = s.allByRole('button').find((el) => /offer it to the market/i.test(s.textOf(el)))
         assert.ok(list, 'no listing control')
         s.clickNoFlush(list)
+        // THIS AWAIT IS LOAD-BEARING, AND IT IS ALSO THIS SCENARIO'S LIMIT. It lets the render
+        // commit, which is what puts `disabled` on the node — so what is asserted below is the
+        // AFFORDANCE, and the second press is stopped by the attribute rather than by the hook.
+        // The same-tick case, where nothing has re-rendered between the two events and the
+        // attribute cannot help, is `test/double-submit.test.ts`. This scenario passed while that
+        // one failed; do not read it as covering the guard.
         await s.settle(0)
         assert.ok(
           list.hasAttribute('disabled'),

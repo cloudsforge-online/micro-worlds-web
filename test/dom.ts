@@ -159,6 +159,17 @@ export interface MountOptions {
   /** `prefers-reduced-motion: reduce` for the media-query scenarios. */
   reducedMotion?: boolean
   /**
+   * Wrap the tree in `<StrictMode>`, the way `src/main.tsx` really mounts it.
+   *
+   * Off by default because StrictMode double-invokes render, effects and reducers, and a scenario
+   * about what a page SAYS does not want its mount effects run twice. But a scenario about a REF is
+   * a different matter: a ref latch is the one guard StrictMode can plausibly change the behaviour
+   * of, and a sibling surface's mutation run recorded exactly the hole this closes — "a StrictMode
+   * ref never exercised". So every double-submit proof below is run BOTH ways, and a guard that
+   * held only in the harness's relaxed mount would be caught here rather than in a browser.
+   */
+  strict?: boolean
+  /**
    * Extra properties on `window`, for the things a page reads off it that no API returns.
    *
    * `window.ethereum` is the one that matters: an injected EIP-1193 provider is not a response
@@ -474,8 +485,13 @@ export async function mount(element: ReactElement, options: MountOptions = {}): 
     })
   }
 
+  // `src/main.tsx` mounts under StrictMode, so a scenario that opts in is rendering the tree the
+  // way the shipped bundle really does.
+  const dress = (el: ReactElement): ReactElement =>
+    options.strict === true ? React.createElement(React.StrictMode, null, el) : el
+
   await act(async () => {
-    root.render(element)
+    root.render(dress(element))
   })
   await flush()
 
@@ -619,7 +635,7 @@ export async function mount(element: ReactElement, options: MountOptions = {}): 
     settle: flush,
     async rerender(next) {
       await act(async () => {
-        root.render(next)
+        root.render(dress(next))
       })
       await flush()
     },
