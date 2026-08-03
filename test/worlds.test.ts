@@ -70,17 +70,17 @@ interface Route {
  * wrong, the test fails and names it — which is the property a comment does not have.
  */
 const SURFACE: readonly Route[] = [
-  { method: 'GET', path: '/v1/titles', line: 467, authenticates: false },
-  { method: 'GET', path: '/v1/players/me', line: 524, authenticates: true },
-  { method: 'PUT', path: '/v1/players/me', line: 551, authenticates: true },
-  { method: 'PUT', path: '/v1/players/me/cosmetics', line: 576, authenticates: true },
-  { method: 'GET', path: '/v1/players/me/inventory', line: 598, authenticates: true },
-  { method: 'POST', path: '/v1/players/me/inventory/:id/list', line: 617, authenticates: true },
-  { method: 'DELETE', path: '/v1/players/me/inventory/:id/list', line: 631, authenticates: true },
-  { method: 'GET', path: '/v1/provisions', line: 642, authenticates: true },
-  { method: 'GET', path: '/v1/provisions/:id', line: 683, authenticates: true },
-  { method: 'GET', path: '/v1/titles/:id/achievements', line: 701, authenticates: false },
-  { method: 'GET', path: '/v1/titles/:id/seasons', line: 755, authenticates: false },
+  { method: 'GET', path: '/v1/titles', line: 507, authenticates: false },
+  { method: 'GET', path: '/v1/players/me', line: 564, authenticates: true },
+  { method: 'PUT', path: '/v1/players/me', line: 591, authenticates: true },
+  { method: 'PUT', path: '/v1/players/me/cosmetics', line: 616, authenticates: true },
+  { method: 'GET', path: '/v1/players/me/inventory', line: 638, authenticates: true },
+  { method: 'POST', path: '/v1/players/me/inventory/:id/list', line: 657, authenticates: true },
+  { method: 'DELETE', path: '/v1/players/me/inventory/:id/list', line: 671, authenticates: true },
+  { method: 'GET', path: '/v1/provisions', line: 682, authenticates: true },
+  { method: 'GET', path: '/v1/provisions/:id', line: 723, authenticates: true },
+  { method: 'GET', path: '/v1/titles/:id/achievements', line: 741, authenticates: false },
+  { method: 'GET', path: '/v1/titles/:id/seasons', line: 795, authenticates: false },
 ]
 
 /**
@@ -91,14 +91,14 @@ const SURFACE: readonly Route[] = [
  * fails the build instead of going quiet.
  */
 const DECLINED: readonly Route[] = [
-  { method: 'POST', path: '/v1/events', line: 389, authenticates: false },
-  { method: 'POST', path: '/v1/titles', line: 484, authenticates: true },
-  { method: 'POST', path: '/v1/provisions/:id/retry', line: 667, authenticates: true },
-  { method: 'PUT', path: '/v1/titles/:id/achievements', line: 714, authenticates: true },
-  { method: 'POST', path: '/v1/titles/:id/achievements/unlock', line: 735, authenticates: true },
-  { method: 'POST', path: '/v1/titles/:id/seasons', line: 760, authenticates: true },
-  { method: 'GET', path: '/v1/seasons/:id/budget', line: 779, authenticates: true },
-  { method: 'POST', path: '/v1/seasons/:id/rewards', line: 802, authenticates: true },
+  { method: 'POST', path: '/v1/events', line: 400, authenticates: false },
+  { method: 'POST', path: '/v1/titles', line: 524, authenticates: true },
+  { method: 'POST', path: '/v1/provisions/:id/retry', line: 707, authenticates: true },
+  { method: 'PUT', path: '/v1/titles/:id/achievements', line: 754, authenticates: true },
+  { method: 'POST', path: '/v1/titles/:id/achievements/unlock', line: 775, authenticates: true },
+  { method: 'POST', path: '/v1/titles/:id/seasons', line: 800, authenticates: true },
+  { method: 'GET', path: '/v1/seasons/:id/budget', line: 824, authenticates: true },
+  { method: 'POST', path: '/v1/seasons/:id/rewards', line: 847, authenticates: true },
 ]
 
 const ALL: readonly Route[] = [...SURFACE, ...DECLINED]
