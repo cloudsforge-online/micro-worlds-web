@@ -169,7 +169,7 @@ Unique to this app in the estate, and deliberate:
 | Key | What | Subdomain | devPort | Registered at |
 | --- | --- | --- | --- | --- |
 | `worlds` | **this bundle** | `worlds` | 3001 | `ui/packages/ui/src/surfaces.ts:239-250` |
-| `worlds-api` | **`micro-worlds`** | `worlds-api` | 4002 | `ui/packages/ui/src/surfaces.ts:495-507` |
+| `worlds-api` | **`micro-worlds`** | `worlds-api` | 4002 | `ui/packages/ui/src/surfaces.ts:771-784` — **but see defect 3: this row is a fossil.** The public API is `api.<apex>`; `worlds-api.<apex>` has no public DNS |
 
 Every other frontend uses one key for both, because for them the bundle and its API share an origin
 behind the gateway. Here they do not, so `apiBase()` is always absolute and every request is
@@ -309,13 +309,27 @@ Reported, not fixed — none of them blocks this repository.
    the public host at all. This client declines both routes for independent reasons, so it is not
    blocked; the reward path is a real hole.
 
-3. **`micro-deploy` / `micro-ui`: no gateway router exists for `worlds-api.<apex>`.** Worlds' routes
-   are served under `CF_API_HOST` today (`public-api.yml:142-147`), and
-   `ui/packages/ui/src/surfaces.ts:480-483` records the intent — "`api.` still points at the game
-   API, which is renamed to `worlds-api.` first." The registry is ahead of the deploy rather than
-   wrong. This bundle resolves against `worlds-api` because resolving against `api` would work today
-   and break silently on the day of the rename; the deploy needs a router for it (or `CF_API_HOST`
-   set accordingly) before this app is served in production.
+3. **`micro-ui`: the `worlds-api` registry row is a fossil, and this bundle resolves against it.**
+   The rename recorded as pending went **the other way**: `worlds-api.<apex>` was retired and folded
+   INTO `api.<apex>`, rather than the API being renamed away from `api.`. Measured on 2026-08-05:
+
+   ```
+   api.cloudsforge.online/v1/titles          -> 200 application/json
+   api-testnet.cloudsforge.online/v1/titles  -> 200 application/json
+   worlds-api.cloudsforge.online             -> no public DNS record
+   ```
+
+   Worlds' routes are served under `CF_API_HOST` (`public-api.yml:142-147`), and `public-api.yml:197`
+   refers to "folding `worlds-api` into the API host" as something already done. But
+   `ui/packages/ui/src/surfaces.ts:771-784` still declares the `worlds-api` row, and its `api` row
+   still carries the superseded comment at `:755-756` — "`api.` still points at the game API, which
+   is renamed to `worlds-api.` first." **The registry is now behind the deploy, not ahead of it.**
+
+   The consequence for this bundle is concrete: `src/lib/hosts.ts` resolves against `worlds-api`,
+   which is a hostname with no public DNS, so in production it must be served with `CF_API_HOST`
+   pointing at `api.<apex>` — the local estate router `cf-api-worlds-api`
+   (`estate-web.yml:388-389`) covers the compose apex only. Reported to micro-ui; retiring the
+   registry row is the real fix and is not this repository's to make.
 
 4. **`micro-web-template` (inherited): `relative()` can never produce a singular unit.** `pick`
    switches unit only above 90 of the smaller one and then rounds, so 60 seconds reads "60 seconds
