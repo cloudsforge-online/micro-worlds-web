@@ -169,7 +169,7 @@ Unique to this app in the estate, and deliberate:
 | Key | What | Subdomain | devPort | Registered at |
 | --- | --- | --- | --- | --- |
 | `worlds` | **this bundle** | `worlds` | 3001 | `ui/packages/ui/src/surfaces.ts:239-250` |
-| `worlds-api` | **`micro-worlds`** | `worlds-api` | 4002 | `ui/packages/ui/src/surfaces.ts:771-784` — **but see defect 3: this row is a fossil.** The public API is `api.<apex>`; `worlds-api.<apex>` has no public DNS |
+| `api` | **`micro-worlds`**, on the public API host | `api` | 4020 | `ui/packages/ui/src/surfaces.ts`, the `api` row. **Not `worlds-api`** — that hostname was retired into this one and has no DNS record; see "the registry outage" below |
 
 Every other frontend uses one key for both, because for them the bundle and its API share an origin
 behind the gateway. Here they do not, so `apiBase()` is always absolute and every request is
@@ -191,13 +191,13 @@ pnpm test
 pnpm build
 ```
 
-### `micro-worlds` must be started on 4002, and here is why
+### `micro-worlds` must be started on 4020, and here is why
 
 ```bash
-PORT=4002 pnpm --dir ../worlds dev
+PORT=4020 pnpm --dir ../worlds dev
 ```
 
-The surface registry gives `worlds-api` **devPort 4002** (`ui/packages/ui/src/surfaces.ts:501`).
+The surface registry gives `api` **devPort 4020** (`ui/packages/ui/src/surfaces.ts`, the `api` row).
 `micro-worlds` binds **4000**: `worlds/src/env.ts:171` defaults `PORT` to 4000 and
 `worlds/.env.example:38` sets it to 4000. Under `pnpm dev` the registry value is the one this bundle
 calls, so a `worlds` started from its own example environment is not where this app looks.
@@ -289,15 +289,16 @@ across six repositories. Recorded here so the omission is a decision rather than
 
 Reported, not fixed — none of them blocks this repository.
 
-1. **`micro-ui`: `worlds-api` devPort 4002 is an allocation, not a fact.** `micro-worlds` binds 4000
-   (`worlds/src/env.ts:171`, `worlds/.env.example:38`). This is the **fifth** instance of the same
-   defect class — `foresight` carried beacon's 4011, `emberkin` carried 3014 while binding 4100,
+1. **`micro-ui`: the API surface's devPort is an allocation, not a fact.** The registry gives `api`
+   devPort 4020; `micro-worlds` binds 4000 (`worlds/src/env.ts:171`, `worlds/.env.example:38`).
+   This is the **fifth** instance of the same defect class — `foresight` carried beacon's 4011, `emberkin` carried 3014 while binding 4100,
    `admin` carried 3002 while `admin-api` binds 4014, `create` carries 4004 while `mint` binds 4000.
    `ui/packages/ui/src/surfaces.test.ts:187-206` pins only surfaces whose service binds a
    *distinctive* port, and 4000 is the service-template default half the estate shares — so the
    entry genuinely is an allocation, and what is missing is anything that makes it true. Handled
-   here the way `micro-mint-web` handled its own: the README says `PORT=4002 pnpm dev`, in one line,
-   next to the citation.
+   here the way `micro-mint-web` handled its own: the README says `PORT=4020 pnpm dev`, in one line,
+   next to the citation. It costs nothing in production, where `api.<apex>` is a gateway hostname
+   that routes to `worlds:4000` by path prefix; there is no gateway in front of `pnpm dev`.
 
 2. **`micro-deploy`: `/v1/seasons` is routed nowhere.**
    `deploy/gateway/dynamic/public-api.yml:143` matches `PathPrefix('/v1/titles')`,
@@ -309,27 +310,33 @@ Reported, not fixed — none of them blocks this repository.
    the public host at all. This client declines both routes for independent reasons, so it is not
    blocked; the reward path is a real hole.
 
-3. **`micro-ui`: the `worlds-api` registry row is a fossil, and this bundle resolves against it.**
-   The rename recorded as pending went **the other way**: `worlds-api.<apex>` was retired and folded
-   INTO `api.<apex>`, rather than the API being renamed away from `api.`. Measured on 2026-08-05:
+3. **FIXED HERE ON 2026-08-05 — this bundle called a hostname that does not exist.**
+   `src/lib/hosts.ts:80` was `export const API_SURFACE: SurfaceKey = 'worlds-api'`, and
+   `worlds-api.<apex>` **has no DNS record on either network**. So every request this bundle made
+   died in the resolver with `ERR_NAME_NOT_RESOLVED` while the page itself kept answering 200, and
+   **the title registry did not load**. The owner found it by opening the product; no test did.
+
+   The rename this file used to cite as pending went **the other way**: `worlds-api.` was retired
+   and folded INTO `api.`, rather than the API being renamed away from `api.`. `api.` is the name a
+   third party would be given, so it is the one that survived. Measured on 2026-08-05:
 
    ```
+   worlds.cloudsforge.online/                -> 200   (the bundle: served throughout the outage)
    api.cloudsforge.online/v1/titles          -> 200 application/json
    api-testnet.cloudsforge.online/v1/titles  -> 200 application/json
-   worlds-api.cloudsforge.online             -> no public DNS record
+   worlds-api.cloudsforge.online             -> no DNS record
+   worlds-api-testnet.cloudsforge.online     -> no DNS record
    ```
 
-   Worlds' routes are served under `CF_API_HOST` (`public-api.yml:142-147`), and `public-api.yml:197`
-   refers to "folding `worlds-api` into the API host" as something already done. But
-   `ui/packages/ui/src/surfaces.ts:771-784` still declares the `worlds-api` row, and its `api` row
-   still carries the superseded comment at `:755-756` — "`api.` still points at the game API, which
-   is renamed to `worlds-api.` first." **The registry is now behind the deploy, not ahead of it.**
+   `API_SURFACE` is now `'api'`. Note that a gateway router for `worlds-api.` **did** exist
+   (`estate-web.yml`, `cf-api-worlds-api`) — a router is not reachability, and reading the gateway
+   config alone gives the wrong answer here. `test/api-host-resolves.test.ts` resolves the name for
+   real and drives the live endpoint, because every existing test either compared the host to a
+   string or stubbed `fetch`.
 
-   The consequence for this bundle is concrete: `src/lib/hosts.ts` resolves against `worlds-api`,
-   which is a hostname with no public DNS, so in production it must be served with `CF_API_HOST`
-   pointing at `api.<apex>` — the local estate router `cf-api-worlds-api`
-   (`estate-web.yml:388-389`) covers the compose apex only. Reported to micro-ui; retiring the
-   registry row is the real fix and is not this repository's to make.
+   What is **not** fixed here and is not this repository's to fix: `micro-ui` still carries the
+   `worlds-api` row. That is deliberate on its side — the row's own comment explains it is kept as
+   the sole fixture for the last-hyphen `<surface>-<env>` split — and it is marked retired.
 
 4. **`micro-web-template` (inherited): `relative()` can never produce a singular unit.** `pick`
    switches unit only above 90 of the smaller one and then rounds, so 60 seconds reads "60 seconds

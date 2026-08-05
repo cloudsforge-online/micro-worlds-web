@@ -7,12 +7,16 @@
  * comment.
  *
  * The second thing under test is that this app uses TWO surface keys — `worlds` for what it is and
- * `worlds-api` for what it calls — because the registry declares two surfaces. Every other
- * frontend in the estate uses one, so this is the property most likely to be "simplified" back
- * into a single key by somebody who has only read the others.
+ * `api` for what it calls — because the registry declares two surfaces. Every other frontend in
+ * the estate uses one, so this is the property most likely to be "simplified" back into a single
+ * key by somebody who has only read the others.
+ *
+ * The key it calls is `api` and MUST NOT go back to `worlds-api`: that hostname is retired with no
+ * DNS record anywhere, and pointing at it took the title registry down while the page kept
+ * answering 200. See test/api-host-resolves.test.ts, which checks the name actually resolves.
  *
  * The third is the dev-port disagreement, asserted as a FACT rather than fixed with a literal: the
- * registry gives `worlds-api` 4002 and `micro-worlds` binds 4000 (`worlds/src/env.ts:171`,
+ * registry gives `api` 4020 and `micro-worlds` binds 4000 (`worlds/src/env.ts:171`,
  * `worlds/.env.example:38`). See the header of src/lib/hosts.ts.
  */
 import assert from 'node:assert/strict'
@@ -70,11 +74,11 @@ describe('the surface this app IS', () => {
 })
 
 describe('the surface this app CALLS is a different one, and that is deliberate', () => {
-  it('is worlds-api, which the registry describes as the game platform API', () => {
-    assert.equal(API_SURFACE, 'worlds-api')
+  it('is api, the public versioned surface the game API was consolidated into', () => {
+    assert.equal(API_SURFACE, 'api')
     const surface = SURFACES.find((s) => s.key === API_SURFACE)
-    assert.ok(surface, 'worlds-api is not in the surface registry')
-    assert.equal(surface.subdomain, 'worlds-api')
+    assert.ok(surface, 'api is not in the surface registry')
+    assert.equal(surface.subdomain, 'api')
     // Not in the switcher: it is a host, not a destination.
     assert.equal(surface.inSwitcher, false)
   })
@@ -83,11 +87,16 @@ describe('the surface this app CALLS is a different one, and that is deliberate'
     assert.notEqual(PRODUCT, API_SURFACE)
   })
 
-  it('is not the `api` surface, which the registry says is being renamed away from this role', () => {
-    // `ui/packages/ui/src/surfaces.ts:480-483`: "`api.` still points at the game API, which is
-    // renamed to `worlds-api.` first." Resolving against `api` would work today and break silently
-    // on the day of the rename.
-    assert.notEqual(API_SURFACE, 'api')
+  it('is NOT `worlds-api`, the retired hostname that has no DNS record', () => {
+    // THIS IS THE REGRESSION GUARD FOR A REAL OUTAGE, not a style rule. `API_SURFACE` was
+    // `'worlds-api'`, that name resolves nowhere on any network, and so every request this bundle
+    // made failed while the page itself served 200 — the registry rendered as a failed state and
+    // the owner found it by using the product.
+    //
+    // The comment that justified the old value read "`api.` still points at the game API, which is
+    // renamed to `worlds-api.` first". That rename never happened; the fold went the other way and
+    // `api.` is the survivor. See the header of src/lib/hosts.ts before changing this back.
+    assert.notEqual(API_SURFACE, 'worlds-api')
   })
 })
 
@@ -97,14 +106,14 @@ describe('the API base is an origin comparison, never a flag', () => {
   it('is absolute in production, because the bundle and the API are two hosts', () => {
     assert.equal(
       resolveApiBase('https://worlds.cloudsforge.online', hosts, API_SURFACE),
-      'https://worlds-api.cloudsforge.online',
+      'https://api.cloudsforge.online',
     )
   })
 
   it('would be relative if they ever shared an origin, which is why the comparison is kept', () => {
     // Nothing in the estate does this today. The branch exists so that a deploy which puts the
     // bundle and the service behind one origin needs no code change to stop sending absolute URLs.
-    assert.equal(resolveApiBase('https://worlds-api.cloudsforge.online', hosts, API_SURFACE), '')
+    assert.equal(resolveApiBase('https://api.cloudsforge.online', hosts, API_SURFACE), '')
   })
 
   it('is absolute when there is no page origin at all', () => {
@@ -114,7 +123,7 @@ describe('the API base is an origin comparison, never a flag', () => {
 
   it('resolves from the window on every call, so one image serves every environment', () => {
     installWindow('https://worlds.cloudsforge.online/entitlements')
-    assert.equal(apiBase(), 'https://worlds-api.cloudsforge.online')
+    assert.equal(apiBase(), 'https://api.cloudsforge.online')
     removeWindow()
 
     installWindow('http://localhost:3001/entitlements')
@@ -125,20 +134,20 @@ describe('the API base is an origin comparison, never a flag', () => {
 describe('the dev port disagreement, recorded rather than papered over', () => {
   /**
    * A hard-coded host would be a second, unversioned copy of the registry, and the copy is the one
-   * that goes stale — so this app resolves 4002 and the README tells a developer to start worlds on
+   * that goes stale — so this app resolves 4020 and the README tells a developer to start worlds on
    * it. The test pins BOTH halves so the day either moves, this fails and names the other.
    *
    * This is the FIFTH instance of the same defect class: `foresight` carried beacon's 4011,
    * `emberkin` carried 3014 while binding 4100, `admin` carried 3002 while `admin-api` binds 4014,
    * and `create` carries 4004 while `mint` binds 4000.
    */
-  it('the registry gives worlds-api devPort 4002', () => {
-    assert.equal(SURFACES.find((s) => s.key === 'worlds-api')?.devPort, 4002)
+  it('the registry gives api devPort 4020', () => {
+    assert.equal(SURFACES.find((s) => s.key === 'api')?.devPort, 4020)
   })
 
-  it('and this app therefore calls 4002 on localhost, which is what the README explains', () => {
+  it('and this app therefore calls 4020 on localhost, which is what the README explains', () => {
     installWindow('http://localhost:3001/')
-    assert.equal(apiBase(), 'http://localhost:4002')
+    assert.equal(apiBase(), 'http://localhost:4020')
   })
 
   it('the vite dev port is the registry’s number for THIS bundle, not for the API', () => {
@@ -148,7 +157,7 @@ describe('the dev port disagreement, recorded rather than papered over', () => {
     const vite = /server:\s*\{\s*port:\s*(\d+)/.exec(read('vite.config.ts'))
     assert.ok(vite, 'vite.config.ts declares no dev server port')
     assert.equal(Number(vite[1]), SURFACES.find((s) => s.key === 'worlds')?.devPort)
-    assert.notEqual(Number(vite[1]), SURFACES.find((s) => s.key === 'worlds-api')?.devPort)
+    assert.notEqual(Number(vite[1]), SURFACES.find((s) => s.key === 'api')?.devPort)
   })
 
   it('src/lib/hosts.ts names no literal port or hostname', () => {
@@ -205,14 +214,10 @@ describe('the placement warning', () => {
       isRegisteredPlacement('https://hub.cloudsforge.online', 'hub.cloudsforge.online', hosts),
       false,
     )
-    // Compared against PRODUCT, not API_SURFACE: `worlds-api` is a host this bundle CALLS and never
+    // Compared against PRODUCT, not API_SURFACE: `api` is a host this bundle CALLS and never
     // a host it is SERVED from, so a bundle answering there is misplaced.
     assert.equal(
-      isRegisteredPlacement(
-        'https://worlds-api.cloudsforge.online',
-        'worlds-api.cloudsforge.online',
-        hosts,
-      ),
+      isRegisteredPlacement('https://api.cloudsforge.online', 'api.cloudsforge.online', hosts),
       false,
     )
   })
