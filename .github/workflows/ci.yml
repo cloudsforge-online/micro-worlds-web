@@ -359,8 +359,20 @@ jobs:
       - name: No hard-coded CloudsForge hostname
         # A literal hostname is a second, unversioned copy of the surface registry, and the copy is
         # the one that will be wrong. It matters more here than elsewhere: this app resolves TWO
-        # surfaces (`worlds` and `worlds-api`), and the gateway has no router for the second yet —
-        # so the temptation to "just point at api." is live rather than theoretical.
+        # surfaces, `worlds` for what it is and `api` for what it calls.
+        #
+        # WHAT THIS COMMENT USED TO SAY, BECAUSE IT IS THE DEFECT IT FAILED TO CATCH. It read:
+        # "this app resolves TWO surfaces (`worlds` and `worlds-api`), and the gateway has no
+        # router for the second yet — so the temptation to 'just point at api.' is live rather
+        # than theoretical." That got it exactly backwards. `worlds-api.` was RETIRED and folded
+        # INTO `api.`; it has no DNS record on either network, and pointing at it is what emptied
+        # the title registry in production. Pointing at `api.` is not a temptation to resist, it is
+        # the correct answer. See the header of src/lib/hosts.ts.
+        #
+        # The check itself was right and stays: it greps `src` only, comments included, so even a
+        # measured-evidence block writes hostnames as `<apex>`. `test/` is deliberately out of
+        # scope — test/api-host-resolves.test.ts must name real hostnames, because resolving them
+        # for real is the whole point of it.
         run: |
           set -uo pipefail
           if grep -rn --include='*.ts' --include='*.tsx' 'cloudsforge\.online' src; then

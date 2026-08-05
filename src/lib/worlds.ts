@@ -20,17 +20,17 @@
  *
  * | Method   | Path                                | Authenticates | Verified at                |
  * | -------- | ----------------------------------- | ------------- | -------------------------- |
- * | `GET`    | `/v1/titles`                        | **no**        | `worlds/src/server.ts:507` |
- * | `GET`    | `/v1/players/me`                    | yes           | `worlds/src/server.ts:564` |
- * | `PUT`    | `/v1/players/me`                    | yes           | `worlds/src/server.ts:591` |
- * | `PUT`    | `/v1/players/me/cosmetics`          | yes           | `worlds/src/server.ts:616` |
- * | `GET`    | `/v1/players/me/inventory`          | yes           | `worlds/src/server.ts:638` |
- * | `POST`   | `/v1/players/me/inventory/:id/list` | yes           | `worlds/src/server.ts:657` |
- * | `DELETE` | `/v1/players/me/inventory/:id/list` | yes           | `worlds/src/server.ts:671` |
- * | `GET`    | `/v1/provisions`                    | yes           | `worlds/src/server.ts:682` |
- * | `GET`    | `/v1/provisions/:id`                | yes           | `worlds/src/server.ts:723` |
- * | `GET`    | `/v1/titles/:id/achievements`       | **no**        | `worlds/src/server.ts:741` |
- * | `GET`    | `/v1/titles/:id/seasons`            | **no**        | `worlds/src/server.ts:795` |
+ * | `GET`    | `/v1/titles`                        | **no**        | `worlds/src/server.ts:531` |
+ * | `GET`    | `/v1/players/me`                    | yes           | `worlds/src/server.ts:588` |
+ * | `PUT`    | `/v1/players/me`                    | yes           | `worlds/src/server.ts:615` |
+ * | `PUT`    | `/v1/players/me/cosmetics`          | yes           | `worlds/src/server.ts:640` |
+ * | `GET`    | `/v1/players/me/inventory`          | yes           | `worlds/src/server.ts:662` |
+ * | `POST`   | `/v1/players/me/inventory/:id/list` | yes           | `worlds/src/server.ts:681` |
+ * | `DELETE` | `/v1/players/me/inventory/:id/list` | yes           | `worlds/src/server.ts:695` |
+ * | `GET`    | `/v1/provisions`                    | yes           | `worlds/src/server.ts:706` |
+ * | `GET`    | `/v1/provisions/:id`                | yes           | `worlds/src/server.ts:747` |
+ * | `GET`    | `/v1/titles/:id/achievements`       | **no**        | `worlds/src/server.ts:765` |
+ * | `GET`    | `/v1/titles/:id/seasons`            | **no**        | `worlds/src/server.ts:819` |
  *
  * ── DECLINED, EACH FOR A STATED REASON ────────────────────────────────────────────────────────
  *
@@ -40,14 +40,14 @@
  *
  * | Method | Path                                  | Verified at                | Why not here |
  * | ------ | ------------------------------------- | -------------------------- | ------------ |
- * | `POST` | `/v1/events`                          | `worlds/src/server.ts:400` | The entitlement bridge's front door. It is HMAC-checked over the exact bytes received BEFORE `JSON.parse` (`server.ts:392-398`) with `OUTBOX_SIGNING_SECRET`. A browser cannot hold that key, and a bundle that shipped it would BE the free-worlds endpoint the check exists to prevent. |
- * | `POST` | `/v1/titles`                          | `worlds/src/server.ts:524` | Registering a title says where a customer's purchase will be sent. `server.ts:488-489` demands `worlds:admin` or `role:admin`. See "the empty registry" below — this is the missing piece, and it is missing from the ESTATE, not from this app. |
- * | `POST` | `/v1/provisions/:id/retry`            | `worlds/src/server.ts:707` | `server.ts:669-670` demands `worlds:admin` or `role:admin`. It is the only way out of `failed` (`server.ts:663-665`), and the service's own comment at `server.ts:645-646` says no view of failed rentals exists anywhere in the estate. That view belongs in the operator console; a player product growing an operator's escape hatch is how the console ends up in six repositories. Reported, not built here. |
- * | `PUT`  | `/v1/titles/:id/achievements`         | `worlds/src/server.ts:754` | `worlds:title` or `role:admin` (`server.ts:718-719`). A title service defines its own achievements. |
- * | `POST` | `/v1/titles/:id/achievements/unlock`  | `worlds/src/server.ts:775` | `worlds:title` or `role:admin` (`server.ts:737-738`). A title reports what a player did; a player does not report it about themselves. |
- * | `POST` | `/v1/titles/:id/seasons`              | `worlds/src/server.ts:800` | Opening a season sets a MONEY budget, so `server.ts:764-765` demands admin. `server.ts:762-763`: "A title that could set its own reward budget could pay itself." |
- * | `GET`  | `/v1/seasons/:id/budget`              | `worlds/src/server.ts:824` | A season's remaining reward budget is an operator's number, not a player's, and rendering "1,412 Shards left in the pot" to a player is an invitation to race for it. It is also the one worlds route the gateway does not route: `deploy/gateway/dynamic/public-api.yml:143` matches `/v1/titles`, `/v1/players` and `/v1/provisions` and not `/v1/seasons`, so it falls to the catch-all at `:151` and is blackholed to `127.0.0.1:1` (`:196-198`). Reported. |
- * | `POST` | `/v1/seasons/:id/rewards`             | `worlds/src/server.ts:847` | `worlds:title` or `role:admin` (`server.ts:804-805`). A title ASKS for a reward; it does not decide. Paying oneself from a browser is the exploit the budget exists to bound. |
+ * | `POST` | `/v1/events`                          | `worlds/src/server.ts:411` | The entitlement bridge's front door. It is HMAC-checked over the exact bytes received BEFORE `JSON.parse` (`server.ts:392-398`) with `OUTBOX_SIGNING_SECRET`. A browser cannot hold that key, and a bundle that shipped it would BE the free-worlds endpoint the check exists to prevent. |
+ * | `POST` | `/v1/titles`                          | `worlds/src/server.ts:548` | Registering a title says where a customer's purchase will be sent. `server.ts:488-489` demands `worlds:admin` or `role:admin`. See "the empty registry" below — this is the missing piece, and it is missing from the ESTATE, not from this app. |
+ * | `POST` | `/v1/provisions/:id/retry`            | `worlds/src/server.ts:731` | `server.ts:669-670` demands `worlds:admin` or `role:admin`. It is the only way out of `failed` (`server.ts:663-665`), and the service's own comment at `server.ts:645-646` says no view of failed rentals exists anywhere in the estate. That view belongs in the operator console; a player product growing an operator's escape hatch is how the console ends up in six repositories. Reported, not built here. |
+ * | `PUT`  | `/v1/titles/:id/achievements`         | `worlds/src/server.ts:778` | `worlds:title` or `role:admin` (`server.ts:718-719`). A title service defines its own achievements. |
+ * | `POST` | `/v1/titles/:id/achievements/unlock`  | `worlds/src/server.ts:799` | `worlds:title` or `role:admin` (`server.ts:737-738`). A title reports what a player did; a player does not report it about themselves. |
+ * | `POST` | `/v1/titles/:id/seasons`              | `worlds/src/server.ts:824` | Opening a season sets a MONEY budget, so `server.ts:764-765` demands admin. `server.ts:762-763`: "A title that could set its own reward budget could pay itself." |
+ * | `GET`  | `/v1/seasons/:id/budget`              | `worlds/src/server.ts:848` | A season's remaining reward budget is an operator's number, not a player's, and rendering "1,412 Shards left in the pot" to a player is an invitation to race for it. It is also the one worlds route the gateway does not route: `deploy/gateway/dynamic/public-api.yml:143` matches `/v1/titles`, `/v1/players` and `/v1/provisions` and not `/v1/seasons`, so it falls to the catch-all at `:151` and is blackholed to `127.0.0.1:1` (`:196-198`). Reported. |
+ * | `POST` | `/v1/seasons/:id/rewards`             | `worlds/src/server.ts:871` | `worlds:title` or `role:admin` (`server.ts:804-805`). A title ASKS for a reward; it does not decide. Paying oneself from a browser is the exploit the budget exists to bound. |
  *
  * `/livez` (`:363`), `/readyz` (`:365`) and `/metrics` (`:370`) are served as well. They are not
  * called from a browser and are not wrapped here.
@@ -300,7 +300,7 @@ export interface Provision {
 /* ══════════════════════════════ the calls ══════════════════════════════ */
 
 /**
- * `GET /v1/titles` — `worlds/src/server.ts:507`.
+ * `GET /v1/titles` — `worlds/src/server.ts:531`.
  *
  * **Makes no `authenticate()` call**, and `worlds/src/server.ts:466` says why: "Public: a launcher
  * listing games cannot require a token to do it." Sent with `auth: false` — not because a token
@@ -322,7 +322,7 @@ export function listTitles(
 }
 
 /**
- * `GET /v1/players/me` — `worlds/src/server.ts:564`.
+ * `GET /v1/players/me` — `worlds/src/server.ts:588`.
  *
  * **`profile` may be null.** `findProfile` returns null for an account that has never set one
  * (`worlds/src/players.ts:97-103`) and the handler puts that null straight on the wire
@@ -349,7 +349,7 @@ export function getPlayer(
 }
 
 /**
- * `PUT /v1/players/me` — `worlds/src/server.ts:591`.
+ * `PUT /v1/players/me` — `worlds/src/server.ts:615`.
  *
  * A full replace, not a patch. `displayName` is the only required field (`server.ts:557`,
  * `requireString`); `avatarAssetUrn` is read as a string or written as null (`server.ts:558`), so
@@ -370,7 +370,7 @@ export function putProfile(input: ProfileInput): Promise<{ profile: PlayerProfil
 }
 
 /**
- * `PUT /v1/players/me/cosmetics` — `worlds/src/server.ts:616`.
+ * `PUT /v1/players/me/cosmetics` — `worlds/src/server.ts:640`.
  *
  * **FAILS CLOSED**, and it is the deliberate mirror of `GET /v1/players/me`
  * (`worlds/src/server.ts:569-575`): a billing outage means "ask again later", not "wear it
@@ -396,7 +396,7 @@ export function equipCosmetic(input: EquipInput): Promise<{ profile: PlayerProfi
 }
 
 /**
- * `GET /v1/players/me/inventory` — `worlds/src/server.ts:638`.
+ * `GET /v1/players/me/inventory` — `worlds/src/server.ts:662`.
  *
  * Scoping by `titleId` returns that title's items AND the cross-title ones — the query is
  * `title_scope in (${titleScope}, '*')` (`worlds/src/players.ts:364`). So a title filter never
@@ -412,7 +412,7 @@ export function listInventory(
 }
 
 /**
- * `POST /v1/players/me/inventory/:id/list` — `worlds/src/server.ts:657`.
+ * `POST /v1/players/me/inventory/:id/list` — `worlds/src/server.ts:681`.
  *
  * **A bound item cannot be listed, ever.** The refusal is a 403 with its own code, `item_bound`
  * (`worlds/src/server.ts:307-312`), and it has its own code because "you may not sell this, ever"
@@ -430,7 +430,7 @@ export function listForSale(id: string, listingUrn: string): Promise<{ item: Inv
 }
 
 /**
- * `DELETE /v1/players/me/inventory/:id/list` — `worlds/src/server.ts:671`.
+ * `DELETE /v1/players/me/inventory/:id/list` — `worlds/src/server.ts:695`.
  *
  * A 404 covers both "no such item" and "not yours" (`server.ts:635`), on purpose — the same
  * answer to both is what stops the route being an enumeration oracle.
@@ -443,7 +443,7 @@ export function unlist(id: string): Promise<{ item: InventoryItem }> {
 }
 
 /**
- * `GET /v1/provisions` — `worlds/src/server.ts:682`.
+ * `GET /v1/provisions` — `worlds/src/server.ts:706`.
  *
  * What a customer has been sold, and whether it was delivered. The handler branches on the
  * principal: an admin reads the whole backlog (`server.ts:647-652`), anybody else reads only rows
@@ -463,7 +463,7 @@ export function listProvisions(
 }
 
 /**
- * `GET /v1/provisions/:id` — `worlds/src/server.ts:723`.
+ * `GET /v1/provisions/:id` — `worlds/src/server.ts:747`.
  *
  * A malformed id, a missing row and somebody else's row are all **404**
  * (`server.ts:687-695`, and `itemIdOf` at `server.ts:919-923`). `worlds/src/server.ts:688` states
@@ -477,7 +477,7 @@ export function getProvision(id: string, signal?: AbortSignal): Promise<{ provis
 }
 
 /**
- * `GET /v1/titles/:id/achievements` — `worlds/src/server.ts:741`.
+ * `GET /v1/titles/:id/achievements` — `worlds/src/server.ts:765`.
  *
  * **Makes no `authenticate()` call.** The handler is four lines with no principal in it. Sent with
  * `auth: false`, and its screen is outside the session gate.
@@ -493,7 +493,7 @@ export function listAchievements(
 }
 
 /**
- * `GET /v1/titles/:id/seasons` — `worlds/src/server.ts:795`.
+ * `GET /v1/titles/:id/seasons` — `worlds/src/server.ts:819`.
  *
  * **Makes no `authenticate()` call.** Two lines, no principal. Same treatment as the achievements
  * list. The season's remaining BUDGET is a different route and is declined — see the header.
@@ -536,7 +536,7 @@ export function listSeasons(
  *
  * ── And nothing registers a title, so a fresh deployment has an EMPTY REGISTRY ────────────────
  *
- * `POST /v1/titles` (`worlds/src/server.ts:524`) is the only writer of the `titles` table, and it
+ * `POST /v1/titles` (`worlds/src/server.ts:548`) is the only writer of the `titles` table, and it
  * demands `worlds:admin` or `role:admin`. Nothing in the estate calls it: neither title service
  * self-registers on boot — which `worlds/src/titles.ts:120-122` anticipates as "the obvious way
  * for a title to declare itself", and which is why `registerTitle` is idempotent on the slug — and
@@ -593,7 +593,7 @@ export const EMPTY_REGISTRY_GAP: KnownGap = {
     'service calls it on boot, no migration seeds it, and no deploy step inserts a row — so a ' +
     'freshly deployed Forge Worlds knows about no titles at all. An empty list here is a 200 and ' +
     'a true answer, not a page that has not finished loading.',
-  citations: ['worlds/src/server.ts:507', 'worlds/src/server.ts:484-489', 'worlds/src/titles.ts:117-122'],
+  citations: ['worlds/src/server.ts:531', 'worlds/src/server.ts:484-489', 'worlds/src/titles.ts:117-122'],
   closes:
     'Each title service registers itself on boot — registerTitle is idempotent on the slug ' +
     '(worlds/src/titles.ts:117-122) precisely so that re-registering every boot produces one row ' +

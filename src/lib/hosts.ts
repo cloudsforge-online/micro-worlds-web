@@ -65,14 +65,16 @@
  * `worlds-api` row as "RETIRED AS A HOSTNAME, KEPT AS A ROW".
  *
  * **`worlds-api.<apex>` HAS NO DNS RECORD, ON EITHER NETWORK, AND IS NOT GOING TO GET ONE.**
- * That is the whole failure. Measured against the live estate on 2026-08-05:
+ * That is the whole failure. Measured against the live estate on 2026-08-05 (hostnames written
+ * against `<apex>`/`<apex-testnet>` because a literal here is the very copy of the registry this
+ * file exists to avoid — the exact names are in `README.md`, which is not code):
  *
- *     https://worlds.cloudsforge.online/               -> 200   (the bundle: always did)
- *     https://api.cloudsforge.online/v1/titles         -> 200   application/json, one title
- *     https://worlds-api.cloudsforge.online/v1/titles  -> 000   the name does not resolve
- *     https://worlds-testnet.cloudsforge.online/       -> 200
- *     https://api-testnet.cloudsforge.online/v1/titles -> 200   application/json, empty registry
- *     https://worlds-api-testnet.cloudsforge.online/   -> 000   the name does not resolve
+ *     https://worlds.<apex>/               -> 200   (the bundle: always did)
+ *     https://api.<apex>/v1/titles         -> 200   application/json, one title
+ *     https://worlds-api.<apex>/v1/titles  -> 000   the name does not resolve
+ *     https://worlds.<apex-testnet>/       -> 200
+ *     https://api.<apex-testnet>/v1/titles -> 200   application/json, empty registry
+ *     https://worlds-api.<apex-testnet>/   -> 000   the name does not resolve
  *
  * ── AND NOTE WHY THE OLD COMMENT'S OWN TEST WOULD HAVE PASSED ─────────────────────────────────
  *
@@ -88,7 +90,7 @@
  * Resolving against `api` is therefore not a shim around a missing router — it is the registry's
  * own answer to "where is the game API". CORS is not in the way: the gateway answers this bundle's
  * origin on both the preflight and the GET, verified rather than assumed —
- * `access-control-allow-origin: https://worlds.cloudsforge.online` with `allow-credentials: true`.
+ * `access-control-allow-origin: https://worlds.<apex>` with `allow-credentials: true`.
  *
  * **3. `/v1/seasons` is not routed at all.** Reported, and it does not affect this bundle:
  * `GET /v1/seasons/:id/budget` (`worlds/src/server.ts:779`) is the one route it would touch, and
