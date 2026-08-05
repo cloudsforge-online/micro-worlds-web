@@ -42,17 +42,16 @@ export default defineConfig({
   // is the estate's one list of where things live and a second number in this file would be a
   // second, unversioned copy of it.
   //
-  // The API is a DIFFERENT surface. `worlds-api` says devPort **4002**
-  // (`ui/packages/ui/src/surfaces.ts:501`) and `micro-worlds` binds **4000**:
-  // `worlds/src/env.ts:171` defaults `PORT` to 4000 and `worlds/.env.example:38` sets it to 4000.
-  // So under `pnpm dev` this bundle resolves `http://localhost:4002` and a `worlds` started from
+  // The API is a DIFFERENT surface: `api`, devPort **4020**, and `micro-worlds` binds **4000**
+  // (`worlds/src/env.ts:171` defaults `PORT` to 4000, `worlds/.env.example:38` sets it to 4000).
+  // So under `pnpm dev` this bundle resolves `http://localhost:4020` and a `worlds` started from
   // its own example environment is not there. That is NOT papered over with a literal host in
   // src/lib/hosts.ts — a hard-coded host is a second copy of the registry and the copy is the one
-  // that goes stale. Run worlds with `PORT=4002`; the README says so in one line, and the finding
-  // is reported to micro-ui, whose file the registry is.
+  // that goes stale. Run worlds with `PORT=4020`; the README says so in one line.
   //
-  // See the long note at the top of src/lib/hosts.ts, which also records that no gateway router
-  // exists for `worlds-api.<apex>` yet.
+  // This used to read `worlds-api`, devPort 4002. That row is DELETED — the hostname was folded
+  // into `api.` and never had a DNS record — so the number here changed with it. See the long note
+  // at the top of src/lib/hosts.ts.
   // ════════════════════════════════════════════════════════════════════════════════════════════
   server: { port: 3001 },
   preview: { port: 3001 },

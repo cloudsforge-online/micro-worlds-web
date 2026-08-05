@@ -151,8 +151,8 @@ describe('the dev port disagreement, recorded rather than papered over', () => {
   })
 
   it('the vite dev port is the registry’s number for THIS bundle, not for the API', () => {
-    // The registry's `worlds` devPort names where the bundle is served; `worlds-api`'s names where
-    // the API answers. admin-web had to draw this distinction after its own entry was read as the
+    // The registry's `worlds` devPort names where the bundle is served; `api`'s names where the
+    // API answers. admin-web had to draw this distinction after its own entry was read as the
     // latter. Both halves are pinned so that confusing them again fails here.
     const vite = /server:\s*\{\s*port:\s*(\d+)/.exec(read('vite.config.ts'))
     assert.ok(vite, 'vite.config.ts declares no dev server port')

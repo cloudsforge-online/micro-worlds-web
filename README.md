@@ -169,7 +169,7 @@ Unique to this app in the estate, and deliberate:
 | Key | What | Subdomain | devPort | Registered at |
 | --- | --- | --- | --- | --- |
 | `worlds` | **this bundle** | `worlds` | 3001 | `ui/packages/ui/src/surfaces.ts:239-250` |
-| `api` | **`micro-worlds`**, on the public API host | `api` | 4020 | `ui/packages/ui/src/surfaces.ts`, the `api` row. **Not `worlds-api`** — that hostname was retired into this one and has no DNS record; see "the registry outage" below |
+| `api` | **`micro-worlds`**, on the public API host | `api` | 4020 | `ui/packages/ui/src/surfaces.ts`, the `api` row. **Not `worlds-api`** — that hostname was folded into this one, never had a DNS record, and its registry row was deleted on 2026-08-05; see "the registry outage" below |
 
 Every other frontend uses one key for both, because for them the bundle and its API share an origin
 behind the gateway. Here they do not, so `apiBase()` is always absolute and every request is
@@ -328,15 +328,16 @@ Reported, not fixed — none of them blocks this repository.
    worlds-api-testnet.cloudsforge.online     -> no DNS record
    ```
 
-   `API_SURFACE` is now `'api'`. Note that a gateway router for `worlds-api.` **did** exist
-   (`estate-web.yml`, `cf-api-worlds-api`) — a router is not reachability, and reading the gateway
-   config alone gives the wrong answer here. `test/api-host-resolves.test.ts` resolves the name for
-   real and drives the live endpoint, because every existing test either compared the host to a
+   `API_SURFACE` is now `'api'`. Note that a gateway router for `worlds-api.` **did** exist at the
+   time (`estate-web.yml`, `cf-api-worlds-api`) — a router is not reachability, and reading the
+   gateway config alone gave the wrong answer. `test/api-host-resolves.test.ts` resolves the name
+   for real and drives the live endpoint, because every existing test either compared the host to a
    string or stubbed `fetch`.
 
-   What is **not** fixed here and is not this repository's to fix: `micro-ui` still carries the
-   `worlds-api` row. That is deliberate on its side — the row's own comment explains it is kept as
-   the sole fixture for the last-hyphen `<surface>-<env>` split — and it is marked retired.
+   **Closed out on 2026-08-05.** The rest of the estate has caught up: the `cf-api-worlds-api`
+   router is deleted, both tunnel ingress entries are gone, and `micro-ui` no longer carries the
+   `worlds-api` row at all — so `SurfaceKey` would now reject the old value and this cannot be
+   reverted by accident.
 
 4. **`micro-web-template` (inherited): `relative()` can never produce a singular unit.** `pick`
    switches unit only above 90 of the smaller one and then rounds, so 60 seconds reads "60 seconds

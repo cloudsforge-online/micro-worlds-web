@@ -19,10 +19,12 @@
  *     a fixture. A stubbed fetch cannot fail to resolve a name. This is the estate's house rule —
  *     **test the seam, not the mock** — and this file is the seam for host resolution.
  *   * Reading `deploy/gateway/dynamic/*.yml` would ALSO have said the host was fine: a Traefik
- *     router `cf-api-worlds-api` matching `Host(worlds-api{CF_WEB_SUFFIX})` genuinely exists. **A
- *     router is not reachability.** Traefik matches a `Host()` on requests that ARRIVE, and none
- *     arrive at a name with no `A` record. Any check that reads config rather than doing a lookup
- *     reaches the wrong conclusion here, which is why this one resolves the name for real.
+ *     router `cf-api-worlds-api` matching `Host(worlds-api{CF_WEB_SUFFIX})` existed at the time.
+ *     **A router is not reachability.** Traefik matches a `Host()` on requests that ARRIVE, and
+ *     none arrive at a name with no `A` record. Any check that reads config rather than doing a
+ *     lookup reaches the wrong conclusion here, which is why this one resolves the name for real.
+ *     That router has since been deleted, so config and DNS finally agree — but the lesson stands
+ *     and this file still does the lookup, because the next disagreement will not announce itself.
  *
  * So this file stubs nothing. It asks the resolver, then it drives `listTitles()` — the app's own
  * function, through its own `apiBase()` and its own `request()` — against the live gateway.
