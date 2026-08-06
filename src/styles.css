@@ -13,15 +13,15 @@
  * looks wrong on a dark display.
  *
  * The token names are the REAL ones, checked against `ui/packages/ui/src/tokens.css`:
- * `--cf-line` and `--cf-line-strong` (`:186-187`), `--cf-danger` (`:111`), `--cf-warn` (`:110`),
- * `--cf-success` (`:109`), `--cf-font-sans` (`:62`). There is no `--cf-border`, no `--cf-critical`,
+ * `--cf-line` and `--cf-line-strong`, `--cf-danger`, `--cf-warn`,
+ * `--cf-success`, `--cf-font-sans`. There is no `--cf-border`, no `--cf-critical`,
  * no `--cf-warning` and no `--cf-font`; a rule written against one of those declares nothing and
  * fails silently, which is the failure mode that makes an invented token name worse than a hex.
  *
  * The ground is the WARM ash ramp set by `data-cf-substrate="warm"` in index.html — the family the
  * brand marks in `brand/assets/worlds/` are drawn on, so the favicon has no visible plate around
  * it. The accent is moss, `#6d9a49`, which comes from `[data-cf-product='worlds']`
- * (`ui/packages/ui/src/tokens.css:372-377`) and is never written down here.
+ * (`ui/packages/ui/src/tokens.css`) and is never written down here.
  *
  * ── State is never colour alone ───────────────────────────────────────────────────────────────
  *

@@ -2,22 +2,22 @@
  * Session state for the tree, and the gate in front of the routes that need one.
  *
  * Hiding a route is NOT the security boundary — `worlds` verifies the bearer on every route that
- * needs one (`authenticate`, `worlds/src/server.ts:895-901`), `subjectUserId` derives the account
+ * needs one (`authenticate`, `worlds/src/server.ts`), `subjectUserId` derives the account
  * from the token so a client cannot ask about somebody else, and `GET /v1/provisions/:id` answers
- * 404 for another account's row (`worlds/src/server.ts:689-695`). This exists so that a signed-out
+ * 404 for another account's row (`worlds/src/server.ts`). This exists so that a signed-out
  * player is sent to sign in instead of being shown a screen made entirely of 401s.
  *
  * **Two of the five screens are deliberately outside the gate**, because the service put their
- * routes outside it: `GET /v1/titles` (`worlds/src/server.ts:467`),
- * `GET /v1/titles/:id/achievements` (`:701`) and `GET /v1/titles/:id/seasons` (`:755`) make no
+ * routes outside it: `GET /v1/titles` (`worlds/src/server.ts`),
+ * `GET /v1/titles/:id/achievements` and `GET /v1/titles/:id/seasons` make no
  * `authenticate()` call at all. See `src/lib/routes.ts`.
  *
  * ══════════════════════════════════════════════════════════════════════════════════════════════
  * ── The `/auth/me` shape ──────────────────────────────────────────────────────────────────────
  *
  * Identity answers `{ user: {...}, session: {...}, organisations: [...] }` — the profile is
- * NESTED under `user`. The route is `identity/src/server.ts:891-903` and the body is built by
- * `toPublicUser` at `identity/src/users.ts:52-63`; both citations were re-read against the source
+ * NESTED under `user`. The route is `identity/src/server.ts` and the body is built by
+ * `toPublicUser` at `identity/src/users.ts`; both citations were re-read against the source
  * for this repository rather than carried over, and both are correct as stated.
  *
  * That shape is worth stating because the estate got it wrong once, at the root: the web template
@@ -26,7 +26,7 @@
  * company bar was always false, and the switcher hid every `adminOnly` entry from every signed-in
  * operator.
  *
- * **It has since been fixed everywhere.** `micro-web-template/src/lib/auth.tsx:26-32` declares the
+ * **It has since been fixed everywhere.** `micro-web-template/src/lib/auth.tsx` declares the
  * nested shape, and hub-web, site, foresight-web, foresight-admin-web, market-web, admin-web and
  * mint-web all do the same.
  *
@@ -62,7 +62,7 @@ export interface MeResponse {
 }
 
 export interface Player {
-  /** `user:<uuid>` — the subject `worlds` records on a provision (`worlds/src/server.ts:655`). */
+  /** `user:<uuid>` — the subject `worlds` records on a provision (`worlds/src/server.ts`). */
   readonly principal: string | null
   readonly handle: string | null
   readonly roles: readonly string[]

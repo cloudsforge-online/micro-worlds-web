@@ -8,17 +8,17 @@
  * (measured in micro-ui). Every state below carries a word and a glyph; the tone is third.
  *
  * **2. `unsupported` is an ANSWER, not a fault, and it must not read as one.**
- * `worlds/src/titleclient.ts:19-24` is explicit: "A title asked for something it does not sell
+ * `worlds/src/titleclient.ts` is explicit: "A title asked for something it does not sell
  * answers 422, and the bridge records `unsupported` and stops. Retrying is guaranteed to fail
  * again." So its word is not "FAILED" and its meaning is not "try again" — it is a customer who
- * paid for something undeliverable (`worlds/src/server.ts:129`), which is a catalogue mistake and
+ * paid for something undeliverable (`worlds/src/server.ts`), which is a catalogue mistake and
  * a refund.
  *
  * **3. NOTHING PURCHASABLE MAY BE DESCRIBED AS AN ADVANTAGE.**
  * `docs/ecosystem/01-product-vision.md` principle 6: purchasable means cosmetic, convenience or
  * access — never power. `sourceMeaning` and `boundMeaning` below therefore say what an item IS and
  * where it may go, and never what it is worth or what it lets somebody do. `bound` in particular
- * is described as the control it is (`worlds/src/players.ts:390-391`) rather than as a downside of
+ * is described as the control it is (`worlds/src/players.ts`) rather than as a downside of
  * a purchase, because the direction of that sentence is the whole principle: an item is bound
  * BECAUSE it would confer power, and the platform's answer is that it never enters a market.
  * ══════════════════════════════════════════════════════════════════════════════════════════════
@@ -84,7 +84,7 @@ export interface Tone {
 }
 
 /**
- * The five provision states — `worlds/src/provisioning.ts:73-79`.
+ * The five provision states — `worlds/src/provisioning.ts`.
  *
  * All five, including the two nobody wants to see. A screen that fell through to "unknown" for
  * `unsupported` would be telling a paying customer that their purchase is in a state the site does
@@ -114,7 +114,7 @@ export function provisionTone(state: ProvisionState): Tone {
         meaning: 'The title raised it and named what it made.',
       }
     case 'unsupported':
-      // NOT a failure word. `worlds/src/titleclient.ts:19-24`: an answer, and terminal. The
+      // NOT a failure word. `worlds/src/titleclient.ts`: an answer, and terminal. The
       // sentence points at the refund rather than at a retry, because retrying is guaranteed to
       // produce the same answer and burning an attempt on it hides the case an operator needs.
       return {
@@ -137,7 +137,7 @@ export function provisionTone(state: ProvisionState): Tone {
   }
 }
 
-/** `worlds/src/titles.ts:26`. Five statuses; two of them can be sold to (`titles.ts:227-229`). */
+/** `worlds/src/titles.ts`. Five statuses; two of them can be sold to (`titles.ts`). */
 export function titleTone(status: TitleStatus): Tone {
   switch (status) {
     case 'draft':
@@ -168,7 +168,7 @@ export function titleTone(status: TitleStatus): Tone {
   }
 }
 
-/** `worlds/src/rewards.ts:249`. */
+/** `worlds/src/rewards.ts`. */
 export function seasonTone(status: SeasonStatus): Tone {
   switch (status) {
     case 'upcoming':
@@ -185,7 +185,7 @@ export function seasonTone(status: SeasonStatus): Tone {
 /* ══════════════════════════════ what a thing IS, never what it is worth ══════════════════════ */
 
 /**
- * What a title can be asked to do — `worlds/src/titles.ts:43`.
+ * What a title can be asked to do — `worlds/src/titles.ts`.
  *
  * Phrased as a capability of the TITLE, not as a benefit to the buyer. "Can raise a private world
  * for you" is a fact about a service; "unlock private worlds" would be marketing, and on this
@@ -205,14 +205,14 @@ export function capabilityMeaning(capability: string): string {
       return 'Reads the inventory your account carries'
     default:
       // Never a guess. A capability this bundle has not heard of is shown by name, because the
-      // service validates against a CLOSED set (`worlds/src/server.ts:493-497`) — so an unknown
+      // service validates against a CLOSED set (`worlds/src/server.ts`) — so an unknown
       // one here means the set grew and this file has not been re-read.
       return capability
   }
 }
 
 /**
- * How an item arrived — `worlds/src/players.ts:201`.
+ * How an item arrived — `worlds/src/players.ts`.
  *
  * Provenance, not value. None of these sentences says an item is good, rare or strong.
  */
@@ -234,7 +234,7 @@ export function sourceMeaning(source: ItemSource): string {
 /**
  * What `bound` means, in the direction the rule actually runs.
  *
- * `worlds/src/players.ts:390-391`, quoting 04-domain-model §7.3: "`bound` is the anti-pay-to-win
+ * `worlds/src/players.ts`, quoting 04-domain-model §7.3: "`bound` is the anti-pay-to-win
  * control: anything conferring power is bound and cannot enter the market." So the sentence for a
  * bound item is about the CONTROL, not about a restriction the owner suffered — and the sentence
  * for a tradeable one must not imply the opposite ("this one is worth something"), which is how a
@@ -246,7 +246,7 @@ export function boundMeaning(bound: boolean): string {
     : 'Cosmetic or convenience, so it may be traded.'
 }
 
-/** What a SKU resolved to — `worlds/src/provisioning.ts:66-71`. */
+/** What a SKU resolved to — `worlds/src/provisioning.ts`. */
 export function kindMeaning(kind: ProvisionKind): string {
   switch (kind) {
     case 'private_world':
@@ -258,7 +258,7 @@ export function kindMeaning(kind: ProvisionKind): string {
     case 'convenience':
       return 'A convenience, delivered by the platform itself'
     case 'unknown':
-      // `worlds/src/provisioning.ts:113-115`: falls back to `unknown` rather than to a guess,
+      // `worlds/src/provisioning.ts`: falls back to `unknown` rather than to a guess,
       // because a guess would deliver the wrong thing silently.
       return 'The platform does not recognise this SKU, so it does not know what to deliver'
   }
@@ -286,8 +286,8 @@ export function shortUrn(urn: string | null): string {
 /**
  * A Shard amount, as text.
  *
- * It arrives as a decimal STRING and stays one — `worlds/src/server.ts:889` ("A budget is money")
- * and `worlds/src/env.ts:91-97` ("an approximate cap is a cap that is either slightly too generous
+ * It arrives as a decimal STRING and stays one — `worlds/src/server.ts` ("A budget is money")
+ * and `worlds/src/env.ts` ("an approximate cap is a cap that is either slightly too generous
  * or refuses a legitimate grant"). Never put through `Number`: the point of the string is that
  * some of these do not survive it. A value that is not all digits is returned verbatim rather than
  * mangled into `NaN`.

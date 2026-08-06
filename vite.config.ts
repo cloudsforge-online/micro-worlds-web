@@ -37,13 +37,13 @@ export default defineConfig({
   // ════════════════════════════════════════════════════════════════════════════════════════════
   // 3001 IS THE REGISTRY'S OWN NUMBER FOR THIS BUNDLE, AND IT IS NOT THE API'S PORT.
   //
-  // `ui/packages/ui/src/surfaces.ts:245` gives the `worlds` surface devPort **3001**, and that is
+  // `ui/packages/ui/src/surfaces.ts` gives the `worlds` surface devPort **3001**, and that is
   // where this app is SERVED. It is used here rather than invented, because the surface registry
   // is the estate's one list of where things live and a second number in this file would be a
   // second, unversioned copy of it.
   //
   // The API is a DIFFERENT surface: `api`, devPort **4020**, and `micro-worlds` binds **4000**
-  // (`worlds/src/env.ts:171` defaults `PORT` to 4000, `worlds/.env.example:38` sets it to 4000).
+  // (`worlds/src/env.ts` defaults `PORT` to 4000, `worlds/.env.example` sets it to 4000).
   // So under `pnpm dev` this bundle resolves `http://localhost:4020` and a `worlds` started from
   // its own example environment is not there. That is NOT papered over with a literal host in
   // src/lib/hosts.ts — a hard-coded host is a second copy of the registry and the copy is the one

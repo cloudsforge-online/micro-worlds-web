@@ -8,8 +8,8 @@
  * ── Which routes are gated is read off the SERVICE, not chosen ────────────────────────────────
  *
  * The index and the title page are public because `worlds` made their routes public:
- * `GET /v1/titles` (`worlds/src/server.ts:467`), `GET /v1/titles/:id/achievements` (`:701`) and
- * `GET /v1/titles/:id/seasons` (`:755`) make no `authenticate()` call at all, and the first carries
+ * `GET /v1/titles` (`worlds/src/server.ts`), `GET /v1/titles/:id/achievements` and
+ * `GET /v1/titles/:id/seasons` make no `authenticate()` call at all, and the first carries
  * a comment saying why — "a launcher listing games cannot require a token to do it". Putting them
  * behind `ProtectedRoute` would send a reader to sign in for a page the service would have served
  * them, which is the same class of mistake as sending a bearer token to a route that never wanted
@@ -18,7 +18,7 @@
  * The other three authenticate, so they are gated. The gate is NOT the security boundary — `worlds`
  * verifies the bearer itself, derives the account from the token with `subjectUserId` so a client
  * cannot ask about somebody else, and answers 404 for another account's provision
- * (`worlds/src/server.ts:689-695`).
+ * (`worlds/src/server.ts`).
  */
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { AppShell } from './components/shell.tsx'

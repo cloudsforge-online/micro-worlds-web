@@ -2,25 +2,25 @@
  * One title: what it declares, what it can award, and the seasons it runs.
  *
  * **Public**, because both routes behind it are: `GET /v1/titles/:id/achievements`
- * (`worlds/src/server.ts:701`) and `GET /v1/titles/:id/seasons` (`:755`) contain no
+ * (`worlds/src/server.ts`) and `GET /v1/titles/:id/seasons` contain no
  * `await authenticate(ctx, deps)`. Putting this screen behind the session gate would send an
  * anonymous reader to sign in for pages the service would have handed them.
  *
  * ── What is deliberately not on this page ─────────────────────────────────────────────────────
  *
- * A season's REMAINING reward budget. `GET /v1/seasons/:id/budget` (`worlds/src/server.ts:779`)
+ * A season's REMAINING reward budget. `GET /v1/seasons/:id/budget` (`worlds/src/server.ts`)
  * would serve it to any signed-in account, and it is declined for two reasons, in this order:
  *
  *   1. It is an operator's number. "1,412 Shards left in the pot" in front of players is an
  *      invitation to race for it, and a season budget exists to bound an exploit
- *      (`worlds/src/env.ts:16-23`), not to be a scoreboard.
- *   2. It is unreachable in production anyway. `deploy/gateway/dynamic/public-api.yml:143` routes
+ *      (`worlds/src/env.ts`), not to be a scoreboard.
+ *   2. It is unreachable in production anyway. `deploy/gateway/dynamic/public-api.yml` routes
  *      `/v1/titles`, `/v1/players` and `/v1/provisions` to worlds and not `/v1/seasons`, so the
- *      path falls to the catch-all at `:151` and is blackholed to `127.0.0.1:1` (`:196-198`).
+ *      path falls to that file's catch-all and is blackholed to `127.0.0.1:1`.
  *      Reported to the deploy; it does not change the first reason.
  *
  * The budget a season was OPENED with, and what it has granted, are both on the season row itself
- * (`worlds/src/server.ts:890-891`) and are shown — those are facts about the season's design, and
+ * (`worlds/src/server.ts`) and are shown — those are facts about the season's design, and
  * a player is entitled to know a season is funded before spending a month in it.
  */
 import { useCallback } from 'react'

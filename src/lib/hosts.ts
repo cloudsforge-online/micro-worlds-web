@@ -33,7 +33,7 @@
  * ── The two disagreements, reported rather than papered over ───────────────────────────────────
  *
  * **1. The dev port.** The registry gives `api` **devPort 4020**. `micro-worlds` binds **4000**:
- * `worlds/src/env.ts:171` defaults `PORT` to 4000 and `worlds/.env.example:38` sets it to 4000.
+ * `worlds/src/env.ts` defaults `PORT` to 4000 and `worlds/.env.example` sets it to 4000.
  * Under `pnpm dev` the registry value is the one this bundle calls, so a `worlds` started from its
  * own example environment is not where this app looks.
  *
@@ -45,7 +45,7 @@
  * This is the same shape as `admin` (registry 3002, `admin-api` binds 4014), `emberkin`
  * (registry 3014, service binds 4100), `foresight` (registry 4021 read as beacon's 4011) and
  * `create` (registry 4004, `mint` binds 4000) — the FIFTH instance of a devPort that is an
- * allocation pretending to be a fact. `surfaces.test.ts:187-206` pins only the surfaces whose
+ * allocation pretending to be a fact. `surfaces.test.ts` pins only the surfaces whose
  * service binds a DISTINCTIVE port, and `worlds` is not among them because 4000 is the
  * service-template default half the estate shares. It is NOT fixed with a literal port here: a
  * hard-coded host is a second, unversioned copy of the registry, and the copy is the one that
@@ -93,7 +93,7 @@
  * `access-control-allow-origin: https://worlds.<apex>` with `allow-credentials: true`.
  *
  * **3. `/v1/seasons` is not routed at all.** Reported, and it does not affect this bundle:
- * `GET /v1/seasons/:id/budget` (`worlds/src/server.ts:779`) is the one route it would touch, and
+ * `GET /v1/seasons/:id/budget` (`worlds/src/server.ts`) is the one route it would touch, and
  * this app declines it — see src/lib/worlds.ts.
  */
 import { cloudsforgeHosts, type CloudsForgeHosts, type SurfaceKey } from '@cloudsforge/ui'
@@ -101,7 +101,7 @@ import { cloudsforgeHosts, type CloudsForgeHosts, type SurfaceKey } from '@cloud
 /**
  * The surface this application IS.
  *
- * It selects the switcher entry marked current and it names the accent. `surfaces.ts:239-250`
+ * It selects the switcher entry marked current and it names the accent. `surfaces.ts`
  * registers `worlds` as a product with `inSwitcher: true`, accent `#6d9a49`, glyph `▲`, subdomain
  * `worlds` and `markId: 'mark-worlds'`.
  */

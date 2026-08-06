@@ -283,7 +283,7 @@ describe('BJ-WLD — Forge Worlds', () => {
                   name: 'First light',
                   description: 'Arrive.',
                   points: 10,
-                  // A decimal STRING: `worlds/src/server.ts:708` calls `.toString()` on a bigint,
+                  // A decimal STRING: `worlds/src/server.ts` calls `.toString()` on a bigint,
                   // and a JSON number cannot hold what a bigint can.
                   rewardShards: '25',
                 },

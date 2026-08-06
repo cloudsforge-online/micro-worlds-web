@@ -4,15 +4,15 @@
  * ══════════════════════════════════════════════════════════════════════════════════════════════
  * `bound` IS THE ANTI-PAY-TO-WIN CONTROL, AND THIS SCREEN RENDERS IT AS ONE.
  *
- * `worlds/src/players.ts:390-391`, quoting 04-domain-model §7.3: "`bound` is the anti-pay-to-win
+ * `worlds/src/players.ts`, quoting 04-domain-model §7.3: "`bound` is the anti-pay-to-win
  * control: anything conferring power is bound and cannot enter the market." The service refuses a
  * bound listing three times over — a `and bound = false` in the UPDATE
- * (`worlds/src/players.ts:424`), a CHECK constraint behind it, and a route that turns the refusal
- * into a 403 with its own code, `item_bound` (`worlds/src/server.ts:307-312`), because "you may not
+ * (`worlds/src/players.ts`), a CHECK constraint behind it, and a route that turns the refusal
+ * into a 403 with its own code, `item_bound` (`worlds/src/server.ts`), because "you may not
  * sell this, ever" is a different sentence from "you may not do this right now".
  *
  * `bound` is on the wire "because a client that offers a 'sell' button must know before it draws
- * one" (`worlds/src/server.ts:861-862`). So a bound row here has **no sell control at all** — not a
+ * one" (`worlds/src/server.ts`). So a bound row here has **no sell control at all** — not a
  * disabled one. A disabled button reads as "not yet, ask somebody", and this is not "not yet": it
  * is never, and the sentence in its place says so.
  *
@@ -188,7 +188,7 @@ function Listing({
         <span className="ww-field__label">Listing reference</span>
         <span className="ww-field__hint">
           The Forge Market listing this item is offered under. Forge Worlds records the reference;
-          the market owns the sale (<code className="cf-num">worlds/src/server.ts:617</code>).
+          the market owns the sale (<code className="cf-num">worlds/src/server.ts</code>).
         </span>
         <input
           className="ww-field__input cf-num"

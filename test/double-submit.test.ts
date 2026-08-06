@@ -4,7 +4,7 @@
  * ══════════════════════════════════════════════════════════════════════════════════════════════
  * WHY THIS FILE EXISTS WHEN `journeys.test.ts` ALREADY HAS A DOUBLE-SUBMIT SCENARIO
  *
- * `test/journeys.test.ts:336-343` presses the listing control twice and asserts one request. It
+ * `test/journeys.test.ts` presses the listing control twice and asserts one request. It
  * passed against a hook that could not stop a double submit, and it passed for one reason: there
  * is an `await s.settle(0)` BETWEEN the two presses.
  *
@@ -75,10 +75,10 @@ describe('two events in one tick — the guard, not the disabled attribute', () 
    * THE MONEY ONE. `POST /v1/players/me/inventory/:id/list` puts a player's item on the market.
    *
    * A second call does NOT create a second listing — the service's UPDATE carries
-   * `and listed_at is null` (`worlds/src/players.ts:423`), so the second one matches no row, reads
+   * `and listed_at is null` (`worlds/src/players.ts`), so the second one matches no row, reads
    * it back, and throws `InventoryError('this item is already listed')`
-   * (`worlds/src/players.ts:442`), which the route turns into a 409 `inventory_state`
-   * (`worlds/src/server.ts:332-333`).
+   * (`worlds/src/players.ts`), which the route turns into a 409 `inventory_state`
+   * (`worlds/src/server.ts`).
    *
    * That is the finding, and it is worse than a duplicate would be: the listing SUCCEEDED, and the
    * second response makes this app render "Item … was not listed" over the top of it. The component
@@ -117,7 +117,7 @@ describe('two events in one tick — the guard, not the disabled attribute', () 
           s.api.matching(LIST).length,
           1,
           'a double click listed the same item twice: the second request is refused 409 by ' +
-            'worlds/src/players.ts:442, so the player is told their listing failed while it is ' +
+            'worlds/src/players.ts, so the player is told their listing failed while it is ' +
             'live on the market, and withdraws an offer that was working',
         )
       },
@@ -171,8 +171,8 @@ describe('two events in one tick — the guard, not the disabled attribute', () 
 
   /*
    * `DELETE .../list` is NOT idempotent, whatever the method implies. `unlist` updates
-   * `where ... and listed_at is not null` (`worlds/src/players.ts:467`) and returns null when
-   * nothing matched, and the route turns that null into a 404 (`worlds/src/server.ts:675`). So the
+   * `where ... and listed_at is not null` (`worlds/src/players.ts`) and returns null when
+   * nothing matched, and the route turns that null into a 404 (`worlds/src/server.ts`). So the
    * second withdrawal of a successful withdrawal is an error on screen.
    */
   it('withdrawing an offer sends ONE withdrawal', async () => {
@@ -202,7 +202,7 @@ describe('two events in one tick — the guard, not the disabled attribute', () 
           s.api.matching(UNLIST).length,
           1,
           'a double click sent two withdrawals: the second is a 404 from ' +
-            'worlds/src/server.ts:675, so the player is told the withdrawal failed when it succeeded',
+            'worlds/src/server.ts, so the player is told the withdrawal failed when it succeeded',
         )
       },
     )
@@ -210,7 +210,7 @@ describe('two events in one tick — the guard, not the disabled attribute', () 
 
   /*
    * `PUT /v1/players/me` is an upsert (`on conflict (user_id) do update set`,
-   * `worlds/src/players.ts:127`), so a duplicate writes the same document twice and is harmless.
+   * `worlds/src/players.ts`), so a duplicate writes the same document twice and is harmless.
    * The guard here is a nicety rather than a repair — but it is the SAME hook, so if this one can
    * send twice then so can the listing, and this is the cheapest place to see it.
    */
@@ -245,8 +245,8 @@ describe('two events in one tick — the guard, not the disabled attribute', () 
 
   /*
    * `PUT /v1/players/me/cosmetics` clearing a slot: the handler skips the entitlement check for a
-   * null urn (`worlds/src/server.ts:585-590`) and the write is a read-modify-write inside one
-   * transaction (`worlds/src/players.ts:168-194`), so clearing an already-clear slot is harmless.
+   * null urn (`worlds/src/server.ts`) and the write is a read-modify-write inside one
+   * transaction (`worlds/src/players.ts`), so clearing an already-clear slot is harmless.
    * Same hook, so the same proof is owed.
    */
   it('taking a cosmetic off sends ONE write', async () => {
@@ -294,7 +294,7 @@ describe('two events in one tick — the guard, not the disabled attribute', () 
  *
  * These are asserted separately because a mutation run found them unasserted: dropping `disabled`
  * from three of the four buttons changed nothing in the suite. Only the listing control was covered
- * (`journeys.test.ts:336`).
+ * (`journeys.test.ts`).
  * ══════════════════════════════════════════════════════════════════════════════════════════════
  */
 describe('the disabled affordance — what the user can see while a write is in flight', () => {

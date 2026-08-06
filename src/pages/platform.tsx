@@ -6,11 +6,11 @@
  *
  * Forge Worlds owns the title REGISTRY, one shared account, inventory, achievements, seasons and
  * the entitlement bridge. Ninety Days After and Emberkin are titles that run ON it — they are not
- * what it is, and `worlds/src/titles.ts:11-17` draws the boundary in the service's own words: "A
+ * what it is, and `worlds/src/titles.ts` draws the boundary in the service's own words: "A
  * title owns SIMULATION… What this service owns is anything that must outlive a season or cross a
  * title." A front page made of two game cards says the platform is those two games, which is the
  * category error this estate has already made twice on its own front page, and which is exactly
- * the error the registry exists to end: `worlds/src/titles.ts:4-9` records that a grep for
+ * the error the registry exists to end: `worlds/src/titles.ts` records that a grep for
  * `title_id` across the frozen game service returns nothing at all, "so every table is implicitly
  * its, and the second game has nowhere to go".
  *
@@ -46,7 +46,7 @@ const OWNS: ReadonlyArray<{ heading: string; body: string; cite: string }> = [
     body:
       'Which titles exist, what each one declares it can be asked to do, and where the platform ' +
       'reaches it. A second title is a row here rather than a rewrite.',
-    cite: 'worlds/src/titles.ts:11-21',
+    cite: 'worlds/src/titles.ts',
   },
   {
     heading: 'One account, across every title',
@@ -54,14 +54,14 @@ const OWNS: ReadonlyArray<{ heading: string; body: string; cite: string }> = [
       'A display name, a reputation, sanctions and an age bracket that outlive any one season. ' +
       'The wardrobe is keyed by title, so “my frame in each game” is representable and “my frame” ' +
       'is still the default.',
-    cite: 'worlds/src/players.ts:4-19',
+    cite: 'worlds/src/players.ts',
   },
   {
     heading: 'Inventory, and what may leave it',
     body:
       'Everything the account owns, with provenance. Anything that could confer an advantage is ' +
       'bound and never enters a market — that is the control, not a side effect.',
-    cite: 'worlds/src/players.ts:388-392',
+    cite: 'worlds/src/players.ts',
   },
   {
     heading: 'Achievements and seasons',
@@ -69,7 +69,7 @@ const OWNS: ReadonlyArray<{ heading: string; body: string; cite: string }> = [
       'A title reports what a player did; the platform records it. A title asks for a reward; the ' +
       'platform charges it against the season’s budget in the same transaction as the ledger ' +
       'posting, so a title with a bug cannot spend past its season.',
-    cite: 'worlds/src/server.ts:794-801',
+    cite: 'worlds/src/server.ts',
   },
   {
     heading: 'The entitlement bridge',
@@ -77,7 +77,7 @@ const OWNS: ReadonlyArray<{ heading: string; body: string; cite: string }> = [
       'What billing says you bought becomes something a title raises. Signature-checked over the ' +
       'exact bytes received before it is parsed, because a provisioning webhook with no MAC is a ' +
       'free-worlds endpoint.',
-    cite: 'worlds/src/server.ts:8-20',
+    cite: 'worlds/src/server.ts',
   },
 ]
 

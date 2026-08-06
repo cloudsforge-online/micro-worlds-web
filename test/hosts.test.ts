@@ -16,8 +16,8 @@
  * answering 200. See test/api-host-resolves.test.ts, which checks the name actually resolves.
  *
  * The third is the dev-port disagreement, asserted as a FACT rather than fixed with a literal: the
- * registry gives `api` 4020 and `micro-worlds` binds 4000 (`worlds/src/env.ts:171`,
- * `worlds/.env.example:38`). See the header of src/lib/hosts.ts.
+ * registry gives `api` 4020 and `micro-worlds` binds 4000 (`worlds/src/env.ts`,
+ * `worlds/.env.example`). See the header of src/lib/hosts.ts.
  */
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'

@@ -67,7 +67,7 @@ describe('every state the service can produce has a word, a glyph and a sentence
 
 describe('unsupported is an answer, not a fault', () => {
   /**
-   * `worlds/src/titleclient.ts:19-24`: "A title asked for something it does not sell answers 422,
+   * `worlds/src/titleclient.ts`: "A title asked for something it does not sell answers 422,
    * and the bridge records `unsupported` and stops. Retrying is guaranteed to fail again."
    *
    * So it must not be spelled FAILED, and its sentence must point at a refund rather than at a
@@ -128,7 +128,7 @@ describe('nothing purchasable is described as an advantage', () => {
   })
 
   it('describes `bound` as the CONTROL rather than as a restriction somebody suffered', () => {
-    // `worlds/src/players.ts:390-391`, quoting 04-domain-model §7.3: "anything conferring power is
+    // `worlds/src/players.ts`, quoting 04-domain-model §7.3: "anything conferring power is
     // bound and cannot enter the market". The direction of that sentence is the whole principle —
     // an item is bound BECAUSE it would confer power, and the platform's answer is that it never
     // enters a market. A sentence phrased the other way round ("you cannot sell this one") turns
@@ -155,7 +155,7 @@ describe('nothing purchasable is described as an advantage', () => {
   })
 
   it('names an unknown capability rather than guessing at one', () => {
-    // The service validates against a CLOSED set (`worlds/src/server.ts:493-497`), so an unknown
+    // The service validates against a CLOSED set (`worlds/src/server.ts`), so an unknown
     // value here means the set grew and this file has not been re-read. Inventing a sentence for
     // it would hide that.
     assert.equal(capabilityMeaning('teleportation'), 'teleportation')
@@ -164,7 +164,7 @@ describe('nothing purchasable is described as an advantage', () => {
 
 describe('an unknown SKU is named rather than guessed at', () => {
   it('says the platform does not know what to deliver', () => {
-    // `worlds/src/provisioning.ts:113-115` falls back to `unknown` rather than to a guess, because
+    // `worlds/src/provisioning.ts` falls back to `unknown` rather than to a guess, because
     // a guess would deliver the wrong thing silently.
     assert.match(kindMeaning('unknown'), /does not recognise/i)
   })
@@ -172,7 +172,7 @@ describe('an unknown SKU is named rather than guessed at', () => {
 
 describe('money is text, never a number', () => {
   /**
-   * `worlds/src/server.ts:889` — "A budget is money." — and `worlds/src/env.ts:91-97`: reading a
+   * `worlds/src/server.ts` — "A budget is money." — and `worlds/src/env.ts`: reading a
    * budget through `Number()` makes a large one approximate, "and an approximate cap is a cap that
    * is either slightly too generous or refuses a legitimate grant".
    */

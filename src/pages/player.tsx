@@ -4,15 +4,15 @@
  * ══════════════════════════════════════════════════════════════════════════════════════════════
  * `profile` MAY BE NULL, AND NULL IS A NEW PLAYER — NOT AN ERROR AND NOT A LOADING STATE.
  *
- * `findProfile` returns null for an account that has never set one (`worlds/src/players.ts:97-103`)
- * and the handler puts that null straight on the wire (`worlds/src/server.ts:537`). So the read
+ * `findProfile` returns null for an account that has never set one (`worlds/src/players.ts`)
+ * and the handler puts that null straight on the wire (`worlds/src/server.ts`). So the read
  * succeeds, the state is `ok`, and the page renders an invitation. A screen that treated it as an
  * empty resource would show "nothing here" to somebody whose account exists perfectly well.
  *
  * ── The wardrobe is keyed BY TITLE, and that is the point ─────────────────────────────────────
  *
- * `equippedCosmetics` is `titleId | '*'` → `{ slot: urn }` (`worlds/src/players.ts:56-57`). The
- * frozen estate had one flat map on one account row, and `worlds/src/players.ts:13-18` records why
+ * `equippedCosmetics` is `titleId | '*'` → `{ slot: urn }` (`worlds/src/players.ts`). The
+ * frozen estate had one flat map on one account row, and `worlds/src/players.ts` records why
  * there is no migration back: "with two it is the difference between 'my frame in each game' and
  * 'my frame', and there is no migration from the second to the first that does not throw
  * information away." So this screen renders the cross-title default and each title's override as
@@ -21,8 +21,8 @@
  * ── Two fields the handler accepts and this screen does not offer ─────────────────────────────
  *
  * `ageBracket` and `parentalControls` are read by `PUT /v1/players/me`
- * (`worlds/src/server.ts:559-564`). They are not offered here. An age bracket is a safeguarding
- * fact (`worlds/src/players.ts:8-11` — "cannot be re-established every time somebody joins a
+ * (`worlds/src/server.ts`). They are not offered here. An age bracket is a safeguarding
+ * fact (`worlds/src/players.ts` — "cannot be re-established every time somebody joins a
  * lobby"), and a form that lets an account assert its own is a form that lets an account assert it
  * is an adult.
  * ══════════════════════════════════════════════════════════════════════════════════════════════
@@ -164,7 +164,7 @@ function Account({ snapshot, onSaved }: { snapshot: PlayerSnapshot; onSaved: () 
  * The profile form.
  *
  * `PUT /v1/players/me` is a full replace, not a patch: `avatarAssetUrn` is written as null when it
- * is not a string (`worlds/src/server.ts:558`), so omitting it CLEARS it. The form therefore always
+ * is not a string (`worlds/src/server.ts`), so omitting it CLEARS it. The form therefore always
  * submits both fields, pre-filled from the current profile — a partial submit here would silently
  * blank an avatar somebody set from a title.
  */
@@ -189,14 +189,14 @@ function ProfileForm({
     async () =>
       putProfile({
         displayName: displayName.trim(),
-        // Empty means CLEARED, and null is how the service spells that (`server.ts:558`).
+        // Empty means CLEARED, and null is how the service spells that (`server.ts`).
         avatarAssetUrn: avatar.trim().length === 0 ? null : avatar.trim(),
       }),
     'Your profile could not be saved.',
   )
 
   // The service's own rule, checked here so the refusal arrives before the round trip rather than
-  // as a 400: `worlds/src/players.ts:111-114` requires 1 to 40 characters after trimming.
+  // as a 400: `worlds/src/players.ts` requires 1 to 40 characters after trimming.
   const trimmed = displayName.trim()
   const tooLong = trimmed.length > 40
   const blocked = trimmed.length === 0 || tooLong
@@ -218,7 +218,7 @@ function ProfileForm({
         <span className="ww-field__label">Display name</span>
         <span className="ww-field__hint">
           What every title shows for you. 1 to 40 characters — the platform refuses the rest
-          (<code className="cf-num">worlds/src/players.ts:111-114</code>).
+          (<code className="cf-num">worlds/src/players.ts</code>).
         </span>
         <input
           className="ww-field__input"
@@ -264,7 +264,7 @@ function ProfileForm({
  * What the account is wearing, per title and across all of them.
  *
  * Clearing a slot is the only cosmetic write this screen offers, and it is offered because the
- * service treats it as unconditional: `worlds/src/server.ts:585-590` skips the entitlement check
+ * service treats it as unconditional: `worlds/src/server.ts` skips the entitlement check
  * when `itemUrn` is null, "you may always take something off, including something you no longer
  * own". SETTING a slot is not offered here — it belongs beside the item, on the inventory screen,
  * where the thing being equipped is visible.
@@ -336,7 +336,7 @@ function Wardrobe({ profile, onSaved }: { profile: PlayerProfile | null; onSaved
           notice={clear.error}
           title={
             // The service FAILS CLOSED on this route when billing is unreachable
-            // (`worlds/src/server.ts:341-348`), and it has its own code. A 503 here is "ask again
+            // (`worlds/src/server.ts`), and it has its own code. A 503 here is "ask again
             // later", not "something is broken" — and saying so is the difference between a player
             // who waits a minute and a player who files a bug.
             clear.error.message.includes('cannot check your purchases')

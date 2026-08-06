@@ -128,8 +128,8 @@ describe('a screen whose question can change re-asks it', () => {
 
   it('the account page never renders EMPTY, because a null profile is a real answer', () => {
     // `findProfile` returns null for an account that has never set one
-    // (`worlds/src/players.ts:97-103`) and the handler puts that null on the wire
-    // (`worlds/src/server.ts:537`). Counting it as empty would show "nothing here" to somebody
+    // (`worlds/src/players.ts`) and the handler puts that null on the wire
+    // (`worlds/src/server.ts`). Counting it as empty would show "nothing here" to somebody
     // whose account exists perfectly well, so the count is 1 unconditionally.
     const account = calls('player')[0] ?? ''
     assert.match(account, /\(\) => 1/, 'the account resource must never be counted as empty')

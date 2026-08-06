@@ -33,7 +33,7 @@ One service, `micro-worlds`, plus `micro-identity` for the session.
 | Upstream | Routes | When it is down |
 | --- | --- | --- |
 | `micro-worlds` | the eleven below | every screen shows a failure with the request id on it; nothing is cached and nothing is guessed |
-| `micro-identity` | `GET /auth/me` (`identity/src/server.ts:891`), `POST /auth/refresh` | **fail soft** — an unreachable account service must not sign somebody out while they are reading whether a purchase arrived (`src/lib/auth.tsx`) |
+| `micro-identity` | `GET /auth/me` (`identity/src/server.ts`), `POST /auth/refresh` | **fail soft** — an unreachable account service must not sign somebody out while they are reading whether a purchase arrived (`src/lib/auth.tsx`) |
 
 ### The routes this client calls
 
@@ -43,24 +43,24 @@ check can go red.
 
 | Method | Path | Authenticates | Verified at | What it does |
 | --- | --- | --- | --- | --- |
-| `GET` | `/v1/titles` | **no** | `worlds/src/server.ts:467` | the registry. Public: "a launcher listing games cannot require a token to do it" |
-| `GET` | `/v1/players/me` | yes | `worlds/src/server.ts:524` | profile, inventory and unlocked achievements. **Fails open** |
-| `PUT` | `/v1/players/me` | yes | `worlds/src/server.ts:551` | replace the profile. A full replace, not a patch |
-| `PUT` | `/v1/players/me/cosmetics` | yes | `worlds/src/server.ts:576` | equip or clear a slot. **Fails closed** |
-| `GET` | `/v1/players/me/inventory` | yes | `worlds/src/server.ts:598` | what the account carries |
-| `POST` | `/v1/players/me/inventory/:id/list` | yes | `worlds/src/server.ts:617` | offer an item to the market |
-| `DELETE` | `/v1/players/me/inventory/:id/list` | yes | `worlds/src/server.ts:631` | withdraw the offer |
-| `GET` | `/v1/provisions` | yes | `worlds/src/server.ts:642` | what you were sold, and whether it arrived |
-| `GET` | `/v1/provisions/:id` | yes | `worlds/src/server.ts:683` | one purchase |
-| `GET` | `/v1/titles/:id/achievements` | **no** | `worlds/src/server.ts:701` | a title's achievements |
-| `GET` | `/v1/titles/:id/seasons` | **no** | `worlds/src/server.ts:755` | a title's seasons |
+| `GET` | `/v1/titles` | **no** | `worlds/src/server.ts` | the registry. Public: "a launcher listing games cannot require a token to do it" |
+| `GET` | `/v1/players/me` | yes | `worlds/src/server.ts` | profile, inventory and unlocked achievements. **Fails open** |
+| `PUT` | `/v1/players/me` | yes | `worlds/src/server.ts` | replace the profile. A full replace, not a patch |
+| `PUT` | `/v1/players/me/cosmetics` | yes | `worlds/src/server.ts` | equip or clear a slot. **Fails closed** |
+| `GET` | `/v1/players/me/inventory` | yes | `worlds/src/server.ts` | what the account carries |
+| `POST` | `/v1/players/me/inventory/:id/list` | yes | `worlds/src/server.ts` | offer an item to the market |
+| `DELETE` | `/v1/players/me/inventory/:id/list` | yes | `worlds/src/server.ts` | withdraw the offer |
+| `GET` | `/v1/provisions` | yes | `worlds/src/server.ts` | what you were sold, and whether it arrived |
+| `GET` | `/v1/provisions/:id` | yes | `worlds/src/server.ts` | one purchase |
+| `GET` | `/v1/titles/:id/achievements` | **no** | `worlds/src/server.ts` | a title's achievements |
+| `GET` | `/v1/titles/:id/seasons` | **no** | `worlds/src/server.ts` | a title's seasons |
 
 **Three routes make no `authenticate()` call** — the three marked **no** above. Their handlers take
 a principal nowhere and read no `authorization` header.
 
 The README template warns that a client sending a token to such a route "gets a 403 it cannot
 diagnose". **On `worlds` that is not what happens, and the difference is worth stating.** There is
-no middleware and no wrapper: `handle()` (`worlds/src/server.ts:284-353`) dispatches straight into
+no middleware and no wrapper: `handle()` (`worlds/src/server.ts`) dispatches straight into
 each route's own closure, so a handler that never calls `authenticate` never reaches `requireScope`
 and nothing can raise a `ForbiddenError`. A bearer sent to `GET /v1/titles` yields a 200. The real
 defect on this service is quieter: a client that *believes* those routes are gated puts them behind
@@ -76,16 +76,16 @@ fails the build instead of going quiet.
 
 | Method | Path | Verified at | Why not here |
 | --- | --- | --- | --- |
-| `POST` | `/v1/events` | `worlds/src/server.ts:389` | the bridge's front door, HMAC-checked over the exact bytes before `JSON.parse`. A browser cannot hold `OUTBOX_SIGNING_SECRET`, and a bundle that shipped it would *be* the free-worlds endpoint the check exists to prevent |
-| `POST` | `/v1/titles` | `worlds/src/server.ts:484` | requires `worlds:admin` or `role:admin` (`:488-489`) |
-| `POST` | `/v1/provisions/:id/retry` | `worlds/src/server.ts:667` | requires an administrator (`:669-670`). It is the only way out of `failed`, and the service's own comment at `:645-646` says no view of failed rentals exists anywhere in the estate. That view belongs in the operator console — see [Known gaps](#known-gaps) |
-| `PUT` | `/v1/titles/:id/achievements` | `worlds/src/server.ts:714` | `worlds:title` or `role:admin`. A title defines its own |
-| `POST` | `/v1/titles/:id/achievements/unlock` | `worlds/src/server.ts:735` | `worlds:title` or `role:admin`. A title reports what a player did; a player does not report it about themselves |
-| `POST` | `/v1/titles/:id/seasons` | `worlds/src/server.ts:760` | opening a season sets a money budget. "A title that could set its own reward budget could pay itself" (`:762-763`) |
-| `GET` | `/v1/seasons/:id/budget` | `worlds/src/server.ts:779` | an operator's number. "1,412 Shards left in the pot" in front of players is an invitation to race for it, and a season budget exists to bound an exploit (`worlds/src/env.ts:16-23`). It is also unroutable in production — see [Defects found elsewhere](#defects-found-in-other-repositories) |
-| `POST` | `/v1/seasons/:id/rewards` | `worlds/src/server.ts:802` | `worlds:title` or `role:admin`. Paying oneself from a browser is the exploit the budget exists to bound |
+| `POST` | `/v1/events` | `worlds/src/server.ts` | the bridge's front door, HMAC-checked over the exact bytes before `JSON.parse`. A browser cannot hold `OUTBOX_SIGNING_SECRET`, and a bundle that shipped it would *be* the free-worlds endpoint the check exists to prevent |
+| `POST` | `/v1/titles` | `worlds/src/server.ts` | requires `worlds:admin` or `role:admin` |
+| `POST` | `/v1/provisions/:id/retry` | `worlds/src/server.ts` | requires an administrator. It is the only way out of `failed`, and the service's own comment there says no view of failed rentals exists anywhere in the estate. That view belongs in the operator console — see [Known gaps](#known-gaps) |
+| `PUT` | `/v1/titles/:id/achievements` | `worlds/src/server.ts` | `worlds:title` or `role:admin`. A title defines its own |
+| `POST` | `/v1/titles/:id/achievements/unlock` | `worlds/src/server.ts` | `worlds:title` or `role:admin`. A title reports what a player did; a player does not report it about themselves |
+| `POST` | `/v1/titles/:id/seasons` | `worlds/src/server.ts` | opening a season sets a money budget. "A title that could set its own reward budget could pay itself" |
+| `GET` | `/v1/seasons/:id/budget` | `worlds/src/server.ts` | an operator's number. "1,412 Shards left in the pot" in front of players is an invitation to race for it, and a season budget exists to bound an exploit (`worlds/src/env.ts`). It is also unroutable in production — see [Defects found elsewhere](#defects-found-in-other-repositories) |
+| `POST` | `/v1/seasons/:id/rewards` | `worlds/src/server.ts` | `worlds:title` or `role:admin`. Paying oneself from a browser is the exploit the budget exists to bound |
 
-`/livez` (`:363`), `/readyz` (`:365`) and `/metrics` (`:370`) are served too. They are not called
+`/livez`, `/readyz` and `/metrics` are served too. They are not called
 from a browser.
 
 ### No `Idempotency-Key`, and that is a fact rather than an omission
@@ -93,33 +93,33 @@ from a browser.
 Four wallet routes and five market mutations in this estate answer **400** without one. **None of
 `worlds`'s do**: there is no `withIdempotentRoute` wrapper and no such header read anywhere in
 `worlds/src/server.ts`. The protection is state instead — `listForSale` runs one conditional UPDATE
-guarded by `and bound = false` (`worlds/src/players.ts:424`). So this client sends none, and
+guarded by `and bound = false` (`worlds/src/players.ts`). So this client sends none, and
 `test/worlds.test.ts` asserts the service still reads none, which is what stops somebody "fixing"
 this client by adding a header the service ignores — or concluding the reverse.
 
-(The header *does* appear in `worlds/src/titleclient.ts:149`, where `worlds` is the **caller** and
+(The header *does* appear in `worlds/src/titleclient.ts`, where `worlds` is the **caller** and
 sends the entitlement id to a title. Different direction, different file.)
 
 ## What it refuses to do
 
 * **It never presents an entitlement as an advantage.** `docs/ecosystem/01-product-vision.md`
   principle 6: purchasable means cosmetic, convenience or access — never power. `bound` is where the
-  platform enforces it (`worlds/src/players.ts:390-391`, from 04-domain-model §7.3: "anything
+  platform enforces it (`worlds/src/players.ts`, from 04-domain-model §7.3: "anything
   conferring power is bound and cannot enter the market"), and this client renders it as the control
   it is rather than as a restriction a buyer suffered. `test/format.test.ts` asserts the vocabulary;
   the `rules` job in CI greps for the rest.
 * **A bound item gets no sell control at all** — not a disabled one. `bound` is on the wire
   "because a client that offers a 'sell' button must know before it draws one"
-  (`worlds/src/server.ts:861-862`), so the control is not drawn. A disabled button reads as "not
+  (`worlds/src/server.ts`), so the control is not drawn. A disabled button reads as "not
   yet, ask somebody" and gets clicked at.
 * **It offers no way to set an age bracket**, though `PUT /v1/players/me` accepts one
-  (`worlds/src/server.ts:559-564`). An age bracket is a safeguarding fact
-  (`worlds/src/players.ts:8-11`); a form that lets an account assert its own is a form that lets an
+  (`worlds/src/server.ts`). An age bracket is a safeguarding fact
+  (`worlds/src/players.ts`); a form that lets an account assert its own is a form that lets an
   account assert it is an adult. It is displayed, never edited.
 * **It has no act-as-anyone primitive.** Every player-scoped route derives the account from the
   token via `subjectUserId`, so there is no `userId` to send. CI greps for one anyway.
 * **It never translates the shared 404 into "that belongs to somebody else".**
-  `worlds/src/server.ts:688`: "'Does not exist' and 'is not yours' are the same answer on purpose" —
+  `worlds/src/server.ts`: "'Does not exist' and 'is not yours' are the same answer on purpose" —
   a distinct answer for the second is an enumeration oracle.
 
 ## Screens
@@ -168,7 +168,7 @@ Unique to this app in the estate, and deliberate:
 
 | Key | What | Subdomain | devPort | Registered at |
 | --- | --- | --- | --- | --- |
-| `worlds` | **this bundle** | `worlds` | 3001 | `ui/packages/ui/src/surfaces.ts:239-250` |
+| `worlds` | **this bundle** | `worlds` | 3001 | `ui/packages/ui/src/surfaces.ts` |
 | `api` | **`micro-worlds`**, on the public API host | `api` | 4020 | `ui/packages/ui/src/surfaces.ts`, the `api` row. **Not `worlds-api`** — that hostname was folded into this one, never had a DNS record, and its registry row was deleted on 2026-08-05; see "the registry outage" below |
 
 Every other frontend uses one key for both, because for them the bundle and its API share an origin
@@ -198,8 +198,8 @@ PORT=4020 pnpm --dir ../worlds dev
 ```
 
 The surface registry gives `api` **devPort 4020** (`ui/packages/ui/src/surfaces.ts`, the `api` row).
-`micro-worlds` binds **4000**: `worlds/src/env.ts:171` defaults `PORT` to 4000 and
-`worlds/.env.example:38` sets it to 4000. Under `pnpm dev` the registry value is the one this bundle
+`micro-worlds` binds **4000**: `worlds/src/env.ts` defaults `PORT` to 4000 and
+`worlds/.env.example` sets it to 4000. Under `pnpm dev` the registry value is the one this bundle
 calls, so a `worlds` started from its own example environment is not where this app looks.
 
 This is **not** fixed with a literal port in `src/lib/hosts.ts`. A hard-coded host is a second,
@@ -229,8 +229,8 @@ render them and that the wording never softens into "coming soon".
 
 ### 1. Nothing registers a title, so the registry starts empty
 
-`POST /v1/titles` (`worlds/src/server.ts:484`) is the only writer of the `titles` table and it
-requires `worlds:admin` or `role:admin` (`:488-489`). No service calls it on boot, no migration seeds
+`POST /v1/titles` (`worlds/src/server.ts`) is the only writer of the `titles` table and it
+requires `worlds:admin` or `role:admin`. No service calls it on boot, no migration seeds
 it, and no deploy step inserts a row. **A freshly deployed Forge Worlds knows about no titles at
 all.**
 
@@ -238,7 +238,7 @@ An empty list here is a **200 and a true answer**, not a page that has not finis
 front page says exactly that and then states the gap.
 
 *What would close it:* each title service registers itself on boot. `registerTitle` is idempotent on
-the slug (`worlds/src/titles.ts:117-123`) precisely so "a deploy that re-registers its title on every
+the slug (`worlds/src/titles.ts`) precisely so "a deploy that re-registers its title on every
 boot — which is the obvious way for a title to declare itself — produces one row rather than a
 conflict an operator has to go and clear". Or an operator registers it once with an admin token.
 
@@ -246,17 +246,17 @@ conflict an operator has to go and clear". Or an operator registers it once with
 
 `worlds` makes exactly two calls into a title service:
 
-* `GET /v1/title` — `worlds/src/titleclient.ts:122`
-* `POST /v1/provision` — `worlds/src/titleclient.ts:134-135`
+* `GET /v1/title` — `worlds/src/titleclient.ts`
+* `POST /v1/provision` — `worlds/src/titleclient.ts`
 
 **Neither `micro-emberkin` nor `micro-nda` serves either.** Both route tables were read:
-`emberkin/src/server.ts` registers ten routes (`:238`–`:431`), `nda/src/server.ts` thirty-two across
-`define` (`:409`–`:654`) and `defineMutation` (`:431`–`:965`); neither path appears in either. They
+`emberkin/src/server.ts` registers ten routes, `nda/src/server.ts` thirty-two across
+`define` and `defineMutation`; neither path appears in either. They
 integrate in the **achievement direction only** — they call `worlds`; `worlds` cannot ask them for
 anything.
 
 **The bridge itself is complete and correct.** `driveProvision` reads the registered title's declared
-capabilities and refuses *before* making the call (`worlds/src/provisioning.ts:441-451`): "Asked
+capabilities and refuses *before* making the call (`worlds/src/provisioning.ts`): "Asked
 BEFORE the call rather than discovered from a 404. A title that cannot do this is a catalogue
 mistake, and it deserves a row that says so." So the outcome is a terminal `unsupported` row carrying
 a readable sentence, not a blind 404 and not a silent retry loop.
@@ -264,12 +264,12 @@ a readable sentence, not a blind 404 and not a silent retry loop.
 **But a private-world entitlement still ends as a row, not a world.** A customer paid, the estate
 recorded it, and nothing was raised. `/entitlements/:id` renders that row with the service's own
 `lastError` **verbatim** and no retry control — the treatment `micro-admin-web` gives an action with
-no executor (`admin-web/src/lib/catalogue.ts:23-37`), for the same reason: a disabled button reads as
+no executor (`admin-web/src/lib/catalogue.ts`), for the same reason: a disabled button reads as
 "not yet" and gets clicked at.
 
 *What would close it:* a title serves `GET /v1/title` and `POST /v1/provision`, honouring the
 entitlement id as its idempotency key in both the `Idempotency-Key` header and the body
-(`worlds/src/titleclient.ts:11-17`), and passes `worlds/src/conformance.ts`.
+(`worlds/src/titleclient.ts`), and passes `worlds/src/conformance.ts`.
 
 `test/worlds.test.ts` re-checks this claim against the real repositories on every CI run and **fails
 if it ever stops being true** — this app must not go on telling somebody their purchase cannot be
@@ -277,7 +277,7 @@ delivered after it can.
 
 ### 3. There is still no operator view of failed provisions
 
-`worlds/src/server.ts:645-646` calls it "the fifth of the six missing pieces: there is no view of
+`worlds/src/server.ts` calls it "the fifth of the six missing pieces: there is no view of
 failed rentals anywhere in the estate today." `GET /v1/provisions` already serves an administrator the
 whole backlog, and `POST /v1/provisions/:id/retry` is the only way out of `failed`.
 
@@ -290,10 +290,10 @@ across six repositories. Recorded here so the omission is a decision rather than
 Reported, not fixed — none of them blocks this repository.
 
 1. **`micro-ui`: the API surface's devPort is an allocation, not a fact.** The registry gives `api`
-   devPort 4020; `micro-worlds` binds 4000 (`worlds/src/env.ts:171`, `worlds/.env.example:38`).
+   devPort 4020; `micro-worlds` binds 4000 (`worlds/src/env.ts`, `worlds/.env.example`).
    This is the **fifth** instance of the same defect class — `foresight` carried beacon's 4011, `emberkin` carried 3014 while binding 4100,
    `admin` carried 3002 while `admin-api` binds 4014, `create` carries 4004 while `mint` binds 4000.
-   `ui/packages/ui/src/surfaces.test.ts:187-206` pins only surfaces whose service binds a
+   `ui/packages/ui/src/surfaces.test.ts` pins only surfaces whose service binds a
    *distinctive* port, and 4000 is the service-template default half the estate shares — so the
    entry genuinely is an allocation, and what is missing is anything that makes it true. Handled
    here the way `micro-mint-web` handled its own: the README says `PORT=4020 pnpm dev`, in one line,
@@ -301,17 +301,17 @@ Reported, not fixed — none of them blocks this repository.
    that routes to `worlds:4000` by path prefix; there is no gateway in front of `pnpm dev`.
 
 2. **`micro-deploy`: `/v1/seasons` is routed nowhere.**
-   `deploy/gateway/dynamic/public-api.yml:143` matches `PathPrefix('/v1/titles')`,
+   `deploy/gateway/dynamic/public-api.yml` matches `PathPrefix('/v1/titles')`,
    `PathPrefix('/v1/players')` and `PathPrefix('/v1/provisions')` for worlds, and *not*
-   `/v1/seasons`. So `GET /v1/seasons/:id/budget` (`worlds/src/server.ts:779`) and
-   `POST /v1/seasons/:id/rewards` (`:802`) fall to the catch-all router at `:151` and are
-   blackholed to `http://127.0.0.1:1` (`:196-198`). The second of those is how a **title service
+   `/v1/seasons`. So `GET /v1/seasons/:id/budget` (`worlds/src/server.ts`) and
+   `POST /v1/seasons/:id/rewards` fall to that file's catch-all router and are
+   blackholed to `http://127.0.0.1:1`. The second of those is how a **title service
    pays a season reward** — so on the current gateway configuration, no title can be paid through
    the public host at all. This client declines both routes for independent reasons, so it is not
    blocked; the reward path is a real hole.
 
 3. **FIXED HERE ON 2026-08-05 — this bundle called a hostname that does not exist.**
-   `src/lib/hosts.ts:80` was `export const API_SURFACE: SurfaceKey = 'worlds-api'`, and
+   `src/lib/hosts.ts` was `export const API_SURFACE: SurfaceKey = 'worlds-api'`, and
    `worlds-api.<apex>` **has no DNS record on either network**. So every request this bundle made
    died in the resolver with `ERR_NAME_NOT_RESOLVED` while the page itself kept answering 200, and
    **the title registry did not load**. The owner found it by opening the product; no test did.
@@ -373,7 +373,7 @@ Reported, not fixed — none of them blocks this repository.
 dead paths because they *began* with a served prefix — `micro-mint` then shipped exactly that defect.
 Worse, a `${scope}` helper standing for two segments collapsed a path so it matched an entirely
 *different* route and was reported fine. `matchesShape` in `test/worlds.test.ts` is copied from the
-corrected form at `market/src/indexerclient.test.ts:230-249`: same segment count, every segment
+corrected form at `market/src/indexerclient.test.ts`: same segment count, every segment
 agrees, and a `${...}` is exactly one segment.
 
 It also compares the **method**, which the first run of the suite proved necessary: `GET /v1/titles`
