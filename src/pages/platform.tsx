@@ -229,8 +229,12 @@ function TitleRow({ title }: { title: Title }) {
           <span className="ww-note__icon" aria-hidden="true">
             ▲
           </span>
-          Not sellable while it is <code className="cf-num">{title.status}</code>. A purchase scoped
-          to it would never be delivered.
+          {/* One flex item, not three — see `.ww-note__body` in styles.css. Interleaving text with
+              a <code> inside a flex container laid the status out on the wrong line. */}
+          <span className="ww-note__body">
+            Not sellable while it is <code className="cf-num">{title.status}</code>. A purchase
+            scoped to it would never be delivered.
+          </span>
         </p>
       )}
     </li>

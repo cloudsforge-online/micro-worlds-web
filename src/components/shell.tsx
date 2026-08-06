@@ -94,10 +94,19 @@ export function AppShell({ unregistered = false }: { unregistered?: boolean }) {
             <span className="ww-note__icon" aria-hidden="true">
               ▲
             </span>
-            This page is being served from an address the CloudsForge surface registry does not
-            know, so every host it resolves — including the account portal and this platform’s own
-            API — is derived from the wrong apex. Its home is the{' '}
-            <code className="cf-num">worlds</code> surface.
+            {/*
+              The sentence is wrapped, and it has to be. `.ww-note` is a flex container, and a flex
+              container makes an item out of every child INCLUDING each anonymous run of text — so
+              this note used to lay out as four items and rendered the `worlds` code element and
+              the words after it on the line ABOVE the words before them. Every word was present
+              and the order on screen was wrong, which is a defect no source read finds.
+            */}
+            <span className="ww-note__body">
+              This page is being served from an address the CloudsForge surface registry does not
+              know, so every host it resolves — including the account portal and this platform’s
+              own API — is derived from the wrong apex. Its home is the{' '}
+              <code className="cf-num">worlds</code> surface.
+            </span>
           </p>
         )}
         <Outlet />

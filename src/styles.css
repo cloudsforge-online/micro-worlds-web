@@ -424,6 +424,26 @@ body {
   flex: none;
 }
 
+/*
+ * THE SENTENCE, AS ONE FLEX ITEM. Found by reading the rendered page rather than the file.
+ *
+ * `.ww-note` is a flex container, and a flex container makes a flex item out of EVERY child —
+ * including each anonymous run of text between elements. Both notes on this surface interleave
+ * text with a `<code>`, so the container was laying out four items rather than two, and the
+ * sentence came out as "…including the account portal and this platform's | worlds | surface." on
+ * one line with "own API — is derived from the wrong apex. Its home is the" underneath it. The
+ * words were all present and in the wrong order on screen, which is the failure a source read
+ * cannot see and a screenshot cannot miss.
+ *
+ * The fix is structural rather than a `flex-wrap` or a `display` change: the note is an icon and a
+ * body, so it is given exactly those two children and the body is an ordinary block of text again.
+ * `min-width: 0` is the other half — a flex item's minimum size is its content by default, so a
+ * long unbroken URN in one of these would otherwise push the note wider than its panel.
+ */
+.ww-note__body {
+  min-width: 0;
+}
+
 .ww-note--warn {
   border-color: var(--cf-warn);
   color: var(--cf-fg);
