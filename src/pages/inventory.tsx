@@ -40,22 +40,23 @@ export function InventoryPage() {
   const inventory = useResource(
     load,
     (data) => data.items.length,
-    'Your inventory could not be read.',
+    'Your inventory could not be fetched.',
   )
 
   return (
     <>
       <header className="ww-head">
         <p className="ww-head__eyebrow">Your account</p>
-        <h1 className="ww-head__title">Inventory</h1>
+        <h1 className="ww-head__title">What you own</h1>
         <p className="ww-head__lede">
-          What the account carries, with where each thing came from. Anything that could confer an
-          advantage is bound to you and never enters a market — that is the platform’s control, not
-          a restriction on a purchase.
+          Everything the account holds, each item remembering how it reached you. Anything that
+          could give you an edge is tied to you and can never be offered for sale. That is how the
+          platform keeps advantage off the market, rather than a condition attached to what you
+          bought.
         </p>
       </header>
 
-      {inventory.state === 'loading' && <Loading label="Reading your inventory" />}
+      {inventory.state === 'loading' && <Loading label="Emptying out your bag" />}
       {inventory.state === 'forbidden' && inventory.error !== null && (
         <Forbidden notice={inventory.error} />
       )}
@@ -63,13 +64,13 @@ export function InventoryPage() {
         <Failed
           notice={inventory.error}
           onRetry={inventory.reload}
-          title="Your inventory did not load"
+          title="Your inventory is not on screen"
         />
       )}
       {inventory.state === 'empty' && (
         <Empty
-          title="This account carries nothing yet"
-          hint="Items arrive from a purchase, a season reward, a title, a trade, or a grant from the platform."
+          title="Your bag is empty"
+          hint="Things turn up here when you buy them, when a season pays out, when you make or find one inside a title, when you trade for one, or when the platform hands you something directly."
         />
       )}
       {inventory.state === 'ok' && inventory.data !== null && (
@@ -100,18 +101,18 @@ function ItemRow({ item, onChanged }: { item: InventoryItem; onChanged: () => vo
       </div>
 
       <dl className="ww-facts">
-        <Fact label="How it arrived">{sourceMeaning(item.source)}</Fact>
-        <Fact label="Where it counts">
+        <Fact label="How you got it">{sourceMeaning(item.source)}</Fact>
+        <Fact label="Where it works">
           {item.titleScope === CROSS_TITLE ? (
-            'Every title'
+            'Everywhere'
           ) : (
             <code className="cf-num">{item.titleScope}</code>
           )}
         </Fact>
-        <Fact label="Quantity">
+        <Fact label="How many">
           <span className="cf-num">{item.quantity}</span>
         </Fact>
-        <Fact label="Acquired">{timestamp(item.acquiredAt)}</Fact>
+        <Fact label="Since">{timestamp(item.acquiredAt)}</Fact>
       </dl>
 
       <p className={`ww-item__rule${item.bound ? ' ww-item__rule--bound' : ''}`}>
@@ -140,11 +141,11 @@ function Listing({
 
   const offer = useMutation<[], { item: InventoryItem }>(
     async () => listForSale(item.id, listingUrn.trim()),
-    'That item was not listed.',
+    'That item is not up for sale.',
   )
   const withdraw = useMutation<[], { item: InventoryItem }>(
     async () => unlist(item.id),
-    'That listing was not withdrawn.',
+    'That listing is still standing.',
   )
 
   const after = (done: unknown) => {
@@ -155,7 +156,7 @@ function Listing({
     return (
       <div className="ww-listing">
         <p className="ww-listing__state">
-          Offered to the market since {timestamp(item.listedAt)} as{' '}
+On sale in Forge Market since {timestamp(item.listedAt)}, under{' '}
           <code className="cf-num" title={item.listingUrn ?? ''}>
             {shortUrn(item.listingUrn)}
           </code>
@@ -167,10 +168,10 @@ function Listing({
           disabled={withdraw.busy}
           onClick={() => void withdraw.run().then(after)}
         >
-          {withdraw.busy ? 'Withdrawing…' : 'Withdraw the offer'}
+          {withdraw.busy ? 'Taking it down…' : 'Take it off sale'}
         </button>
         {withdraw.error !== null && (
-          <Failed notice={withdraw.error} title="The offer was not withdrawn" />
+          <Failed notice={withdraw.error} title="It is still on sale" />
         )}
       </div>
     )
@@ -187,8 +188,9 @@ function Listing({
       <label className="ww-field">
         <span className="ww-field__label">Listing reference</span>
         <span className="ww-field__hint">
-          The Forge Market listing this item is offered under. Forge Worlds records the reference;
-          the market owns the sale (<code className="cf-num">worlds/src/server.ts</code>).
+          The reference of the Forge Market listing this item sits behind. Forge Worlds only notes
+          which listing it is; the sale itself belongs to the market
+          (<code className="cf-num">worlds/src/server.ts</code>).
         </span>
         <input
           className="ww-field__input cf-num"
@@ -204,7 +206,7 @@ function Listing({
         type="submit"
         disabled={offer.busy || listingUrn.trim().length === 0}
       >
-        {offer.busy ? 'Listing…' : 'Offer it to the market'}
+        {offer.busy ? 'Listing…' : 'Put it up for sale'}
       </button>
       {offer.error !== null && (
         <Failed
@@ -214,8 +216,8 @@ function Listing({
             // about the past. When it does, it is rendered as the RULE rather than as a permission
             // problem the reader could fix by asking somebody.
             offer.error.message.includes('bound')
-              ? 'This item is bound to your account and can never be sold'
-              : `Item ${shortId(item.id)} was not listed`
+              ? 'This item is tied to your account and can never be sold'
+              : `Item ${shortId(item.id)} is not up for sale`
           }
         />
       )}

@@ -90,7 +90,7 @@ describe('every screen distinguishes the four states', () => {
     // came from something in FRONT of the service. Telling somebody to ask an administrator for a
     // role no route checks would send them somewhere that cannot help.
     assert.doesNotMatch(withoutComments(title), /<Forbidden/)
-    assert.match(platform, /refused this request before it reached the platform/)
+    assert.match(platform, /turned this request away before Forge Worlds saw it/)
   })
 })
 
@@ -142,7 +142,7 @@ describe('an undeliverable entitlement is rendered honestly', () => {
   })
 
   it('says that nothing was raised, as a sentence rather than an em dash', () => {
-    assert.match(code, /No title has made anything for this purchase/)
+    assert.match(code, /no title has produced anything against it/)
   })
 
   it('offers no control on a terminal row', () => {
@@ -158,7 +158,7 @@ describe('the account page treats a null profile as a new player', () => {
   })
 
   it('invites a name rather than saying nothing is here', () => {
-    assert.match(code, /Create your profile/)
+    assert.match(code, /Set up your profile/)
   })
 
   it('submits the whole document, because PUT is a replace and not a patch', () => {
@@ -226,7 +226,7 @@ describe('the shell and the 404', () => {
   it('the 404 page says the SERVER answered 404, not merely that the page is missing', () => {
     // nginx keeps the real status through `error_page 404 /index.html`. Saying so is what stops a
     // reader assuming the app is broken when the address is simply wrong.
-    assert.match(notFound, /404, not a 200/)
+    assert.match(notFound, /404 rather than a 200/)
   })
 
   it('the 404 page offers a way back to the platform', () => {

@@ -46,7 +46,7 @@ export function PlayerPage() {
   const load = useCallback(async (signal: AbortSignal) => getPlayer({ signal }), [])
   // `count` is 1 unconditionally: a null profile is a real answer about an account that exists, so
   // this resource is never "empty". Emptiness belongs to the lists on the other screens.
-  const player = useResource<PlayerSnapshot>(load, () => 1, 'Your account could not be read.')
+  const player = useResource<PlayerSnapshot>(load, () => 1, 'Your account could not be fetched.')
 
   return (
     <>
@@ -54,15 +54,16 @@ export function PlayerPage() {
         <p className="ww-head__eyebrow">Forge Worlds</p>
         <h1 className="ww-head__title">Your account</h1>
         <p className="ww-head__lede">
-          One profile across every title. What you are called, what you are wearing, and anything
-          the platform has recorded against the account — all of it outlives any one season.
+          A single profile that every title reads from: the name you go by, what you have on, and
+          whatever the platform has written down about you. None of it belongs to a particular game,
+          so none of it goes away when one of them does.
         </p>
       </header>
 
-      {player.state === 'loading' && <Loading label="Reading your account" />}
+      {player.state === 'loading' && <Loading label="Fetching your account" />}
       {player.state === 'forbidden' && player.error !== null && <Forbidden notice={player.error} />}
       {player.state === 'failed' && player.error !== null && (
-        <Failed notice={player.error} onRetry={player.reload} title="Your account did not load" />
+        <Failed notice={player.error} onRetry={player.reload} title="Your account is not on screen" />
       )}
       {player.data !== null && <Account snapshot={player.data} onSaved={player.reload} />}
     </>
@@ -75,23 +76,23 @@ function Account({ snapshot, onSaved }: { snapshot: PlayerSnapshot; onSaved: () 
   return (
     <>
       <section className="ww-panel" aria-label="Your profile">
-        <h2 className="ww-panel__title">Profile</h2>
+        <h2 className="ww-panel__title">Who you are here</h2>
         {profile === null ? (
           <p className="ww-panel__subtitle">
-            You have no Forge Worlds profile yet. Your account exists — this is the name titles will
-            show for you, and nothing has set it.
+            Your CloudsForge account exists and is signed in; it has no Forge Worlds profile
+            attached to it. Choose the name every title should show for you and this fills in.
           </p>
         ) : (
           <dl className="ww-facts">
-            <Fact label="Reputation">
+            <Fact label="Standing">
               <span className="cf-num">{profile.reputation}</span>
             </Fact>
-            <Fact label="Age bracket">
+            <Fact label="Age band">
               {/* Shown, never editable. See the file header. */}
               <span className="cf-num">{profile.ageBracket}</span>
             </Fact>
-            <Fact label="Created">{timestamp(profile.createdAt)}</Fact>
-            <Fact label="Updated">{timestamp(profile.updatedAt)}</Fact>
+            <Fact label="First set up">{timestamp(profile.createdAt)}</Fact>
+            <Fact label="Last changed">{timestamp(profile.updatedAt)}</Fact>
           </dl>
         )}
         <ProfileForm profile={profile} onSaved={onSaved} />
@@ -103,7 +104,8 @@ function Account({ snapshot, onSaved }: { snapshot: PlayerSnapshot; onSaved: () 
             <span aria-hidden="true">⊘</span> Sanctions
           </h2>
           <p className="ww-panel__subtitle">
-            Recorded against the account rather than against a world, so they hold everywhere.
+            Held against the account itself rather than against any one world, so a sanction applies
+            wherever you go unless its scope says otherwise.
           </p>
           <ul className="ww-sanctions">
             {profile.sanctions.map((sanction, index) => (
@@ -113,8 +115,8 @@ function Account({ snapshot, onSaved }: { snapshot: PlayerSnapshot; onSaved: () 
                 <p className="ww-sanction__meta">
                   Applied {timestamp(sanction.appliedAt)} ·{' '}
                   {sanction.expiresAt === null
-                    ? 'no expiry'
-                    : `expires ${timestamp(sanction.expiresAt)}`}{' '}
+                    ? 'no end date'
+                    : `lifts ${timestamp(sanction.expiresAt)}`}{' '}
                   ·{' '}
                   {sanction.scope === CROSS_TITLE ? (
                     'every title'
@@ -131,15 +133,16 @@ function Account({ snapshot, onSaved }: { snapshot: PlayerSnapshot; onSaved: () 
       <Wardrobe profile={profile} onSaved={onSaved} />
 
       <section className="ww-panel" aria-label="Achievements">
-        <h2 className="ww-panel__title">Achievements</h2>
+        <h2 className="ww-panel__title">What you have done</h2>
         <p className="ww-panel__subtitle">
-          Unlocked by a title and recorded here, so they survive the title. Points are a record, not
-          a currency: nothing on this platform can be bought with them.
+          A title decides you have earned something and tells the platform, which keeps the record
+          from then on. The points beside each one are a tally and not money: there is nothing
+          anywhere on this platform they can be exchanged for.
         </p>
         {snapshot.achievements.length === 0 ? (
           <p className="ww-absent ww-absent--block">
-            Nothing unlocked yet. A title reports an achievement to the platform when you earn it;
-            no title can unlock one on your behalf from here.
+Nothing yet. Achievements arrive when a title reports that you earned one — none of them can
+            be granted from this page, and nor can you award yourself one.
           </p>
         ) : (
           <ul className="ww-achievements">
@@ -148,7 +151,7 @@ function Account({ snapshot, onSaved }: { snapshot: PlayerSnapshot; onSaved: () 
                 <p className="ww-achievement__name">{achievement.name}</p>
                 <p className="ww-achievement__meta">
                   <code className="cf-num">{achievement.key}</code> ·{' '}
-                  <span className="cf-num">{achievement.points}</span> points · unlocked{' '}
+                  <span className="cf-num">{achievement.points}</span> points · earned{' '}
                   {timestamp(achievement.unlockedAt)}
                 </p>
               </li>
@@ -192,7 +195,7 @@ function ProfileForm({
         // Empty means CLEARED, and null is how the service spells that (`server.ts`).
         avatarAssetUrn: avatar.trim().length === 0 ? null : avatar.trim(),
       }),
-    'Your profile could not be saved.',
+    'Your profile was not saved.',
   )
 
   // The service's own rule, checked here so the refusal arrives before the round trip rather than
@@ -217,8 +220,8 @@ function ProfileForm({
       <label className="ww-field">
         <span className="ww-field__label">Display name</span>
         <span className="ww-field__hint">
-          What every title shows for you. 1 to 40 characters — the platform refuses the rest
-          (<code className="cf-num">worlds/src/players.ts</code>).
+          The name every title puts beside you. Between 1 and 40 characters; the platform turns down
+          anything longer (<code className="cf-num">worlds/src/players.ts</code>).
         </span>
         <input
           className="ww-field__input"
@@ -230,16 +233,16 @@ function ProfileForm({
         />
         {tooLong && (
           <span className="ww-field__error">
-            That is {trimmed.length} characters. The platform accepts 40.
+You have typed {trimmed.length} characters. Forty is the limit.
           </span>
         )}
       </label>
 
       <label className="ww-field">
-        <span className="ww-field__label">Avatar asset</span>
+        <span className="ww-field__label">Avatar</span>
         <span className="ww-field__hint">
-          An asset URN. Leaving this empty clears it — this is a full replace, not a patch, so the
-          form submits both fields every time.
+          The reference of the image asset to use. Emptying this box removes your avatar: saving
+          replaces the whole profile rather than merging into it, so both boxes are sent every time.
         </span>
         <input
           className="ww-field__input cf-num"
@@ -252,10 +255,10 @@ function ProfileForm({
       </label>
 
       <button className="cf-btn" type="submit" disabled={save.busy || blocked}>
-        {save.busy ? 'Saving…' : profile === null ? 'Create your profile' : 'Save'}
+        {save.busy ? 'Saving…' : profile === null ? 'Set up your profile' : 'Save these'}
       </button>
 
-      {save.error !== null && <Failed notice={save.error} title="Your profile was not saved" />}
+      {save.error !== null && <Failed notice={save.error} title="Your profile is unchanged" />}
     </form>
   )
 }
@@ -277,30 +280,32 @@ function Wardrobe({ profile, onSaved }: { profile: PlayerProfile | null; onSaved
         itemUrn: null,
         ...(scope === CROSS_TITLE ? {} : { titleId: scope }),
       }),
-    'That slot could not be cleared.',
+    'That slot was not emptied.',
   )
 
   const groups = Object.entries(profile?.equippedCosmetics ?? {})
 
   return (
     <section className="ww-panel" aria-label="What you are wearing">
-      <h2 className="ww-panel__title">Wardrobe</h2>
+      <h2 className="ww-panel__title">What you have on</h2>
       <p className="ww-panel__subtitle">
-        Keyed by title, with a cross-title default. A title with no preference set renders the
-        default, so “my frame” and “my frame in each game” are both representable.
+        You have one default outfit and, on top of it, whatever you have chosen for a particular
+        title. Anywhere you have expressed no preference, the default is what shows — so you can
+        look the same everywhere or different in each place, as you like.
       </p>
 
       {groups.length === 0 ? (
         <p className="ww-absent ww-absent--block">
-          Nothing equipped. Cosmetics are checked against your purchases when you set them and
-          never when you take them off.
+You are wearing nothing you have chosen. The platform checks that you own a cosmetic when
+          you put it on, and never when you take it off — losing an item cannot leave you stuck in
+          it.
         </p>
       ) : (
         groups.map(([scope, slots]) => (
           <div className="ww-wardrobe" key={scope}>
             <h3 className="ww-wardrobe__scope">
               {scope === CROSS_TITLE ? (
-                'Every title'
+'Everywhere'
               ) : (
                 <code className="cf-num">{scope}</code>
               )}
@@ -322,7 +327,7 @@ function Wardrobe({ profile, onSaved }: { profile: PlayerProfile | null; onSaved
                       })
                     }}
                   >
-                    Take off
+Take it off
                   </button>
                 </li>
               ))}
@@ -341,7 +346,7 @@ function Wardrobe({ profile, onSaved }: { profile: PlayerProfile | null; onSaved
             // who waits a minute and a player who files a bug.
             clear.error.message.includes('cannot check your purchases')
               ? 'Your purchases could not be checked just now'
-              : 'That slot was not cleared'
+              : 'That slot is unchanged'
           }
         />
       )}

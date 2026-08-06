@@ -230,9 +230,9 @@ describe('the front page states both gaps', () => {
     // The category error this estate has made twice. The index opens with the platform's own
     // responsibilities; the registry is a section within it, and it is read at runtime.
     const owns = platformCode.indexOf('const OWNS')
-    const registry = platformCode.indexOf('The registry')
+    const registry = platformCode.indexOf('The register')
     assert.ok(owns > 0 && registry > owns, 'the registry section must come after what it owns')
-    assert.match(platform, /Forge Worlds is not a game/)
+    assert.match(platform, /Forge Worlds is not itself a game/)
   })
 
   it('builds the registry from the SERVICE, never from a list in source', () => {
@@ -271,7 +271,7 @@ describe('the front page states both gaps', () => {
   it('frames the two titles as things that RUN on the platform', () => {
     // The sentence that does the work. Asserted so a rewrite cannot drop it and leave the page
     // describing a platform with nothing to say about what a title is.
-    assert.match(platform, /are titles that run here/i)
+    assert.match(platform, /run on top of it/i)
   })
 })
 
@@ -325,13 +325,13 @@ describe('a title that cannot be sold to is marked as such', () => {
 
   it('is said on the registry row', () => {
     assert.match(platformCode, /isSellable/)
-    assert.match(platformCode, /would never be delivered/)
+    assert.match(platformCode, /would\s+never be delivered/)
   })
 
   it('says a title declaring no capabilities will not be asked for anything', () => {
     // The bridge checks capabilities before calling (`worlds/src/provisioning.ts`), so a
     // title with none is one whose every purchase ends undeliverable. Saying it on the row is
     // cheaper than saying it after somebody has paid.
-    assert.match(platformCode, /declares no capabilities/)
+    assert.match(platformCode, /can be asked for nothing/)
   })
 })

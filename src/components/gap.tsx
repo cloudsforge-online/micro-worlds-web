@@ -34,11 +34,11 @@ export function GapNotice({ gap }: { gap: KnownGap }) {
       </h3>
       <p className="ww-gap__finding">{gap.finding}</p>
       <div className="ww-gap__closes">
-        <h4 className="ww-gap__closes-title">What would close it</h4>
+        <h4 className="ww-gap__closes-title">What would fix it</h4>
         <p>{gap.closes}</p>
       </div>
       <p className="ww-gap__cites">
-        Check it against:{' '}
+Check this for yourself in:{' '}
         {gap.citations.map((cite, index) => (
           <span key={cite}>
             {index > 0 && ', '}
@@ -66,12 +66,12 @@ export function GapNotice({ gap }: { gap: KnownGap }) {
 export function ServiceRefusal({ reason, attempts }: { reason: string; attempts: number }) {
   return (
     <div className="ww-refusal">
-      <h4 className="ww-refusal__title">In Forge Worlds’ own words</h4>
+      <h4 className="ww-refusal__title">What Forge Worlds said, word for word</h4>
       <p className="ww-refusal__text cf-num">{reason}</p>
       <p className="ww-refusal__meta">
-        {attempts === 1 ? '1 attempt' : `${attempts} attempts`}. This is terminal: it is not being
-        retried in the background, and a background poll deliberately never reopens it — repeating
-        whatever caused a failure, at the rate of the poll, is worse than leaving it still.
+{attempts === 1 ? '1 attempt' : `${attempts} attempts`}. That is where it stops. Nothing is
+        quietly trying again behind the scenes, and that is deliberate: repeating whatever went
+        wrong every few seconds does more harm than leaving it alone.
       </p>
     </div>
   )

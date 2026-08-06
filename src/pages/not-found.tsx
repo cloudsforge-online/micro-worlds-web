@@ -14,13 +14,14 @@ export function NotFoundPage() {
       <span className="wt-state__icon" aria-hidden="true">
         ◇
       </span>
-      <p className="wt-state__title">There is nothing at this address</p>
+      <p className="wt-state__title">Forge Worlds has no page here</p>
       <p className="wt-state__hint">
-        The server said so too — this page arrived with a 404, not a 200.
+        The server agrees: this screen was delivered with a 404 rather than a 200, so whatever sent
+        you can tell that the link is broken.
       </p>
       <div className="wt-state__action">
         <Link className="cf-btn" to="/">
-          Back to the platform
+Back to the platform
         </Link>
       </div>
     </div>
