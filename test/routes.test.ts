@@ -115,8 +115,8 @@ describe('which routes are public matches which routes worlds leaves unauthentic
   /**
    * THE ASSERTION THIS FILE EXISTS FOR, ALONGSIDE THE nginx ONE.
    *
-   * `GET /v1/titles` (worlds/src/server.ts:467), `GET /v1/titles/:id/achievements` (:701) and
-   * `GET /v1/titles/:id/seasons` (:755) make no `authenticate()` call. Gating a screen built from
+   * `GET /v1/titles` (worlds/src/server.ts), `GET /v1/titles/:id/achievements` and
+   * `GET /v1/titles/:id/seasons` make no `authenticate()` call. Gating a screen built from
    * them would send a visitor to sign in for a page the service would have served them — and the
    * estate has already shipped the mirror-image defect, a client sending a bearer to a route with
    * no `authenticate()` call and then reasoning about a 403 that was never about authorisation.

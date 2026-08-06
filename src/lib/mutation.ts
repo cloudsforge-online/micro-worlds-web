@@ -22,17 +22,17 @@
  *
  * **No `worlds` route reads an `Idempotency-Key`.** There is no `withIdempotentRoute` wrapper and
  * no such header read anywhere in `worlds/src/server.ts`; the `idempotency` matches in that package
- * are the title conformance suite (`worlds/src/conformance.ts:236`), the provisioning bridge where
- * the entitlement id IS the key and never passes through a browser (`worlds/src/jobs.ts:15`,
- * `worlds/src/titleclient.ts:15-16`), and the keys `worlds` sends DOWNSTREAM
- * (`worlds/src/outbox.ts:285`). So this client sends none, and `test/worlds.test.ts` asserts the
+ * are the title conformance suite (`worlds/src/conformance.ts`), the provisioning bridge where
+ * the entitlement id IS the key and never passes through a browser (`worlds/src/jobs.ts`,
+ * `worlds/src/titleclient.ts`), and the keys `worlds` sends DOWNSTREAM
+ * (`worlds/src/outbox.ts`). So this client sends none, and `test/worlds.test.ts` asserts the
  * service still reads none. There is no header that can make a second click safe here.
  *
  * ── The two PUTs are idempotent by method, and really are ──────────────────────────────────────
  *
  * `putProfile` is a full replace ending in `on conflict (user_id) do update set`
- * (`worlds/src/players.ts:127`). `equipCosmetic` reads, modifies and writes the wardrobe inside one
- * transaction (`worlds/src/players.ts:168-194`) and setting a slot to the value it already holds is
+ * (`worlds/src/players.ts`). `equipCosmetic` reads, modifies and writes the wardrobe inside one
+ * transaction (`worlds/src/players.ts`) and setting a slot to the value it already holds is
  * a no-op. A duplicate of either is harmless. The guard on those is a nicety.
  *
  * ── The two inventory writes are where a second request DOES damage ───────────────────────────
@@ -41,16 +41,16 @@
  * to somebody whose action SUCCEEDED.
  *
  *   * `listForSale` updates `where ... and listed_at is null and bound = false`
- *     (`worlds/src/players.ts:423-424`). A second concurrent call matches no row, reads the row back
+ *     (`worlds/src/players.ts`). A second concurrent call matches no row, reads the row back
  *     to say which of three reasons it was, and throws `InventoryError('this item is already
- *     listed')` (`worlds/src/players.ts:442`) — a 409 `inventory_state`
- *     (`worlds/src/server.ts:332-333`). So no second listing is created; instead the player is shown
+ *     listed')` (`worlds/src/players.ts`) — a 409 `inventory_state`
+ *     (`worlds/src/server.ts`). So no second listing is created; instead the player is shown
  *     "Item … was not listed" while their item is live on the market. They then withdraw an offer
  *     that was doing exactly what they asked.
  *
  *   * `unlist` updates `where ... and listed_at is not null` and returns null when nothing matched
- *     (`worlds/src/players.ts:463-471`); the route turns that null into a 404
- *     (`worlds/src/server.ts:675`). DELETE being idempotent by convention does not make THIS delete
+ *     (`worlds/src/players.ts`); the route turns that null into a 404
+ *     (`worlds/src/server.ts`). DELETE being idempotent by convention does not make THIS delete
  *     idempotent: the second one is an error on screen over a withdrawal that worked.
  *
  * A component that reports failure for an action that succeeded is worse than one that reports a

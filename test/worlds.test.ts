@@ -5,19 +5,24 @@
  * That is the whole problem: a test that asserts "the client calls /v1/titles" is a test that the
  * client agrees with itself. So this file does not assert paths in the abstract — it reads
  * `worlds/src/server.ts` from the sibling checkout and requires that each path and method this
- * bundle calls is REGISTERED there, at the line the citation names.
+ * bundle calls is REGISTERED there — found by SEARCHING for its `define(`, never by line.
  *
  * ── Two checks, because one of them has already been fooled ───────────────────────────────────
  *
- * **1. Citations.** Each entry in `SURFACE` names a line; the line must contain the `define(` that
- * registers exactly that method and path.
+ * **1. Registration.** Each entry in `SURFACE` must be registered by the service. It used to name
+ * a LINE, and the line is why this repository kept turning red for edits made in a different one:
+ * micro-trade inserted seven lines near its imports, every route below it moved, and every
+ * citation in every client broke while the routes themselves were untouched. Nothing runs this
+ * suite when micro-worlds changes, so it surfaced whenever somebody next tried to release. A
+ * search costs one pass over a file already in memory, cannot go stale, and still fails when a
+ * route is REMOVED — which is the fact worth having.
  *
  * **2. SHAPES, never prefixes.** `micro-market`'s guard matched `path.startsWith(servedPrefix)`
  * and would have passed two genuinely dead paths because they BEGAN with a served prefix —
  * `micro-mint` then shipped exactly that defect, calling
  * `/v1/chains/:chain/:network/transactions/:hash`, which the indexer has never served. Worse, a
  * `${scope}` helper standing for two segments collapsed a path so it matched an entirely DIFFERENT
- * route and was reported fine. The corrected form is `market/src/indexerclient.test.ts:230-249`,
+ * route and was reported fine. The corrected form is `market/src/indexerclient.test.ts`,
  * and `matchesShape` below is copied from it rather than invented a third time: same segment
  * count, every segment agrees, and a `${...}` is exactly one segment.
  *
@@ -34,11 +39,14 @@
  * `micro-mint-web`'s CI bends a citation and requires the suite to go red. It once HARDCODED the
  * line number it mutates: the day micro-mint's route table moved, the `sed` matched nothing, the
  * mutation did not happen, the suite passed unmutated, and the step reported "the cross-check
- * passed a citation off by one line" when the truth was that no citation had been bent. So the
- * equivalent step in this repository's ci.yml READS the number out of this file, and REFUSES TO
- * GRADE AN UNMUTATED FILE — it greps for the bent value and exits non-zero if the mutation did not
- * apply. A mutation test that names the value it mutates goes stale exactly when the thing it
- * guards changes.
+ * passed a citation off by one line" when the truth was that no citation had been bent.
+ *
+ * The equivalent step in this repository's ci.yml now bends a PATH instead — it renames
+ * `/v1/titles` to a route worlds does not serve — and still REFUSES TO GRADE AN UNMUTATED FILE,
+ * grepping for the mutated value and exiting non-zero if the write did not land. Bending a line
+ * tested that the suite read a particular position in the service; bending a path tests that it
+ * read the service at all, which is the property actually worth having and the only one that
+ * survives micro-worlds being edited.
  */
 import assert from 'node:assert/strict'
 import { existsSync, readFileSync } from 'node:fs'
@@ -59,28 +67,29 @@ const worldsServer = WORLDS_CANDIDATES.find((p) => existsSync(p))
 interface Route {
   readonly method: string
   readonly path: string
-  readonly line: number
   readonly authenticates: boolean
 }
 
 /**
- * The surface this bundle CALLS, with the line each was read from.
+ * The surface this bundle CALLS.
  *
- * Written down here as DATA so the checks below can be mechanical. If one of these citations is
- * wrong, the test fails and names it — which is the property a comment does not have.
+ * Written down here as DATA so the checks below can be mechanical: each entry must be registered
+ * by the service, and the service must serve nothing neither table has heard of. Neither direction
+ * needs a line number, and a line number is what used to break this file whenever micro-worlds was
+ * edited in a way that moved its routes without changing them.
  */
 const SURFACE: readonly Route[] = [
-  { method: 'GET', path: '/v1/titles', line: 531, authenticates: false },
-  { method: 'GET', path: '/v1/players/me', line: 588, authenticates: true },
-  { method: 'PUT', path: '/v1/players/me', line: 615, authenticates: true },
-  { method: 'PUT', path: '/v1/players/me/cosmetics', line: 640, authenticates: true },
-  { method: 'GET', path: '/v1/players/me/inventory', line: 662, authenticates: true },
-  { method: 'POST', path: '/v1/players/me/inventory/:id/list', line: 681, authenticates: true },
-  { method: 'DELETE', path: '/v1/players/me/inventory/:id/list', line: 695, authenticates: true },
-  { method: 'GET', path: '/v1/provisions', line: 706, authenticates: true },
-  { method: 'GET', path: '/v1/provisions/:id', line: 747, authenticates: true },
-  { method: 'GET', path: '/v1/titles/:id/achievements', line: 765, authenticates: false },
-  { method: 'GET', path: '/v1/titles/:id/seasons', line: 819, authenticates: false },
+  { method: 'GET', path: '/v1/titles', authenticates: false },
+  { method: 'GET', path: '/v1/players/me', authenticates: true },
+  { method: 'PUT', path: '/v1/players/me', authenticates: true },
+  { method: 'PUT', path: '/v1/players/me/cosmetics', authenticates: true },
+  { method: 'GET', path: '/v1/players/me/inventory', authenticates: true },
+  { method: 'POST', path: '/v1/players/me/inventory/:id/list', authenticates: true },
+  { method: 'DELETE', path: '/v1/players/me/inventory/:id/list', authenticates: true },
+  { method: 'GET', path: '/v1/provisions', authenticates: true },
+  { method: 'GET', path: '/v1/provisions/:id', authenticates: true },
+  { method: 'GET', path: '/v1/titles/:id/achievements', authenticates: false },
+  { method: 'GET', path: '/v1/titles/:id/seasons', authenticates: false },
 ]
 
 /**
@@ -91,26 +100,37 @@ const SURFACE: readonly Route[] = [
  * fails the build instead of going quiet.
  */
 const DECLINED: readonly Route[] = [
-  { method: 'POST', path: '/v1/events', line: 411, authenticates: false },
-  { method: 'POST', path: '/v1/titles', line: 548, authenticates: true },
-  { method: 'POST', path: '/v1/provisions/:id/retry', line: 731, authenticates: true },
-  { method: 'PUT', path: '/v1/titles/:id/achievements', line: 778, authenticates: true },
-  { method: 'POST', path: '/v1/titles/:id/achievements/unlock', line: 799, authenticates: true },
-  { method: 'POST', path: '/v1/titles/:id/seasons', line: 824, authenticates: true },
-  { method: 'GET', path: '/v1/seasons/:id/budget', line: 848, authenticates: true },
-  { method: 'POST', path: '/v1/seasons/:id/rewards', line: 871, authenticates: true },
+  { method: 'POST', path: '/v1/events', authenticates: false },
+  { method: 'POST', path: '/v1/titles', authenticates: true },
+  { method: 'POST', path: '/v1/provisions/:id/retry', authenticates: true },
+  { method: 'PUT', path: '/v1/titles/:id/achievements', authenticates: true },
+  { method: 'POST', path: '/v1/titles/:id/achievements/unlock', authenticates: true },
+  { method: 'POST', path: '/v1/titles/:id/seasons', authenticates: true },
+  { method: 'GET', path: '/v1/seasons/:id/budget', authenticates: true },
+  { method: 'POST', path: '/v1/seasons/:id/rewards', authenticates: true },
 ]
 
 const ALL: readonly Route[] = [...SURFACE, ...DECLINED]
 
 const client = readFileSync(here('src/lib/worlds.ts'), 'utf8')
 
+/**
+ * Is a route written down in the client's own doc-comment table?
+ *
+ * Matched on the METHOD and PATH cells rather than on a citation string, because the citation is
+ * the same file for all nineteen now and proves nothing about any one of them.
+ */
+const citesRoute = (route: Route): boolean =>
+  new RegExp(`\\|\\s*\`${route.method}\`\\s*\\|\\s*\`${route.path.replace(/[/:]/g, '\\$&')}\`\\s*\\|`).test(
+    client,
+  )
+
 /* ------------------------------------------------ shapes, never prefixes */
 
 /**
  * Does a requested path match a served pattern? Same segment count, and every segment agrees.
  *
- * **Segment counts, never prefixes.** Copied from `market/src/indexerclient.test.ts:230-249`, which
+ * **Segment counts, never prefixes.** Copied from `market/src/indexerclient.test.ts`, which
  * is itself the corrected form of a guard that matched by prefix and would have passed a dead path
  * because it began with a served one. A count is not a shape, and a prefix is not a shape.
  */
@@ -159,7 +179,7 @@ export function requestedPaths(source: string): readonly string[] {
  * that compared paths alone reported the called route as a violation of the declined one — the
  * mirror of the estate's prefix bug, one level up. A shape is a method and a path together.
  *
- * `api()` defaults to GET (`src/lib/api.ts:271`), so a call site with no `method:` is a GET. The
+ * `api()` defaults to GET (`src/lib/api.ts`), so a call site with no `method:` is a GET. The
  * options object follows the path in the same call, so the method is looked for between this path
  * literal and the next one.
  */
@@ -224,13 +244,19 @@ describe('the client calls only routes it has cited', () => {
     }
   })
 
-  it('cites a line for every route, in the doc comment as well as here', () => {
+  it('names every route in its own table, and says which file it read them from', () => {
+    // The doc comment in `src/lib/worlds.ts` is a table of METHOD and PATH, and this requires the
+    // two tables to agree. It used to require the client to repeat a LINE NUMBER for each route,
+    // which made three copies of one fact — the service, this table and the client's prose — of
+    // which two were in repositories that never see micro-worlds change. The method and the path
+    // are the parts the client actually depends on, and the check below proves they are real.
     for (const route of ALL) {
-      assert.ok(
-        client.includes(`worlds/src/server.ts:${route.line}`),
-        `${route.method} ${route.path} has no citation in src/lib/worlds.ts`,
-      )
+      assert.ok(citesRoute(route), `${route.method} ${route.path} is not in src/lib/worlds.ts's table`)
     }
+    assert.ok(
+      client.includes('worlds/src/server.ts'),
+      'src/lib/worlds.ts no longer says which service source its surface was read from',
+    )
   })
 
   it('every call site uses a method the surface table cites for that shape', () => {
@@ -261,13 +287,13 @@ describe('the client calls only routes it has cited', () => {
     // The declined table is only honest while the reasons are written down. Each one appears in
     // the client's own header table, keyed by its citation.
     assert.ok(
-      DECLINED.every((route) => client.includes(`worlds/src/server.ts:${route.line}`)),
-      'a declined route has no citation in the client',
+      DECLINED.every(citesRoute),
+      'a declined route is missing from the client\'s own table',
     )
   })
 })
 
-describe('the cited lines are the lines that register the routes', () => {
+describe('every route this bundle names is really registered by the service', () => {
   if (worldsServer === undefined) {
     // NOT a silent pass. It says which check did not run, and CI makes the absence fatal.
     it('SKIPPED: no micro-worlds checkout — CI checks one out and requires this to run', () => {
@@ -284,14 +310,28 @@ describe('the cited lines are the lines that register the routes', () => {
     assert.ok(defines.length >= 20, `expected worlds' route list, found ${defines.length} defines`)
   })
 
+  /**
+   * Where a route is registered, found by SEARCHING for it rather than by citing a line.
+   *
+   * This used to be a line number in the tables above, and the line number is why this repository
+   * kept turning red for edits made in a different one: micro-trade inserted seven lines near its
+   * imports and every route below moved, so every citation pointed at the wrong line while the
+   * routes themselves were untouched. Nothing runs this suite when micro-worlds changes, so it
+   * surfaced whenever somebody next tried to release — the worst possible moment.
+   *
+   * Searching costs one pass over a file already in memory and cannot go stale. A service edit
+   * that MOVES a route can no longer break this; one that REMOVES a route still does.
+   */
+  const indexOfRoute = (method: string, path: string): number => {
+    const re = new RegExp(`^\\s{4}define\\('${method}',\\s*'${path.replace(/[/:]/g, '\\$&')}'`)
+    return lines.findIndex((l) => re.test(l))
+  }
+
   for (const route of ALL) {
-    it(`${route.method} ${route.path} is registered at worlds/src/server.ts:${route.line}`, () => {
-      // 1-indexed citation, 0-indexed array.
-      const line = lines[route.line - 1] ?? ''
-      assert.match(
-        line,
-        new RegExp(`define\\('${route.method}',\\s*'${route.path.replace(/[/:]/g, '\\$&')}'`),
-        `worlds/src/server.ts:${route.line} is:\n  ${line.trim()}`,
+    it(`${route.method} ${route.path} is registered in worlds/src/server.ts`, () => {
+      assert.ok(
+        indexOfRoute(route.method, route.path) >= 0,
+        `${route.method} ${route.path} is not registered in worlds/src/server.ts at all`,
       )
     })
   }
@@ -317,7 +357,8 @@ describe('the cited lines are the lines that register the routes', () => {
     // The defect this asserts against is a client sending a bearer to a handler that never wanted
     // one — and its mirror, a client gating a screen the service serves to anybody.
     for (const route of ALL) {
-      const start = route.line - 1
+      const start = indexOfRoute(route.method, route.path)
+      assert.ok(start >= 0, `${route.method} ${route.path} is not registered in worlds/src/server.ts`)
       // The handler runs to the next `define(` at the same indentation, or to the end.
       let end = lines.length
       for (let i = start + 1; i < lines.length; i++) {
@@ -363,19 +404,33 @@ describe('the title bridge gap is real, and is stated as it is', () => {
 
   const lines = readFileSync(titleClient, 'utf8').split('\n')
 
-  // The two calls worlds makes INTO a title, cited by line in src/lib/worlds.ts. If either moves,
-  // this fails and names it rather than letting the README describe a file that has changed.
-  const TITLE_CALLS: ReadonlyArray<{ line: number; fragment: string }> = [
-    { line: 122, fragment: "'/v1/title'" },
-    { line: 135, fragment: "'/v1/provision'" },
+  /**
+   * The two calls worlds makes INTO a title, named by the FUNCTION that makes each one.
+   *
+   * These were line numbers until micro-trade proved what a line number in somebody else's
+   * repository is worth: seven inserted lines moved every route below them and broke every client
+   * that had cited one. `describe()` and `provision()` move with the code; lines 122 and 135 did
+   * not, and nothing here runs when micro-worlds is edited.
+   */
+  const TITLE_CALLS: ReadonlyArray<{ fn: string; fragment: string }> = [
+    { fn: 'describe', fragment: "'/v1/title'" },
+    { fn: 'provision', fragment: "'/v1/provision'" },
   ]
 
   for (const call of TITLE_CALLS) {
-    it(`worlds calls ${call.fragment} at worlds/src/titleclient.ts:${call.line}`, () => {
-      const line = lines[call.line - 1] ?? ''
+    it(`worlds calls ${call.fragment} from ${call.fn}() in worlds/src/titleclient.ts`, () => {
+      // `async <name>(` and not merely `<name>(`: the interface above the implementation declares
+      // both names too, and anchoring on the declaration would grade a signature rather than a
+      // call. That is the same defect as citing a line — a check that reads the wrong place and
+      // passes anyway.
+      const at = lines.findIndex((l) => new RegExp(`^\\s*async ${call.fn}\\(`).test(l))
+      assert.ok(at >= 0, `${call.fn}() is gone from worlds/src/titleclient.ts`)
+      // The path literal must appear in that function, not merely somewhere in the file — a
+      // whole-file `includes` would go on passing after the call moved into a different one.
+      const body = lines.slice(at, at + 40).join('\n')
       assert.ok(
-        line.includes(call.fragment),
-        `worlds/src/titleclient.ts:${call.line} is:\n  ${line.trim()}`,
+        body.includes(call.fragment),
+        `${call.fn}() in worlds/src/titleclient.ts no longer requests ${call.fragment}`,
       )
     })
   }

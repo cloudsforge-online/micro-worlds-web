@@ -39,13 +39,13 @@
 #
 # Re-checked against micro-org rather than believed:
 #
-#   * the single checkout is fixed. web-ci.yml:88-115 checks the app out into `app/`, micro-ui into
+#   * the single checkout is fixed. web-ci.yml checks the app out into `app/`, micro-ui into
 #     `ui/` beside it, and installs THE SIBLING FIRST, because `link:` resolves to the sibling's own
 #     node_modules — the shape of the `check:` job below. micro-ui is public now, so even the
 #     `estate_token` fallback to `github.token` resolves.
-#   * the deep-route probe is fixed, and inverted. web-ci.yml:290-297 REQUIRES an unknown path to
+#   * the deep-route probe is fixed, and inverted. web-ci.yml REQUIRES an unknown path to
 #     answer 404 and names `try_files $uri /index.html` as the thing not to do; the 200 is now asked
-#     only of the optional `deep-link-path` input (:299-309), a route the app really has.
+#     only of the optional `deep-link-path` input, a route the app really has.
 #
 # So the two things that made a bespoke `check:` and `image:` unavoidable are gone. This file is
 # still not deleted, because what remains is not a workaround: `rules:` (line 296 below) was
@@ -53,7 +53,7 @@
 # `image` — and web-ci.yml has no input that could carry it. Its `runtime-hosts` job checks VITE_*,
 # build arguments, third-party analytics and the README. It cannot check
 #   that strip the prose once, so no rule fires on its own explanation (line 328),
-#   that every route this client calls cites the line that serves it (line 397),
+#   that every route this client calls is written down where it is served (line 397),
 #   or that no act-as-anyone parameter (line 415).
 #
 # Migrating would delete assertions to save a checkout that is already written. What was genuinely
@@ -97,17 +97,18 @@ jobs:
       # THE SERVICE THIS CLIENT IS BUILT AGAINST, CHECKED OUT SO THE CITATIONS CAN BE VERIFIED.
       #
       # `test/worlds.test.ts` reads `worlds/src/server.ts` and requires that every route this
-      # bundle calls — and every route it DECLINES — is registered at the line its citation names,
-      # that the three routes called without a bearer really make no `authenticate()` call, and
+      # bundle calls — and every route it DECLINES — is registered by the service, found by
+      # SEARCHING for its `define(` rather than by citing a line in a file this repository does not
+      # own; that the three routes called without a bearer really make no `authenticate()` call; and
       # that worlds still requires no `Idempotency-Key`. Eight clients in this estate were built
       # against a surface somebody imagined; one made every on-chain escrow activation fail with a
       # false diagnosis.
       #
-      # It also reads `worlds/src/titleclient.ts` and pins the two lines where worlds calls into a
-      # title — the gap this product exists to represent honestly.
+      # It also reads `worlds/src/titleclient.ts` and pins the two FUNCTIONS from which worlds calls
+      # into a title — the gap this product exists to represent honestly.
       #
-      # Only `src/` is fetched — the citations are line numbers in source, and nothing here builds
-      # or runs the service.
+      # Only `src/` is fetched — the checks read source, and nothing here builds or runs the
+      # service.
       # ══════════════════════════════════════════════════════════════════════════════════════════
       - uses: actions/checkout@v4
         with:
@@ -190,7 +191,7 @@ jobs:
             echo "::error::the route cross-check skipped itself while micro-worlds was present"
             exit 1
           fi
-          grep -qE 'is registered at worlds/src/server\.ts:[0-9]+' <<<"$out" || {
+          grep -q 'is registered in worlds/src/server.ts' <<<"$out" || {
             echo "::error::the route cross-check did not run against worlds/src/server.ts"
             exit 1
           }
@@ -201,44 +202,47 @@ jobs:
           }
           echo "ok: every cited route was verified against the service that serves it"
 
-      # …and the cross-check can fail. Bend one citation and require the suite to go red, so a
+      # …and the cross-check can fail. Bend one route and require the suite to go red, so a
       # `worlds.test.ts` reduced to assertions that always pass cannot look like a verified client.
-      - name: …and it would have noticed a wrong citation
+      - name: …and it would have noticed a route the service does not serve
         working-directory: worlds-web
         run: |
           set -euo pipefail
           cp test/worlds.test.ts "$RUNNER_TEMP/worlds.test.ts.orig"
           # ══════════════════════════════════════════════════════════════════════════════════════
-          # THE LINE NUMBER IS READ, NEVER WRITTEN HERE.
+          # THE MUTATION IS A PATH NOW, NOT A LINE.
           #
-          # micro-mint-web's version of this step used to HARDCODE it. The day micro-mint's route
-          # table moved, the sed matched nothing, the mutation did not happen, the suite passed
-          # UNMUTATED, and this step reported "the cross-check passed a citation off by one line"
-          # when the truth was that no citation had been bent. A mutation test that names the value
-          # it mutates goes stale exactly when the thing it guards changes.
+          # This step used to bend a line number, and micro-mint-web's version of it used to
+          # HARDCODE the number: the day micro-mint's route table moved, the sed matched nothing,
+          # the mutation did not happen, the suite passed UNMUTATED, and the step reported "the
+          # cross-check passed a citation off by one line" when the truth was that no citation had
+          # been bent.
           #
-          # So: read the number, then REFUSE TO GRADE AN UNMUTATED FILE. Both halves are needed —
-          # reading the number without checking that the write landed is the same failure with an
-          # extra step.
+          # Bending a line tested that the suite read a particular POSITION in the service. Bending
+          # a path tests that it read the service at all, which is the property worth having and
+          # the only one that survives micro-worlds being edited — an insertion near its imports
+          # moves every route below it and used to turn this repository red for it.
+          #
+          # The refusal to grade an unmutated file is kept, because it is orthogonal and it is the
+          # half that stops a confident wrong diagnosis.
           # ══════════════════════════════════════════════════════════════════════════════════════
-          line=$(grep -oE "path: '/v1/titles', line: [0-9]+" test/worlds.test.ts | head -1 | grep -oE '[0-9]+$')
-          if [ -z "${line:-}" ]; then
-            echo "::error::no '/v1/titles' citation to bend — SURFACE has been renamed and this step is reading nothing"
+          grep -q "path: '/v1/titles'," test/worlds.test.ts || {
+            echo "::error::no '/v1/titles' entry to bend — SURFACE has been renamed and this step is reading nothing"
             exit 1
-          fi
-          sed -i "s|path: '/v1/titles', line: $line|path: '/v1/titles', line: $((line + 1))|" test/worlds.test.ts
-          if ! grep -q "path: '/v1/titles', line: $((line + 1))" test/worlds.test.ts; then
+          }
+          sed -i "s|path: '/v1/titles',|path: '/v1/titles-that-worlds-does-not-serve',|" test/worlds.test.ts
+          if ! grep -q "path: '/v1/titles-that-worlds-does-not-serve'," test/worlds.test.ts; then
             echo "::error::the mutation did not apply; this step would grade an unmutated file"
             cp "$RUNNER_TEMP/worlds.test.ts.orig" test/worlds.test.ts
             exit 1
           fi
           if node --import tsx --test test/worlds.test.ts >/dev/null 2>&1; then
-            echo "::error::the cross-check passed a citation off by one line — it is not reading the service"
+            echo "::error::the cross-check passed with a route the service does not serve — it is not reading the service"
             cp "$RUNNER_TEMP/worlds.test.ts.orig" test/worlds.test.ts
             exit 1
           fi
           cp "$RUNNER_TEMP/worlds.test.ts.orig" test/worlds.test.ts
-          echo "ok: a citation off by one line turns the suite red, so a pass is evidence"
+          echo "ok: naming a route worlds does not serve turns the suite red, so a pass is evidence"
 
       # The same treatment for the TITLE-SIDE citation, because it is a different assertion in a
       # different file and the first mutation does not exercise it.
@@ -247,24 +251,25 @@ jobs:
         run: |
           set -euo pipefail
           cp test/worlds.test.ts "$RUNNER_TEMP/worlds.test.ts.orig"
-          line=$(grep -oE "line: [0-9]+, fragment: \"'/v1/title'\"" test/worlds.test.ts | grep -oE '[0-9]+' | head -1)
-          if [ -z "${line:-}" ]; then
-            echo "::error::no '/v1/title' citation to bend — TITLE_CALLS has been renamed and this step is reading nothing"
+          # Same treatment, same reason: bend the PATH the bridge is asserted to request, not a
+          # line in the file that requests it.
+          grep -q "fragment: \"'/v1/title'\"" test/worlds.test.ts || {
+            echo "::error::no '/v1/title' fragment to bend — TITLE_CALLS has been renamed and this step is reading nothing"
             exit 1
-          fi
-          sed -i "s|line: $line, fragment: \"'/v1/title'\"|line: $((line + 1)), fragment: \"'/v1/title'\"|" test/worlds.test.ts
-          if ! grep -q "line: $((line + 1)), fragment: \"'/v1/title'\"" test/worlds.test.ts; then
+          }
+          sed -i "s|fragment: \"'/v1/title'\"|fragment: \"'/v1/title-no-title-serves'\"|" test/worlds.test.ts
+          if ! grep -q "fragment: \"'/v1/title-no-title-serves'\"" test/worlds.test.ts; then
             echo "::error::the mutation did not apply; this step would grade an unmutated file"
             cp "$RUNNER_TEMP/worlds.test.ts.orig" test/worlds.test.ts
             exit 1
           fi
           if node --import tsx --test test/worlds.test.ts >/dev/null 2>&1; then
-            echo "::error::the title-bridge check passed a citation off by one line"
+            echo "::error::the title-bridge check passed against a path titleclient.ts never requests"
             cp "$RUNNER_TEMP/worlds.test.ts.orig" test/worlds.test.ts
             exit 1
           fi
           cp "$RUNNER_TEMP/worlds.test.ts.orig" test/worlds.test.ts
-          echo "ok: the titleclient citations are read from the real file too"
+          echo "ok: the titleclient calls are read out of the real file too"
 
       - name: Build
         working-directory: worlds-web
@@ -406,27 +411,30 @@ jobs:
         # silently delete the rule.
         run: test -f test/routes.test.ts && grep -q 'nginx.conf' test/routes.test.ts
 
-      - name: Every route this client calls cites the line that serves it
+      - name: Every route this client calls is written down where it is served
         # The rule test/worlds.test.ts enforces, restated so that deleting the test does not delete
-        # it. Every `/v1/...` path in the client must live in a file that also carries a
-        # `worlds/src/server.ts:<line>` citation, and no page may call /v1 directly.
+        # it. Every route lives in the client's own table, and no page may call /v1 directly.
+        #
+        # This counted `worlds/src/server.ts:<line>` citations until the line numbers came out. A
+        # count of a file name would count the prose too, so the ROWS are counted instead — which
+        # is what "every route is written down" actually meant.
         run: |
           set -uo pipefail
-          cites=$(grep -coE 'worlds/src/server\.ts:[0-9]+' src/lib/worlds.ts || true)
-          # Eleven called plus eight declined. Below nineteen, a route has lost its citation.
+          cites=$(grep -cE '^ \* \| *`(GET|POST|PUT|DELETE)` *\| *`/v1/' src/lib/worlds.ts || true)
+          # Eleven called plus eight declined. Below nineteen, a route has left the table.
           if [ "${cites:-0}" -lt 19 ]; then
-            echo "::error::src/lib/worlds.ts carries ${cites:-0} route citations; the surface has nineteen"
+            echo "::error::src/lib/worlds.ts tabulates ${cites:-0} routes; the surface has nineteen"
             exit 1
           fi
           if grep -rn --include='*.tsx' -E "api<[^>]*>\(\s*[\`'\"]/v1/" src; then
             echo "::error::a page calls /v1 directly; every call goes through src/lib/worlds.ts, where it is cited"
             exit 1
           fi
-          echo "ok: ${cites:-0} citations, and no uncited call site"
+          echo "ok: ${cites:-0} tabulated routes, and no uncited call site"
 
       - name: No act-as-anyone parameter
         # Every player-scoped route on worlds derives the account from the token with
-        # `subjectUserId` (worlds/src/server.ts:527, :554, :579, :603, :623, :634, :655). There is no
+        # `subjectUserId` (worlds/src/server.ts). There is no
         # userId parameter to send and there must be no primitive here that looks like one.
         # deploy/gateway/dynamic/policy.yml refuses the /internal routes that took a userId as a
         # parameter for the same reason.
@@ -466,7 +474,7 @@ jobs:
         # ══════════════════════════════════════════════════════════════════════════════════════
         # docs/ecosystem/01-product-vision.md principle 6: purchasable means cosmetic, convenience
         # or access — NEVER power. `bound` is where the platform enforces it
-        # (worlds/src/players.ts:390-391), and this surface must not undo it in prose.
+        # (worlds/src/players.ts), and this surface must not undo it in prose.
         #
         # A grep cannot judge meaning, so it targets the specific vocabulary that would have to
         # appear for this app to be selling an advantage. It is a floor, not the rule.
@@ -662,7 +670,7 @@ jobs:
           # The web template's Dockerfile once did not copy public/ into the build context, so four
           # frontends shipped an image with no icon in it while their own brand test passed —
           # because that test reads the SOURCE tree. Fixed upstream at
-          # micro-web-template/Dockerfile:39; this probe is what would have caught it, and here a
+          # micro-web-template/Dockerfile; this probe is what would have caught it, and here a
           # missing asset would also blank the link preview on every shared title page.
           # ════════════════════════════════════════════════════════════════════════════════════
           for asset in favicon-32x32.png favicon-192x192.png favicon-512x512.png og-1200x630.png; do
@@ -691,12 +699,12 @@ jobs:
   # already drifted:
   #
   #   generator  `cfctl release` pins one image per deployable, the name from
-  #              org/tools/registry.ts:367-369 (`ghcr.io/<org>/<repo.repo>`, which is why the package
+  #              org/tools/registry.ts (`ghcr.io/<org>/<repo.repo>`, which is why the package
   #              is micro-<app> and not <app>) and the tag from that repository's package.json
-  #              version, org/tools/cfctl.ts:962-968.
+  #              version, org/tools/cfctl.ts.
   #   verifier   `cfctl release --verify` runs `docker manifest inspect` on EVERY entry and returns
-  #              non-zero if one cannot be pulled, org/tools/cfctl.ts:997-1038.
-  #   deployer   deploy/scripts/release-deploy.sh:99-124 refuses to change anything while any image
+  #              non-zero if one cannot be pulled, org/tools/cfctl.ts.
+  #   deployer   deploy/scripts/release-deploy.sh refuses to change anything while any image
   #              is missing.
   #
   # A frontend with no producer was therefore a manifest entry that could never verify.

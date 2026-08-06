@@ -5,15 +5,15 @@
  * A DEFECT THAT IS FIXED, AND A TEST THAT KEEPS IT FIXED.
  *
  * Identity answers `{ user: {...}, session: {...}, organisations: [...] }` — the profile is NESTED
- * under `user` (`identity/src/server.ts:891-903`, body built by `toPublicUser` at
- * `identity/src/users.ts:52-63`; both re-read against the source for this repository).
+ * under `user` (`identity/src/server.ts`, body built by `toPublicUser` at
+ * `identity/src/users.ts`; both re-read against the source for this repository).
  *
  * The web template once declared `interface Me { handle?, roles? }` and read both fields off the
  * TOP level, where they are not, and four frontends inherited it: `roles` was always null, `isAdmin`
  * in the shared company bar was always false, and the switcher hid every `adminOnly` entry from
  * every signed-in operator.
  *
- * **That is fixed upstream now** — `micro-web-template/src/lib/auth.tsx:26-32` declares the nested
+ * **That is fixed upstream now** — `micro-web-template/src/lib/auth.tsx` declares the nested
  * shape and lines 98-99 read `me?.user?.handle` and `me?.user?.roles`, and hub-web, site,
  * foresight-web, foresight-admin-web and market-web all match. So this file is not a correction of
  * anybody; it is the assertion that stops the reading drifting BACK, plus the flat fallback the
@@ -55,8 +55,8 @@ describe('the nested shape identity answers', () => {
   })
 
   it('prefixes the principal with `user:`, which is how worlds spells a provision subject', () => {
-    // `worlds/src/server.ts:655` composes the subject as `user:` plus `subjectUserId(principal)`,
-    // and `worlds/src/server.ts:692` compares a provision's `subject` against the same spelling.
+    // `worlds/src/server.ts` composes the subject as `user:` plus `subjectUserId(principal)`,
+    // and `worlds/src/server.ts` compares a provision's `subject` against the same spelling.
     // A principal read without the prefix would never match a row and this app would tell a
     // customer none of their purchases were theirs.
     assert.match(readPlayer(NESTED).principal ?? '', /^user:/)
@@ -126,7 +126,7 @@ describe('the reading is not accidentally the template’s', () => {
   })
 
   it('cites where the nested shape is built, so the claim can be re-checked', () => {
-    assert.match(source, /identity\/src\/server\.ts:891-903/)
-    assert.match(source, /identity\/src\/users\.ts:52-63/)
+    assert.match(source, /identity\/src\/server\.ts/)
+    assert.match(source, /identity\/src\/users\.ts/)
   })
 })

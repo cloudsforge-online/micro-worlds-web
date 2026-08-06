@@ -30,8 +30,8 @@ export interface AppRoute {
   /**
    * True when the route renders without a session.
    *
-   * Read off the SERVICE rather than chosen. `GET /v1/titles` (`worlds/src/server.ts:467`),
-   * `GET /v1/titles/:id/achievements` (`:701`) and `GET /v1/titles/:id/seasons` (`:755`) contain no
+   * Read off the SERVICE rather than chosen. `GET /v1/titles` (`worlds/src/server.ts`),
+   * `GET /v1/titles/:id/achievements` and `GET /v1/titles/:id/seasons` contain no
    * `await authenticate(ctx, deps)` at all. Putting a screen built from them behind the session
    * gate would send an anonymous visitor to sign in to read something the service would have
    * handed them — the mirror of the estate's older mistake of sending a bearer to a route that
@@ -55,12 +55,12 @@ export const ROUTES: readonly AppRoute[] = [
   // ────────────────────────────────────────────────────────────────────────────────────────────
   { path: '', label: 'The platform', wildcard: false, public: true },
   // Your account across every title: profile, reputation, sanctions, the wardrobe keyed by title.
-  // Behind the gate: `GET /v1/players/me` authenticates (`worlds/src/server.ts:525`).
+  // Behind the gate: `GET /v1/players/me` authenticates (`worlds/src/server.ts`).
   { path: 'player', label: 'Your account', wildcard: false, public: false },
-  // Everything the account owns, and what may leave it. `GET /v1/players/me/inventory` (`:599`).
+  // Everything the account owns, and what may leave it. `GET /v1/players/me/inventory`.
   { path: 'inventory', label: 'Inventory', wildcard: false, public: false },
   // What you were sold and whether it was delivered — including the rows that never will be.
-  // Wildcard: `/entitlements/<uuid>` is one provision. `GET /v1/provisions` (`:643`).
+  // Wildcard: `/entitlements/<uuid>` is one provision. `GET /v1/provisions`.
   { path: 'entitlements', label: 'Entitlements', wildcard: true, public: false },
   // ────────────────────────────────────────────────────────────────────────────────────────────
   // REACHABLE AND DELIBERATELY NOT OFFERED, which is what `label: null` is for.

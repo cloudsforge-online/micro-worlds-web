@@ -16,7 +16,7 @@
  * sits and waits for something that is never going to arrive.
  *
  * The model is `micro-admin-web`'s treatment of an action with no executor
- * (`admin-web/src/lib/catalogue.ts:23-37`): stated not hidden, no control that could exercise it —
+ * (`admin-web/src/lib/catalogue.ts`): stated not hidden, no control that could exercise it —
  * not a disabled one — and the service's own words verbatim. The rules are asserted here rather
  * than trusted to a component, because a redesign undoes prose and cannot undo a test.
  * ══════════════════════════════════════════════════════════════════════════════════════════════
@@ -46,7 +46,7 @@ const read = (file: string): string => readFileSync(new URL(`../${file}`, import
  * "belongs to somebody else", which appears only in the comment saying the app must never say it.
  *
  * It is exactly the shape of the nginx check that had to strip comments because nginx.conf quotes
- * the directive it forbids — and of `market/src/indexerclient.test.ts:266-269`, which strips first
+ * the directive it forbids — and of `market/src/indexerclient.test.ts`, which strips first
  * because "a checker that cannot tell a request from a sentence about one is not a checker".
  * Recorded here rather than quietly fixed, because the reflex to grep raw source is what produces
  * a green check that is measuring the wrong text.
@@ -81,17 +81,28 @@ describe('the gaps are declared as data, so they can be checked', () => {
     describe(gap.id, () => {
       it('states a finding long enough to be a real one', () => {
         // `admin-api` requires a blocked action's reason to exceed 80 characters so that whoever
-        // unblocks it has something to act on (`admin-web/src/lib/catalogue.ts:75-77`). The same
+        // unblocks it has something to act on (`admin-web/src/lib/catalogue.ts`). The same
         // floor applies here, and for the same reason.
         assert.ok(gap.finding.length > 80, `${gap.id} has a finding of ${gap.finding.length} chars`)
       })
 
       it('carries citations a reader can check', () => {
         // A claim nobody can check is worse than no claim, because it is believed.
+        //
+        // A citation is a repository-relative FILE, optionally followed by the symbol or route
+        // inside it. It used to be required to end in `:<line>`, and that requirement is what this
+        // shape now forbids: a line names a position in a file micro-worlds owns and edits freely,
+        // so it went stale without anybody here touching anything — and these strings are RENDERED
+        // TO A CUSTOMER, who would then check the wrong line and conclude the page was lying.
         assert.ok(gap.citations.length >= 3, `${gap.id} carries ${gap.citations.length} citations`)
         for (const cite of gap.citations) {
-          assert.match(cite, /^[a-z-]+\/src\/[a-z]+\.ts:\d+(-\d+)?$/, `${gap.id}: ${cite}`)
+          assert.match(cite, /^[a-z-]+\/src\/[a-z]+\.ts(?: [^:]+)?$/, `${gap.id}: ${cite}`)
         }
+        assert.equal(
+          new Set(gap.citations).size,
+          gap.citations.length,
+          `${gap.id} cites the same place twice; name the symbol that tells them apart`,
+        )
       })
 
       it('says what would close it, concretely', () => {
@@ -121,20 +132,22 @@ describe('the title-bridge gap says the specific true thing', () => {
     assert.match(TITLE_BRIDGE_GAP.finding, /POST \/v1\/provision\b/)
   })
 
-  it('cites the two lines in worlds/src/titleclient.ts that make those calls', () => {
-    // `test/worlds.test.ts` checks these two line numbers against the real file. Here we only
-    // assert that the gap entry carries them, so the two halves cannot drift apart.
-    assert.ok(TITLE_BRIDGE_GAP.citations.some((c) => c.startsWith('worlds/src/titleclient.ts:122')))
-    assert.ok(TITLE_BRIDGE_GAP.citations.some((c) => c.startsWith('worlds/src/titleclient.ts:134')))
+  it('cites the two functions in worlds/src/titleclient.ts that make those calls', () => {
+    // `test/worlds.test.ts` finds both functions in the real file and requires each to still
+    // request its path. Here we only assert that the gap entry names them, so the two halves
+    // cannot drift apart. They were line numbers until a service edit elsewhere in the estate
+    // moved seven routes at once and broke every client that had cited one.
+    assert.ok(TITLE_BRIDGE_GAP.citations.includes('worlds/src/titleclient.ts describe()'))
+    assert.ok(TITLE_BRIDGE_GAP.citations.includes('worlds/src/titleclient.ts provision()'))
   })
 
   it('says the bridge is CORRECT, not broken — it checks capability before it calls', () => {
-    // The distinction matters and is easy to lose. `worlds/src/provisioning.ts:441-451` asks the
+    // The distinction matters and is easy to lose. `worlds/src/provisioning.ts` asks the
     // title's declared capabilities BEFORE making the request, so the outcome is a readable
     // terminal row rather than a blind 404. Saying "the bridge is broken" would be false and would
     // point whoever fixes this at the wrong repository.
     assert.match(TITLE_BRIDGE_GAP.finding, /before it calls/i)
-    assert.ok(TITLE_BRIDGE_GAP.citations.includes('worlds/src/provisioning.ts:441-451'))
+    assert.ok(TITLE_BRIDGE_GAP.citations.includes('worlds/src/provisioning.ts'))
   })
 
   it('still says the customer outcome plainly: a row, not a world', () => {
@@ -168,7 +181,7 @@ describe('the empty-registry gap says an empty list is an ANSWER', () => {
   })
 
   it('points at the idempotency that makes self-registration the obvious fix', () => {
-    // `worlds/src/titles.ts:117-122` — registerTitle is idempotent on the slug precisely so a
+    // `worlds/src/titles.ts` — registerTitle is idempotent on the slug precisely so a
     // service can re-register on every boot.
     assert.match(EMPTY_REGISTRY_GAP.closes, /idempotent on the slug/i)
   })
@@ -270,7 +283,7 @@ describe('an undeliverable entitlement renders the service’s own refusal', () 
 
   it('offers NO retry control — not a disabled one', () => {
     // `POST /v1/provisions/:id/retry` demands `worlds:admin` or `role:admin`
-    // (`worlds/src/server.ts:669-670`), so a control here could only ever 403. A disabled button
+    // (`worlds/src/server.ts`), so a control here could only ever 403. A disabled button
     // reads as "not yet, ask somebody" and gets clicked at.
     assert.ok(!entitlementsCode.includes('/retry'), 'the player app must not call the retry route')
     assert.doesNotMatch(entitlementsCode, /disabled=/, 'a terminal provision gets no control at all')
@@ -283,7 +296,7 @@ describe('an undeliverable entitlement renders the service’s own refusal', () 
   })
 
   it('does not translate the shared 404 into "that belongs to somebody else"', () => {
-    // `worlds/src/server.ts:688`: "'Does not exist' and 'is not yours' are the same answer on
+    // `worlds/src/server.ts`: "'Does not exist' and 'is not yours' are the same answer on
     // purpose" — a distinct answer for the second is an enumeration oracle. An app that invented
     // the distinction would undo the control in the one place a user can see it.
     assert.doesNotMatch(entitlementsCode, /(belongs to|another account|someone else['’]s)/i)
@@ -296,7 +309,7 @@ describe('an undeliverable entitlement renders the service’s own refusal', () 
 
 describe('a title that cannot be sold to is marked as such', () => {
   /**
-   * `worlds/src/titles.ts:227-229` — only `beta` and `live` are sellable, because a purchase
+   * `worlds/src/titles.ts` — only `beta` and `live` are sellable, because a purchase
    * scoped to a `draft` or `retired` title would never be delivered. That is the same failure mode
    * as the bridge gap, one step earlier, and the registry row says so.
    */
@@ -316,7 +329,7 @@ describe('a title that cannot be sold to is marked as such', () => {
   })
 
   it('says a title declaring no capabilities will not be asked for anything', () => {
-    // The bridge checks capabilities before calling (`worlds/src/provisioning.ts:441-451`), so a
+    // The bridge checks capabilities before calling (`worlds/src/provisioning.ts`), so a
     // title with none is one whose every purchase ends undeliverable. Saying it on the row is
     // cheaper than saying it after somebody has paid.
     assert.match(platformCode, /declares no capabilities/)

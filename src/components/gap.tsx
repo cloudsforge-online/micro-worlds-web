@@ -3,7 +3,7 @@
  *
  * ══════════════════════════════════════════════════════════════════════════════════════════════
  * THE MODEL IS `micro-admin-web`'s TREATMENT OF AN ACTION WITH NO EXECUTOR, AND THE RULES ARE ITS
- * RULES (`admin-web/src/lib/catalogue.ts:23-37`, `admin-web/src/pages/actions.tsx:114-148`):
+ * RULES (`admin-web/src/lib/catalogue.ts`, `admin-web/src/pages/actions.tsx`):
  *
  *   1. It is **stated**, never hidden. Hiding it leaves somebody hunting for a capability the
  *      estate does not have, and erases the record of why.
@@ -16,8 +16,9 @@
  * spinner, a skeleton or an empty state that implies "any moment now" is a lie with a specific
  * cost here — a customer who paid for a private world would sit and wait for something that is
  * never going to arrive. `useResource` already ranks failure above emptiness
- * (`src/lib/resource.ts:14-30` — that file is 111 lines long, and the citation here read
- * `:370-386` until it was checked); this component is what emptiness renders AS.
+ * (`src/lib/resource.ts` — the citation here once named a line range that file has never had,
+ * which is one of the reasons citations no longer carry lines); this component is what emptiness
+ * renders AS.
  * ══════════════════════════════════════════════════════════════════════════════════════════════
  */
 import type { KnownGap } from '../lib/worlds.ts'
@@ -53,12 +54,12 @@ export function GapNotice({ gap }: { gap: KnownGap }) {
  * A service's own refusal, verbatim.
  *
  * `worlds` writes a sentence into `provisions.last_error` when it gives up — `no delivery is
- * defined for sku …` (`worlds/src/provisioning.ts:429`), `… does not declare the … capability`
- * (`:437-449`), `the entitlement's scope … does not name a registered title` (`:466`), or a
- * title's own 422 message (`:466`, via `TitleUnsupportedError`).
+ * defined for sku …`, `… does not declare the … capability`, `the entitlement's scope … does not
+ * name a registered title` — all three in `worlds/src/provisioning.ts` — or a title's own 422
+ * message, raised there as `TitleUnsupportedError`.
  *
  * It is rendered as it arrived, without paraphrase, for the same reason `micro-admin-web` renders
- * `blockedReason` verbatim (`admin-web/src/lib/catalogue.ts:30-32`): so that this app and the
+ * `blockedReason` verbatim (`admin-web/src/lib/catalogue.ts`): so that this app and the
  * service cannot drift into telling somebody two different stories about why their purchase did
  * not arrive.
  */

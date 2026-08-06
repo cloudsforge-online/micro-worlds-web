@@ -38,7 +38,7 @@
  * the API host does not, that is the defect, and it is not skippable — which is exactly the state
  * the estate was in.
  *
- * `GET /v1/titles` is unauthenticated by design (`worlds/src/server.ts:507` has no
+ * `GET /v1/titles` is unauthenticated by design (`worlds/src/server.ts` has no
  * `authenticate` call; see the table at the top of src/lib/worlds.ts), so this needs no credential
  * and prints none.
  */

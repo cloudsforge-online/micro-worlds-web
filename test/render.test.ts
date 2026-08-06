@@ -86,7 +86,7 @@ describe('every screen distinguishes the four states', () => {
   })
 
   it('the public pages do NOT render a Forbidden screen, because a 403 there is not about roles', () => {
-    // `GET /v1/titles` (worlds/src/server.ts:467) makes no authenticate() call, so a 403 from it
+    // `GET /v1/titles` (worlds/src/server.ts) makes no authenticate() call, so a 403 from it
     // came from something in FRONT of the service. Telling somebody to ask an administrator for a
     // role no route checks would send them somewhere that cannot help.
     assert.doesNotMatch(withoutComments(title), /<Forbidden/)
@@ -96,13 +96,13 @@ describe('every screen distinguishes the four states', () => {
 
 describe('a bound item gets no control at all', () => {
   /**
-   * `worlds/src/players.ts:390-391`: "`bound` is the anti-pay-to-win control: anything conferring
+   * `worlds/src/players.ts`: "`bound` is the anti-pay-to-win control: anything conferring
    * power is bound and cannot enter the market." `bound` is on the wire "because a client that
-   * offers a 'sell' button must know before it draws one" (`worlds/src/server.ts:861-862`).
+   * offers a 'sell' button must know before it draws one" (`worlds/src/server.ts`).
    *
    * NOT a disabled button. A disabled button reads as "not yet, ask somebody", and this is not
    * "not yet" — it is never. `micro-admin-web` reached the same conclusion about an action with no
-   * executor (`admin-web/src/lib/catalogue.ts:26-29`).
+   * executor (`admin-web/src/lib/catalogue.ts`).
    */
   const code = withoutComments(inventory)
 
@@ -162,21 +162,21 @@ describe('the account page treats a null profile as a new player', () => {
   })
 
   it('submits the whole document, because PUT is a replace and not a patch', () => {
-    // `worlds/src/server.ts:558` writes `avatarAssetUrn` as null when it is not a string, so a
+    // `worlds/src/server.ts` writes `avatarAssetUrn` as null when it is not a string, so a
     // partial submit would silently clear an avatar somebody set from inside a title.
     assert.match(code, /displayName:/)
     assert.match(code, /avatarAssetUrn:/)
   })
 
   it('never offers to set an age bracket', () => {
-    // A safeguarding fact (`worlds/src/players.ts:8-11`). A form that lets an account assert its
+    // A safeguarding fact (`worlds/src/players.ts`). A form that lets an account assert its
     // own is a form that lets an account assert it is an adult. It is DISPLAYED and never edited.
     assert.doesNotMatch(code, /setAgeBracket|ageBracket:\s*[a-z]/)
     assert.match(code, /profile\.ageBracket/)
   })
 
   it('groups the wardrobe by title rather than flattening it', () => {
-    // `worlds/src/players.ts:13-18`: flattening is an information loss with no migration back.
+    // `worlds/src/players.ts`: flattening is an information loss with no migration back.
     assert.match(code, /equippedCosmetics/)
     assert.match(code, /CROSS_TITLE/)
   })
@@ -236,7 +236,7 @@ describe('no page reaches the API directly', () => {
 
 describe('money is never put through Number', () => {
   it('no page parses a Shard amount', () => {
-    // Both Shard fields arrive as decimal strings and stay strings — `worlds/src/server.ts:889`,
+    // Both Shard fields arrive as decimal strings and stay strings — `worlds/src/server.ts`,
     // "A budget is money." The formatter is the only thing that touches them.
     for (const [name, source] of PAGES) {
       const code = withoutComments(source)

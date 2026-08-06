@@ -4,7 +4,7 @@
  * ══════════════════════════════════════════════════════════════════════════════════════════════
  * THIS IS THE SCREEN THE GAP LANDS ON, AND IT IS THE REASON THIS SURFACE EXISTS.
  *
- * `worlds/src/server.ts:129` names it in the metric's own help text: `unsupported` is "a customer
+ * `worlds/src/server.ts` names it in the metric's own help text: `unsupported` is "a customer
  * who paid for something undeliverable". Today that includes every private-world purchase, because
  * no title serves `POST /v1/provision` — see `TITLE_BRIDGE_GAP` in src/lib/worlds.ts.
  *
@@ -14,9 +14,9 @@
  *      (`provisions.last_error`), rather than a paraphrase — so this app and the service cannot
  *      drift into telling somebody two different stories about why their purchase did not arrive.
  *   2. There is **no retry control**, and not a disabled one. `POST /v1/provisions/:id/retry`
- *      demands `worlds:admin` or `role:admin` (`worlds/src/server.ts:669-670`), so a button here
+ *      demands `worlds:admin` or `role:admin` (`worlds/src/server.ts`), so a button here
  *      could only ever 403 — and a disabled button reads as "not yet" and gets clicked at.
- *   3. `unsupported` is not spelled as a failure. `worlds/src/titleclient.ts:19-24`: it is an
+ *   3. `unsupported` is not spelled as a failure. `worlds/src/titleclient.ts`: it is an
  *      ANSWER, and terminal. The word is UNDELIVERABLE and the sentence points at a refund.
  * ══════════════════════════════════════════════════════════════════════════════════════════════
  */
@@ -101,7 +101,7 @@ export function EntitlementPage() {
         <Failed
           notice={provision.error}
           onRetry={provision.reload}
-          // A 404 here means "no such provision" OR "not yours", and `worlds/src/server.ts:688`
+          // A 404 here means "no such provision" OR "not yours", and `worlds/src/server.ts`
           // says the two are the same answer ON PURPOSE, because a distinct answer for the second
           // is an enumeration oracle. So this app must not translate the 404 into "that belongs to
           // somebody else" — it would be inventing a distinction the service refuses to make.
@@ -168,9 +168,9 @@ function ProvisionCard({ provision, linked }: { provision: Provision; linked: bo
       {/*
         THE SERVICE'S OWN REFUSAL, VERBATIM, AND NO CONTROL BESIDE IT.
 
-        `lastError` is set by `terminal()` (`worlds/src/provisioning.ts:586-626`) and holds the
+        `lastError` is set by `terminal()` (`worlds/src/provisioning.ts`) and holds the
         sentence the bridge wrote when it gave up. Rendering it as-is is rule 3 of
-        `admin-web/src/lib/catalogue.ts:30-32`. There is deliberately nothing to click: the only
+        `admin-web/src/lib/catalogue.ts`. There is deliberately nothing to click: the only
         route out of `failed` is `POST /v1/provisions/:id/retry`, which demands an administrator.
       */}
       {terminal && provision.lastError !== null && (
