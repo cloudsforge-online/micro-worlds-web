@@ -97,21 +97,21 @@ export function provisionTone(state: ProvisionState): Tone {
         tone: 'warn',
         glyph: '◷',
         word: 'PENDING',
-        meaning: 'Recorded and queued. Nothing has been asked of a title yet.',
+        meaning: 'Written down and waiting its turn. No title has been asked for anything yet.',
       }
     case 'provisioning':
       return {
         tone: 'busy',
         glyph: '◐',
         word: 'PROVISIONING',
-        meaning: 'A job holds this and is talking to the title.',
+        meaning: 'Being handled now — the platform is talking to the title about it.',
       }
     case 'provisioned':
       return {
         tone: 'good',
         glyph: '●',
         word: 'DELIVERED',
-        meaning: 'The title raised it and named what it made.',
+        meaning: 'The title made it and told the platform what it made.',
       }
     case 'unsupported':
       // NOT a failure word. `worlds/src/titleclient.ts`: an answer, and terminal. The
@@ -122,8 +122,8 @@ export function provisionTone(state: ProvisionState): Tone {
         glyph: '⊘',
         word: 'UNDELIVERABLE',
         meaning:
-          'You paid for something no title can deliver. This will not be retried, and it is a ' +
-          'refund rather than a wait.',
+          'What you paid for is something no title is able to hand over. Nothing will try again, ' +
+          'so the remedy here is a refund and not patience.',
       }
     case 'failed':
       return {
@@ -131,8 +131,8 @@ export function provisionTone(state: ProvisionState): Tone {
         glyph: '■',
         word: 'FAILED',
         meaning:
-          'Delivery was attempted and did not succeed. Only an operator can reopen this; a ' +
-          'background poll deliberately never does.',
+          'The attempt was made and it did not work. Only a person at CloudsForge can start it ' +
+          'again; nothing in the background will, on purpose.',
       }
   }
 }
@@ -145,25 +145,25 @@ export function titleTone(status: TitleStatus): Tone {
         tone: 'mute',
         glyph: '○',
         word: 'DRAFT',
-        meaning: 'Registered, not sellable. A purchase would never be delivered.',
+        meaning: 'On the register, but nothing can be sold against it — a purchase would go undelivered.',
       }
     case 'beta':
-      return { tone: 'warn', glyph: '◑', word: 'BETA', meaning: 'Playable and sellable to.' }
+      return { tone: 'warn', glyph: '◑', word: 'BETA', meaning: 'Open to play, and open to buy things for.' }
     case 'live':
-      return { tone: 'good', glyph: '●', word: 'LIVE', meaning: 'Playable and sellable to.' }
+      return { tone: 'good', glyph: '●', word: 'LIVE', meaning: 'Open to play, and open to buy things for.' }
     case 'sunset':
       return {
         tone: 'warn',
         glyph: '◷',
         word: 'SUNSET',
-        meaning: 'Winding down. Still registered, and your account outlives it.',
+        meaning: 'Winding down. Still on the register, and your account carries on after it.',
       }
     case 'retired':
       return {
         tone: 'mute',
         glyph: '⊙',
         word: 'RETIRED',
-        meaning: 'Closed. Hidden from the registry unless asked for by name.',
+        meaning: 'Finished. Left off the register unless you name it directly.',
       }
   }
 }
@@ -172,13 +172,13 @@ export function titleTone(status: TitleStatus): Tone {
 export function seasonTone(status: SeasonStatus): Tone {
   switch (status) {
     case 'upcoming':
-      return { tone: 'mute', glyph: '○', word: 'UPCOMING', meaning: 'Not started.' }
+      return { tone: 'mute', glyph: '○', word: 'UPCOMING', meaning: 'Not started yet.' }
     case 'active':
-      return { tone: 'good', glyph: '●', word: 'ACTIVE', meaning: 'Running now.' }
+      return { tone: 'good', glyph: '●', word: 'ACTIVE', meaning: 'Under way right now.' }
     case 'ended':
-      return { tone: 'warn', glyph: '◷', word: 'ENDED', meaning: 'Over. Its rewards are settled.' }
+      return { tone: 'warn', glyph: '◷', word: 'ENDED', meaning: 'Finished, with every reward paid out.' }
     case 'archived':
-      return { tone: 'mute', glyph: '⊙', word: 'ARCHIVED', meaning: 'Closed and put away.' }
+      return { tone: 'mute', glyph: '⊙', word: 'ARCHIVED', meaning: 'Shut and filed away.' }
   }
 }
 
@@ -194,15 +194,15 @@ export function seasonTone(status: SeasonStatus): Tone {
 export function capabilityMeaning(capability: string): string {
   switch (capability) {
     case 'private_world':
-      return 'Declares it can raise a private world when the platform asks'
+      return 'Declares it will set up a private world when the platform asks for one'
     case 'cosmetics':
-      return 'Renders the cosmetics your account carries'
+      return 'Draws the cosmetics your account carries'
     case 'achievements':
-      return 'Reports achievements to the platform'
+      return 'Tells the platform what you have earned'
     case 'seasons':
-      return 'Runs seasons the platform budgets'
+      return 'Runs seasons against money the platform sets aside'
     case 'inventory':
-      return 'Reads the inventory your account carries'
+      return 'Reads what your account is carrying'
     default:
       // Never a guess. A capability this bundle has not heard of is shown by name, because the
       // service validates against a CLOSED set (`worlds/src/server.ts`) — so an unknown
@@ -219,15 +219,15 @@ export function capabilityMeaning(capability: string): string {
 export function sourceMeaning(source: ItemSource): string {
   switch (source) {
     case 'purchase':
-      return 'Bought'
+      return 'You bought it'
     case 'reward':
-      return 'Awarded by a season'
+      return 'A season paid it out'
     case 'craft':
-      return 'Made in a title'
+      return 'You made it inside a title'
     case 'market':
-      return 'Traded for'
+      return 'You traded for it'
     case 'grant':
-      return 'Granted by the platform'
+      return 'The platform handed it to you'
   }
 }
 
@@ -242,25 +242,25 @@ export function sourceMeaning(source: ItemSource): string {
  */
 export function boundMeaning(bound: boolean): string {
   return bound
-    ? 'Bound to your account. Anything that could confer an advantage is bound and never enters a market.'
-    : 'Cosmetic or convenience, so it may be traded.'
+    ? 'Tied to your account. Anything capable of giving you an edge is tied down like this and can never reach a market.'
+    : 'Appearance or convenience only, so you are free to trade it.'
 }
 
 /** What a SKU resolved to — `worlds/src/provisioning.ts`. */
 export function kindMeaning(kind: ProvisionKind): string {
   switch (kind) {
     case 'private_world':
-      return 'A private world, raised by a title'
+      return 'A world of your own, set up by the title'
     case 'cosmetic':
-      return 'A cosmetic, delivered by the platform itself'
+      return 'Something to wear, handed over by the platform'
     case 'season_pass':
-      return 'Access to a season'
+      return 'Entry to a season'
     case 'convenience':
-      return 'A convenience, delivered by the platform itself'
+      return 'A convenience, handed over by the platform'
     case 'unknown':
       // `worlds/src/provisioning.ts`: falls back to `unknown` rather than to a guess,
       // because a guess would deliver the wrong thing silently.
-      return 'The platform does not recognise this SKU, so it does not know what to deliver'
+      return 'The platform has never been taught what this product code means, so it cannot deliver it'
   }
 }
 

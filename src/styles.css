@@ -43,8 +43,20 @@ body {
   background: var(--cf-bg);
   color: var(--cf-fg);
   font-family: var(--cf-font-sans);
-  /* The bar is dark on every surface; the page follows the substrate. */
-  color-scheme: dark;
+  /*
+   * `color-scheme: dark` WAS HERE, AND IT WAS THE LIGHT-MODE BLOCKER ON THIS SURFACE.
+   *
+   * With `data-cf-scheme="auto"` on <html> (index.html), tokens.css resolves the palette the
+   * reader's system asks for and sets `color-scheme` per scheme on the ROOT. A declaration on
+   * `body` beats that for everything inside body, and everything is inside body — so a reader in a
+   * light environment would have got a light page with dark form controls drawn on it: the two
+   * text inputs on the account page, the listing input on an inventory row, every scrollbar, every
+   * date and select the browser draws itself. Deleting it is what makes `auto` mean anything here.
+   *
+   * The comment it carried said "the bar is dark on every surface; the page follows the substrate"
+   * — which is true and is not an argument for this declaration. The bar is dark because
+   * `.cf-bar` sets its own ground, not because the document was told to be.
+   */
 }
 
 /* ----------------------------- sub-nav ----------------------------- */
@@ -159,7 +171,7 @@ body {
 }
 
 .wt-link {
-  color: var(--cf-accent);
+  color: var(--cf-accent-text);
 }
 
 .wt-facts {
@@ -286,24 +298,17 @@ body {
 /* ----------------------------- chrome ------------------------------ */
 
 /*
- * The skip link. Off-screen until focused, then the first thing on the page — the inventory list
- * is long and a keyboard user should not have to tab the navigation to reach it.
+ * `.ww-skip` was here, and it is gone with the markup it styled. The skip link is now `SkipLink`
+ * from @cloudsforge/ui, which brings `.cf-skip` and — the part that actually matters — points at a
+ * `<main>` carrying `tabIndex={-1}`, which the local one did not. A rule left behind after its
+ * element is deleted is dead weight the next reader has to prove is dead.
+ *
+ * Worth recording that the local rule used `:focus-visible` alone. `.cf-skip` declares both
+ * `:focus` and `:focus-visible`, and that is not redundancy: a skip link is reached by Tab, which
+ * does produce `:focus-visible` in current browsers, but it is also the one control routinely
+ * given focus programmatically, and a link that is focused and still off-screen at `left: -9999px`
+ * is a focus nobody can see.
  */
-.ww-skip {
-  position: absolute;
-  left: -9999px;
-  top: 0;
-  z-index: 100;
-  padding: var(--cf-space-sm) var(--cf-space-lg);
-  background: var(--cf-accent);
-  color: var(--cf-accent-ink);
-  font-weight: 600;
-  border-radius: 0 0 var(--cf-radius-sm) 0;
-}
-
-.ww-skip:focus-visible {
-  left: 0;
-}
 
 /*
  * The quiet button. An ADDITIONAL class on `.cf-btn`, never a `--modifier` on it: `.cf-btn--quiet`
@@ -322,7 +327,7 @@ body {
 }
 
 .ww-link {
-  color: var(--cf-accent);
+  color: var(--cf-accent-text);
   text-decoration: none;
 }
 
@@ -419,6 +424,26 @@ body {
   flex: none;
 }
 
+/*
+ * THE SENTENCE, AS ONE FLEX ITEM. Found by reading the rendered page rather than the file.
+ *
+ * `.ww-note` is a flex container, and a flex container makes a flex item out of EVERY child —
+ * including each anonymous run of text between elements. Both notes on this surface interleave
+ * text with a `<code>`, so the container was laying out four items rather than two, and the
+ * sentence came out as "…including the account portal and this platform's | worlds | surface." on
+ * one line with "own API — is derived from the wrong apex. Its home is the" underneath it. The
+ * words were all present and in the wrong order on screen, which is the failure a source read
+ * cannot see and a screenshot cannot miss.
+ *
+ * The fix is structural rather than a `flex-wrap` or a `display` change: the note is an icon and a
+ * body, so it is given exactly those two children and the body is an ordinary block of text again.
+ * `min-width: 0` is the other half — a flex item's minimum size is its content by default, so a
+ * long unbroken URN in one of these would otherwise push the note wider than its panel.
+ */
+.ww-note__body {
+  min-width: 0;
+}
+
 .ww-note--warn {
   border-color: var(--cf-warn);
   color: var(--cf-fg);
@@ -442,7 +467,7 @@ body {
 .ww-owns__heading {
   margin: 0 0 var(--cf-space-xs);
   font-size: var(--cf-text-md);
-  color: var(--cf-accent);
+  color: var(--cf-accent-text);
 }
 
 .ww-owns__body {
@@ -511,7 +536,7 @@ body {
 
 .ww-title__name:hover,
 .ww-provision__sku:hover {
-  color: var(--cf-accent);
+  color: var(--cf-accent-text);
 }
 
 .ww-title__slug,
@@ -543,7 +568,7 @@ body {
 
 .ww-cap__key {
   min-width: 9rem;
-  color: var(--cf-accent);
+  color: var(--cf-accent-text);
 }
 
 .ww-cap__meaning {
@@ -612,7 +637,7 @@ body {
 }
 
 .ww-badge--warn {
-  color: var(--cf-warn);
+  color: var(--cf-warn-text);
 }
 
 .ww-badge--crit {
@@ -620,7 +645,7 @@ body {
 }
 
 .ww-badge--busy {
-  color: var(--cf-accent);
+  color: var(--cf-accent-text);
 }
 
 .ww-badge--mute {

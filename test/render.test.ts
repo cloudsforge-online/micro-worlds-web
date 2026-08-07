@@ -90,7 +90,7 @@ describe('every screen distinguishes the four states', () => {
     // came from something in FRONT of the service. Telling somebody to ask an administrator for a
     // role no route checks would send them somewhere that cannot help.
     assert.doesNotMatch(withoutComments(title), /<Forbidden/)
-    assert.match(platform, /refused this request before it reached the platform/)
+    assert.match(platform, /turned this request away before Forge Worlds saw it/)
   })
 })
 
@@ -142,7 +142,7 @@ describe('an undeliverable entitlement is rendered honestly', () => {
   })
 
   it('says that nothing was raised, as a sentence rather than an em dash', () => {
-    assert.match(code, /No title has made anything for this purchase/)
+    assert.match(code, /no title has produced anything against it/)
   })
 
   it('offers no control on a terminal row', () => {
@@ -158,7 +158,7 @@ describe('the account page treats a null profile as a new player', () => {
   })
 
   it('invites a name rather than saying nothing is here', () => {
-    assert.match(code, /Create your profile/)
+    assert.match(code, /Set up your profile/)
   })
 
   it('submits the whole document, because PUT is a replace and not a patch', () => {
@@ -188,21 +188,45 @@ describe('the shell and the 404', () => {
   })
 
   it('the shell offers a skip link before anything else', () => {
-    // ELEMENTS are compared, not bare names: `CloudsForgeBar` appears in the import line at the
-    // top of the file, so comparing the raw names would put the bar before everything and pass
-    // this test for a reason that has nothing to do with the DOM order.
+    // ELEMENTS are compared, not bare names: `SkipLink` and `CloudsForgeBar` both appear in the
+    // import list at the top of the file, so comparing the raw names would put the bar before
+    // everything and pass this test for a reason that has nothing to do with the DOM order.
+    //
+    // `<SkipLink` rather than the `<a className="ww-skip">` this file used to look for: the anchor
+    // is the shared one now, and the reason is not tidiness — the local one pointed at a `<main>`
+    // with no `tabIndex`, so following it scrolled the page and left focus on the link.
+    // test/shared-chrome.test.ts proves the target end of that in a real document, which source
+    // text cannot.
     const code = withoutComments(shell)
-    const skip = code.indexOf('<a className="ww-skip"')
+    const skip = code.indexOf('<SkipLink')
     const bar = code.indexOf('<CloudsForgeBar')
     assert.ok(skip > 0, 'the shell has no skip link')
     assert.ok(bar > 0, 'the shell does not render the company bar')
     assert.ok(skip < bar, 'the skip link must come first in the DOM')
   })
 
+  it('the consent banner is LAST, so it is last in the tab order', () => {
+    // A consent dialog that traps focus is the coercion the regulation is about; this one is
+    // explicitly not modal, and being last in the document is how a reader gets to ignore it,
+    // read the page, and answer afterwards.
+    const code = withoutComments(shell)
+    const banner = code.indexOf('<CookieBanner')
+    assert.ok(banner > 0, 'the shell renders no consent banner')
+    assert.ok(banner > code.indexOf('<CloudsForgeFooter'), 'the banner must come after the footer')
+    assert.ok(banner > code.indexOf('<MainRegion'), 'the banner must come after the page')
+  })
+
+  it('the shell carries no analytics tag of its own, and never may', () => {
+    // The tag is injected from exactly one place in the estate — the Accept button inside
+    // `CookieBanner` — and a second call site here would be an analytics cookie set before the
+    // question was asked. Raw source, deliberately: this must not appear even in a comment.
+    assert.doesNotMatch(shell, /googletagmanager|gtag\(/)
+  })
+
   it('the 404 page says the SERVER answered 404, not merely that the page is missing', () => {
     // nginx keeps the real status through `error_page 404 /index.html`. Saying so is what stops a
     // reader assuming the app is broken when the address is simply wrong.
-    assert.match(notFound, /404, not a 200/)
+    assert.match(notFound, /404 rather than a 200/)
   })
 
   it('the 404 page offers a way back to the platform', () => {

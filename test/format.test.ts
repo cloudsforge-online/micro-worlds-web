@@ -79,7 +79,7 @@ describe('unsupported is an answer, not a fault', () => {
   })
 
   it('says it will not be retried', () => {
-    assert.match(provisionTone('unsupported').meaning, /not be retried/i)
+    assert.match(provisionTone('unsupported').meaning, /nothing will try again/i)
   })
 
   it('names the remedy, which is a refund rather than patience', () => {
@@ -97,7 +97,7 @@ describe('unsupported is an answer, not a fault', () => {
   })
 
   it('marks failed as an operator’s job, not the player’s', () => {
-    assert.match(provisionTone('failed').meaning, /operator/i)
+    assert.match(provisionTone('failed').meaning, /person at CloudsForge/i)
   })
 })
 
@@ -134,14 +134,14 @@ describe('nothing purchasable is described as an advantage', () => {
     // enters a market. A sentence phrased the other way round ("you cannot sell this one") turns
     // the control into a downside of a purchase.
     const bound = boundMeaning(true)
-    assert.match(bound, /never enters a market/i)
-    assert.match(bound, /advantage/i)
+    assert.match(bound, /can never reach a market/i)
+    assert.match(bound, /giving you an edge/i)
   })
 
   it('does not imply a tradeable item is worth more than a bound one', () => {
     const free = boundMeaning(false)
     assert.doesNotMatch(free, /(valuable|worth|rare|better)/i)
-    assert.match(free, /cosmetic or convenience/i)
+    assert.match(free, /appearance or convenience/i)
   })
 
   it('describes a capability as a fact about the TITLE, not a benefit to the buyer', () => {
@@ -166,7 +166,7 @@ describe('an unknown SKU is named rather than guessed at', () => {
   it('says the platform does not know what to deliver', () => {
     // `worlds/src/provisioning.ts` falls back to `unknown` rather than to a guess, because
     // a guess would deliver the wrong thing silently.
-    assert.match(kindMeaning('unknown'), /does not recognise/i)
+    assert.match(kindMeaning('unknown'), /never been taught/i)
   })
 })
 

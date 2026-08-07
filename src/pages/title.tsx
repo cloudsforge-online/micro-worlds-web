@@ -43,13 +43,13 @@ export function TitlePage() {
   const achievements = useResource(
     loadAchievements,
     (data) => data.achievements.length,
-    'This title’s achievements could not be read.',
+    'This title’s achievements could not be fetched.',
     [id],
   )
   const seasons = useResource(
     loadSeasons,
     (data) => data.seasons.length,
-    'This title’s seasons could not be read.',
+    'This title’s seasons could not be fetched.',
     [id],
   )
 
@@ -58,37 +58,38 @@ export function TitlePage() {
       <header className="ww-head">
         <p className="ww-head__eyebrow">
           <Link className="ww-link" to="/">
-            ← The platform
+← The platform
           </Link>
         </p>
         <h1 className="ww-head__title cf-num">{shortId(id)}</h1>
         <p className="ww-head__lede">
-          A title runs its own simulation — worlds, tiles, ticks, combat. What Forge Worlds holds
-          for it is what has to outlive a season: the achievements it reports, and the seasons it
-          runs against a budget the platform sets.
+          The game itself lives in the title: its worlds, its rules, its moment-to-moment play.
+          Forge Worlds keeps only the parts that have to outlast a season — the achievements this
+          title reports, and the seasons it runs against money the platform has set aside.
         </p>
       </header>
 
       <section className="ww-panel" aria-label="Achievements this title defines">
         <h2 className="ww-panel__title">Achievements</h2>
         <p className="ww-panel__subtitle">
-          Defined by the title, recorded by the platform. Points are a record, not a currency —
-          nothing here can be spent.
+          The title decides what counts as an achievement; the platform keeps the record of who has
+          earned one. Points are a tally rather than a currency, and there is nothing to spend them
+          on.
         </p>
 
-        {achievements.state === 'loading' && <Loading label="Reading achievements" />}
+        {achievements.state === 'loading' && <Loading label="Fetching achievements" />}
         {(achievements.state === 'failed' || achievements.state === 'forbidden') &&
           achievements.error !== null && (
             <Failed
               notice={achievements.error}
               onRetry={achievements.reload}
-              title="Achievements did not load"
+              title="Achievements are not on screen"
             />
           )}
         {achievements.state === 'empty' && (
           <Empty
             title="This title has defined no achievements"
-            hint="A title defines its own, with a title credential. Nothing here means none have been defined — not that the list is still arriving."
+            hint="Each title writes its own, using its own credential. An empty list means none exist rather than that more are on their way."
           />
         )}
         {achievements.state === 'ok' && achievements.data !== null && (
@@ -106,7 +107,7 @@ export function TitlePage() {
                     <>
                       {' '}
                       · pays <span className="cf-num">{shards(achievement.rewardShards)}</span>{' '}
-                      Shards from the season budget
+                      Shards out of the season&rsquo;s budget
                     </>
                   )}
                 </p>
@@ -119,19 +120,20 @@ export function TitlePage() {
       <section className="ww-panel" aria-label="Seasons this title runs">
         <h2 className="ww-panel__title">Seasons</h2>
         <p className="ww-panel__subtitle">
-          A season carries a reward budget in Shards. A title asks the platform to pay a reward; the
-          platform charges the budget and the ledger in one transaction, so a title with a bug
-          cannot spend past its season.
+          Every season opens with a sum in Shards set aside for rewards. When the title asks for a
+          payout, the platform takes it from that sum and writes the ledger entry in a single
+          transaction, so a title carrying a bug cannot pay out more than the season was funded
+          for.
         </p>
 
-        {seasons.state === 'loading' && <Loading label="Reading seasons" />}
+        {seasons.state === 'loading' && <Loading label="Fetching seasons" />}
         {(seasons.state === 'failed' || seasons.state === 'forbidden') && seasons.error !== null && (
-          <Failed notice={seasons.error} onRetry={seasons.reload} title="Seasons did not load" />
+          <Failed notice={seasons.error} onRetry={seasons.reload} title="Seasons are not on screen" />
         )}
         {seasons.state === 'empty' && (
           <Empty
             title="This title has no seasons"
-            hint="Opening one sets a money budget, so it is an operator's act rather than a title's — a title that could set its own reward budget could pay itself."
+            hint="Opening a season commits real money, so a person at CloudsForge does it rather than the title. A title able to set its own reward budget would be a title able to pay itself."
           />
         )}
         {seasons.state === 'ok' && seasons.data !== null && (
@@ -146,13 +148,13 @@ export function TitlePage() {
                   </div>
                   <p className="ww-season__slug cf-num">{season.slug}</p>
                   <dl className="ww-facts">
-                    <Fact label="Runs">
+                    <Fact label="Runs from">
                       {timestamp(season.startsAt)} → {timestamp(season.endsAt)}
                     </Fact>
-                    <Fact label="Opened with">
+                    <Fact label="Funded with">
                       <span className="cf-num">{shards(season.rewardBudgetShards)}</span> Shards
                     </Fact>
-                    <Fact label="Granted so far">
+                    <Fact label="Paid out so far">
                       <span className="cf-num">{shards(season.rewardsGrantedShards)}</span> Shards
                     </Fact>
                   </dl>

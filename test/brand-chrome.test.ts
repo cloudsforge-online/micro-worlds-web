@@ -28,6 +28,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
+import { SURFACE_DESCRIPTION } from '../src/lib/meta.ts'
 
 const at = (p: string) => fileURLToPath(new URL(`../${p}`, import.meta.url))
 const HTML = readFileSync(at('index.html'), 'utf8')
@@ -118,6 +119,75 @@ test('the accent and substrate are declared on <html>, before React can paint', 
   // wore the company's colour by accident for as long as that was true.
   assert.match(HTML, /data-cf-product="worlds"/)
   assert.match(HTML, /data-cf-substrate="warm"/)
+})
+
+test('so is the scheme, which is the third of the three and the reason light mode works', () => {
+  // Statically, for the same reason as the other two: a theme flash is worse than a theme nobody
+  // asked for. `auto` follows the reader's operating system; tokens.css scopes its
+  // `prefers-color-scheme` query to `[data-cf-scheme='auto']`, so without this attribute the light
+  // palette is unreachable no matter what the reader's system says.
+  assert.match(HTML, /data-cf-scheme="auto"/)
+})
+
+test('the color-scheme meta is spelled the way the standard spells it', () => {
+  /*
+   * `colour-scheme` was here: correct English, and not a registered meta name, so no browser has
+   * ever read it. The declaration meant to tell the browser which form controls and scrollbars to
+   * draw did nothing at all — on a surface whose account page and inventory rows are made of text
+   * inputs.
+   *
+   * Both values, not just `dark`: with `data-cf-scheme="auto"` above, the page resolves whichever
+   * palette the reader's system asks for, and declaring only `dark` here would leave the chrome
+   * the browser draws disagreeing with the page around it.
+   */
+  assert.doesNotMatch(HTML, /name="colour-scheme"/, 'the British spelling is inert; no browser reads it')
+  assert.match(HTML, /<meta name="color-scheme" content="dark light" \/>/)
+})
+
+test('the shell names the analytics property and carries no tag for it', () => {
+  /*
+   * THE MEASUREMENT ID, AND NOT THE TAG. The stock snippet fetches a third-party script and sets
+   * `_ga` on load — before any banner has been drawn, let alone answered — and under ePrivacy
+   * Art. 5(3) an analytics cookie set before consent is a violation a banner underneath it does
+   * not cure. `@cloudsforge/ui/consent` injects it from exactly one place: the Accept button.
+   *
+   * The second assertion is the one with teeth, and it is stated as an absence over the WHOLE file
+   * rather than as a search for one vendor's domain: any `<script src>` in this shell is a
+   * third-party fetch on load, because the only first-party script here is the module entry point
+   * that Vite rewrites.
+   */
+  assert.match(HTML, /<meta name="cf-analytics" content="G-[A-Z0-9]+" \/>/)
+  const sources = [...HTML.matchAll(/<script[^>]*\ssrc="([^"]*)"/g)].map((m) => m[1])
+  assert.deepEqual(sources, ['/src/main.tsx'], `index.html fetches a script it should not: ${sources.join(', ')}`)
+})
+
+test('the static description is byte-identical to the one applyHead uses', () => {
+  /*
+   * TWO COPIES, ONE SENTENCE, AND A TEST BECAUSE THE ESTATE HAS ALREADY SHIPPED THE DRIFT.
+   * `site/index.html` records that its shell's title disagreed with its own application's for as
+   * long as it took somebody to open the served HTML rather than the page, and every search result
+   * carried a sentence the owner had asked to have removed.
+   *
+   * The two exist because two different readers need them: this one is what a link-preview fetcher
+   * gets, and those generally do not execute JavaScript; `SURFACE_DESCRIPTION` is what
+   * `applyHead()` writes on every navigation.
+   */
+  const m = /<meta\s+name="description"\s+content="([^"]+)"/.exec(HTML.replace(/\s+/g, ' '))
+  assert.ok(m, 'index.html declares no description')
+  assert.equal(m[1], SURFACE_DESCRIPTION)
+})
+
+test('the description says platform, and names no title', () => {
+  // The category error this estate has already made twice on its own front page, in the one place
+  // a stranger reads BEFORE arriving. It is also why the description is NOT derived from the
+  // surface registry: `worlds`' blurb there names a title. See src/lib/meta.ts.
+  for (const title of ['Emberkin', 'Ninety Days', 'Kindred']) {
+    assert.ok(
+      !SURFACE_DESCRIPTION.includes(title),
+      `the surface description names a title: ${title}`,
+    )
+  }
+  assert.match(SURFACE_DESCRIPTION, /platform/i)
 })
 
 test('the Dockerfile copies public/ into the build context', () => {

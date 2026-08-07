@@ -183,7 +183,7 @@ describe('BJ-WLD — Forge Worlds', () => {
         await s.settle(20)
         const sell = s
           .allByRole('button')
-          .filter((el) => /offer it to the market/i.test(s.textOf(el)))
+          .filter((el) => /put it up for sale/i.test(s.textOf(el)))
         assert.ok(sell.length > 0, 'an unbound item was offered no way to sell it')
 
         // 01-product-vision principle 6 runs the other way too: nothing here may describe an item
@@ -252,8 +252,8 @@ describe('BJ-WLD — Forge Worlds', () => {
       },
       async (s) => {
         await s.settle(20)
-        assert.match(s.text(), /no forge worlds profile yet/i)
-        assert.match(s.text(), /your account exists/i)
+        assert.match(s.text(), /no Forge Worlds profile attached to it/i)
+        assert.match(s.text(), /your CloudsForge account exists/i)
         // Not an error…
         assert.equal(
           s.document.querySelector('[role="alert"]'),
@@ -331,7 +331,7 @@ describe('BJ-ADV — the adversarial matrix', () => {
         await s.settle(20)
         const urn = s.allByRole('textbox')[0]
         if (urn) await s.type(urn, 'urn:cf:market:listing:1')
-        const list = s.allByRole('button').find((el) => /offer it to the market/i.test(s.textOf(el)))
+        const list = s.allByRole('button').find((el) => /put it up for sale/i.test(s.textOf(el)))
         assert.ok(list, 'no listing control')
         s.clickNoFlush(list)
         // THIS AWAIT IS LOAD-BEARING, AND IT IS ALSO THIS SCENARIO'S LIMIT. It lets the render
@@ -375,7 +375,7 @@ describe('BJ-ADV — the adversarial matrix', () => {
         await s.settle(20)
         const urn = s.allByRole('textbox')[0]
         if (urn) await s.type(urn, 'urn:cf:market:listing:1')
-        const list = s.allByRole('button').find((el) => /offer it to the market/i.test(s.textOf(el)))
+        const list = s.allByRole('button').find((el) => /put it up for sale/i.test(s.textOf(el)))
         assert.ok(list, 'no listing control')
         await s.click(list)
         await s.settle(30)
@@ -537,7 +537,7 @@ describe('BJ-WORLDS-404 — an unowned address answers 404', () => {
       assert.match(s.text(), /not found|nothing at this address|no page|does not exist/i)
       // And it says the STATUS was a 404 rather than a 200, which is nginx's doing and the whole
       // reason this repository enumerates its routes by hand.
-      assert.match(s.text(), /404, not a 200/i)
+      assert.match(s.text(), /404 rather than a 200/i)
       assert.ok(s.allByRole('link').length > 0, 'the not-found screen strands the reader')
       assert.ok(!ROUTES.map((r) => r.path).includes('nothing-here'))
     })

@@ -34,22 +34,23 @@ export function EntitlementsPage() {
   const provisions = useResource(
     load,
     (data) => data.provisions.length,
-    'Your entitlements could not be read.',
+    'Your purchases could not be fetched.',
   )
 
   return (
     <>
       <header className="ww-head">
         <p className="ww-head__eyebrow">Your account</p>
-        <h1 className="ww-head__title">Entitlements</h1>
+        <h1 className="ww-head__title">What you have bought</h1>
         <p className="ww-head__lede">
-          Everything billing told Forge Worlds you bought, and what happened next. A row that could
-          not be delivered says so here, in the platform’s own words, rather than sitting quietly at
-          “pending” for ever.
+          Each purchase billing has passed to Forge Worlds, and what became of it afterwards.
+          Anything that could not be delivered says so plainly, in the platform&rsquo;s own words,
+          rather than sitting at &ldquo;pending&rdquo; indefinitely and letting you assume it is on
+          its way.
         </p>
       </header>
 
-      {provisions.state === 'loading' && <Loading label="Reading your entitlements" />}
+      {provisions.state === 'loading' && <Loading label="Gathering your purchases" />}
       {provisions.state === 'forbidden' && provisions.error !== null && (
         <Forbidden notice={provisions.error} />
       )}
@@ -57,13 +58,13 @@ export function EntitlementsPage() {
         <Failed
           notice={provisions.error}
           onRetry={provisions.reload}
-          title="Your entitlements did not load"
+          title="Your purchases are not on screen"
         />
       )}
       {provisions.state === 'empty' && (
         <Empty
           title="Nothing has been bought on this account"
-          hint="Purchases reach Forge Worlds from billing over a signed webhook. Nothing here means nothing has arrived — not that something is still on its way."
+          hint="Purchases reach Forge Worlds from billing over a signed message. An empty list means none has ever arrived, which is different from one being on the way."
         />
       )}
       {provisions.state === 'ok' && provisions.data !== null && (
@@ -80,20 +81,20 @@ export function EntitlementsPage() {
 export function EntitlementPage() {
   const { id = '' } = useParams<{ id: string }>()
   const load = useCallback(async (signal: AbortSignal) => getProvision(id, signal), [id])
-  const provision = useResource(load, () => 1, 'That entitlement could not be read.', [id])
+  const provision = useResource(load, () => 1, 'That purchase could not be fetched.', [id])
 
   return (
     <>
       <header className="ww-head">
         <p className="ww-head__eyebrow">
           <Link className="ww-link" to="/entitlements">
-            ← All entitlements
+← Everything you have bought
           </Link>
         </p>
         <h1 className="ww-head__title cf-num">{shortId(id)}</h1>
       </header>
 
-      {provision.state === 'loading' && <Loading label="Reading the entitlement" />}
+      {provision.state === 'loading' && <Loading label="Fetching this purchase" />}
       {provision.state === 'forbidden' && provision.error !== null && (
         <Forbidden notice={provision.error} />
       )}
@@ -107,8 +108,8 @@ export function EntitlementPage() {
           // somebody else" — it would be inventing a distinction the service refuses to make.
           title={
             provision.error.message.includes('no such provision')
-              ? 'There is no entitlement with that id on this account'
-              : 'That entitlement did not load'
+              ? 'This account has nothing filed under that reference'
+              : 'That purchase is not on screen'
           }
         />
       )}
@@ -140,25 +141,25 @@ function ProvisionCard({ provision, linked }: { provision: Provision; linked: bo
       <p className="ww-provision__meaning">{tone.meaning}</p>
 
       <dl className="ww-facts">
-        <Fact label="What it is">{kindMeaning(provision.kind)}</Fact>
-        <Fact label="Scope">
+        <Fact label="What you bought">{kindMeaning(provision.kind)}</Fact>
+        <Fact label="Where it applies">
           <span className="cf-num">{provision.scope}</span>
         </Fact>
-        <Fact label="Bought">{timestamp(provision.createdAt)}</Fact>
-        <Fact label="Delivered">
+        <Fact label="Bought on">{timestamp(provision.createdAt)}</Fact>
+        <Fact label="Delivered on">
           {provision.provisionedAt === null ? (
-            <span className="ww-absent">Nothing has been raised for this</span>
+            <span className="ww-absent">Nothing has been made for this</span>
           ) : (
             timestamp(provision.provisionedAt)
           )}
         </Fact>
-        <Fact label="What was raised">
+        <Fact label="What it became">
           <Maybe
             value={provision.provisionedUrn}
-            missing="Nothing. No title has made anything for this purchase."
+            missing="Nothing so far — no title has produced anything against it."
           />
         </Fact>
-        <Fact label="Entitlement id">
+        <Fact label="Reference">
           <span className="cf-num" title={provision.entitlementId}>
             {shortId(provision.entitlementId)}
           </span>
@@ -178,22 +179,23 @@ function ProvisionCard({ provision, linked }: { provision: Provision; linked: bo
       )}
       {terminal && provision.lastError === null && (
         <p className="ww-absent ww-absent--block">
-          The platform recorded no reason for this. That is itself worth reporting — quote{' '}
+No reason was written down for this, which is itself worth telling us about. Quote{' '}
           <code className="cf-num">{shortId(provision.id)}</code>.
         </p>
       )}
 
       {provision.state === 'unsupported' && (
         <p className="ww-provision__aside">
-          Undeliverable is a decision, not a fault: the platform asks a title what it can do before
-          it asks it to do anything, so this row exists instead of a request nobody could answer.
-          It will not be retried. If money changed hands for it, that is a refund.
+Undeliverable is a decision rather than a breakage. The platform establishes what a title is
+          willing to be asked before it asks, so what you have here is a clear answer instead of a
+          request that would have gone unanswered. Nothing will try again. Where money changed
+          hands, the remedy is a refund.
         </p>
       )}
 
       {provision.provisionedUrn !== null && (
         <p className="ww-provision__urn">
-          <span className="ww-provision__urn-label">Raised as</span>{' '}
+          <span className="ww-provision__urn-label">Delivered as</span>{' '}
           <code className="cf-num" title={provision.provisionedUrn}>
             {shortUrn(provision.provisionedUrn)}
           </code>

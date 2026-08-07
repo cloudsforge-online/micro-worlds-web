@@ -107,7 +107,7 @@ describe('two events in one tick — the guard, not the disabled attribute', () 
         const urn = s.allByRole('textbox')[0]
         assert.ok(urn, 'no listing-reference field')
         await s.type(urn, 'urn:cf:market:listing:1')
-        const offer = s.byRole('button', 'Offer it to the market')
+        const offer = s.byRole('button', 'Put it up for sale')
 
         s.clickNoFlush(offer)
         s.clickNoFlush(offer)
@@ -152,12 +152,12 @@ describe('two events in one tick — the guard, not the disabled attribute', () 
         assert.ok(urn, 'no listing-reference field')
         await s.type(urn, 'urn:cf:market:listing:1')
 
-        await s.click(s.byRole('button', 'Offer it to the market'))
+        await s.click(s.byRole('button', 'Put it up for sale'))
         await s.settle(20)
         assert.equal(s.api.matching(LIST).length, 1, 'the first attempt was not sent')
 
         // Same control, second press, after the failure has been rendered.
-        await s.click(s.byRole('button', 'Offer it to the market'))
+        await s.click(s.byRole('button', 'Put it up for sale'))
         await s.settle(20)
         assert.equal(
           s.api.matching(LIST).length,
@@ -192,7 +192,7 @@ describe('two events in one tick — the guard, not the disabled attribute', () 
       `${ORIGIN}/inventory`,
       async (s) => {
         await s.settle(20)
-        const withdraw = s.byRole('button', 'Withdraw the offer')
+        const withdraw = s.byRole('button', 'Take it off sale')
 
         s.clickNoFlush(withdraw)
         s.clickNoFlush(withdraw)
@@ -268,7 +268,7 @@ describe('two events in one tick — the guard, not the disabled attribute', () 
       `${ORIGIN}/player`,
       async (s) => {
         await s.settle(20)
-        const off = s.byRole('button', 'Take off')
+        const off = s.byRole('button', 'Take it off')
 
         s.clickNoFlush(off)
         s.clickNoFlush(off)
@@ -312,7 +312,7 @@ describe('the disabled affordance — what the user can see while a write is in 
       `${ORIGIN}/inventory`,
       async (s) => {
         await s.settle(20)
-        const withdraw = s.byRole('button', 'Withdraw the offer')
+        const withdraw = s.byRole('button', 'Take it off sale')
         s.clickNoFlush(withdraw)
         await s.settle(0)
         assert.ok(
@@ -361,7 +361,7 @@ describe('the disabled affordance — what the user can see while a write is in 
       `${ORIGIN}/player`,
       async (s) => {
         await s.settle(20)
-        const off = s.byRole('button', 'Take off')
+        const off = s.byRole('button', 'Take it off')
         s.clickNoFlush(off)
         await s.settle(0)
         assert.ok(
