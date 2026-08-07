@@ -41,9 +41,8 @@ import { ROUTES } from './routes.ts'
  * or rather, change this one and let the test tell you about the other.
  */
 export const SURFACE_DESCRIPTION =
-  'The platform games run on: one title registry, one account across every title, the inventory ' +
-  'it carries, the achievements and seasons titles report into, and the bridge that turns a ' +
-  'purchase into something a title raises.'
+  'The platform under our games: one account across all of them, the items it owns, the ' +
+  'achievements and seasons they report into, and what your purchases become.'
 
 /** The shape `surfaceMeta()` takes, restated so this module imports no React and no design system. */
 export interface PageMeta {

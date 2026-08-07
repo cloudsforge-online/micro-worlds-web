@@ -1,6 +1,6 @@
 {
   "name": "@cloudsforge/worlds-web",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "packageManager": "pnpm@11.9.0",
   "private": true,
   "description": "Forge Worlds: the title registry, one account across every title, inventory, achievements, seasons, and the entitlement bridge — the platform games run on, not a game.",
