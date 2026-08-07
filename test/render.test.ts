@@ -239,11 +239,7 @@ describe('no page reaches the API directly', () => {
     // The rule CI restates. A page that called `api()` itself would be a route with no citation
     // and no cross-check against the service.
     //
-    // A REQUEST is a path in a string or template literal. The platform page also DISPLAYS
-    // `GET /v1/titles` to the reader, inside a <code> element, as part of saying that an empty
-    // registry is a real answer from a named route — and that is the honesty this surface is for,
-    // not a call site. A check that forbade the characters would delete the explanation, which is
-    // the failure mode six guards in this estate have already had.
+    // A REQUEST is a path in a string or template literal.
     for (const [name, source] of PAGES) {
       const code = withoutComments(source)
       assert.doesNotMatch(code, /['"`]\/v1\//, `${name} requests a /v1 path directly`)
@@ -251,10 +247,25 @@ describe('no page reaches the API directly', () => {
     }
   })
 
-  it('and the one page that shows a route name shows it as text, not as a request', () => {
-    // Stated positively so the check above cannot go vacuous by the platform page quietly losing
-    // the sentence that names the route.
-    assert.match(platform, /<code className="cf-num">GET \/v1\/titles<\/code>/)
+  it('and no page shows a route name to a reader either', () => {
+    /*
+     * THE INVERSE OF WHAT USED TO STAND HERE, which REQUIRED the platform page to display
+     * `GET /v1/titles` inside a <code> element — the reasoning being that naming the route made
+     * "an empty list is a real answer" checkable.
+     *
+     * It made it checkable by an engineer. The person reading that sentence is deciding whether to
+     * make an account, and a route name tells them nothing they can act on: the claim they need is
+     * that the list is empty because nobody has added anything, which the page now says in those
+     * words. The route lives in `src/lib/worlds.ts`, which is where a request is made from.
+     */
+    for (const [name, source] of PAGES) {
+      const code = withoutComments(source)
+      assert.doesNotMatch(
+        code,
+        /\b(GET|POST|PUT|PATCH|DELETE) \/v\d/,
+        `${name} prints an HTTP route at a reader`,
+      )
+    }
   })
 })
 

@@ -86,27 +86,31 @@ describe('the gaps are declared as data, so they can be checked', () => {
         assert.ok(gap.finding.length > 80, `${gap.id} has a finding of ${gap.finding.length} chars`)
       })
 
-      it('carries citations a reader can check', () => {
-        // A claim nobody can check is worse than no claim, because it is believed.
-        //
-        // A citation is a repository-relative FILE, optionally followed by the symbol or route
-        // inside it. It used to be required to end in `:<line>`, and that requirement is what this
-        // shape now forbids: a line names a position in a file micro-worlds owns and edits freely,
-        // so it went stale without anybody here touching anything — and these strings are RENDERED
-        // TO A CUSTOMER, who would then check the wrong line and conclude the page was lying.
-        assert.ok(gap.citations.length >= 3, `${gap.id} carries ${gap.citations.length} citations`)
-        for (const cite of gap.citations) {
-          assert.match(cite, /^[a-z-]+\/src\/[a-z]+\.ts(?: [^:]+)?$/, `${gap.id}: ${cite}`)
+      it('is written for the person reading it, not for the person who would fix it', () => {
+        /*
+         * THE INVERSE OF THE RULE THAT USED TO STAND HERE, which required at least three citations
+         * per gap — `worlds/src/titleclient.ts describe()` and four more — and the component
+         * printed them under the heading "Check this for yourself in:". They were rendered TO A
+         * CUSTOMER, who cannot open a file in a repository and did not come here to.
+         *
+         * The provenance is not gone: `src/lib/worlds.ts` carries the whole finding, route by
+         * route and file by file, for whoever closes the gap. What is gone is putting it on a
+         * screen belonging to somebody deciding whether to buy something — along with `closes`,
+         * which answered a question only an engineer was asking.
+         */
+        for (const text of [gap.title, gap.finding]) {
+          assert.doesNotMatch(
+            text,
+            /\b[a-z0-9_-]+\/src\/[A-Za-z0-9_./-]+\.(ts|tsx|js)\b/,
+            `${gap.id} prints a repository path to a customer: ${text}`,
+          )
+          assert.doesNotMatch(
+            text,
+            /\b(GET|POST|PUT|PATCH|DELETE) \/v\d/,
+            `${gap.id} prints an HTTP route to a customer: ${text}`,
+          )
+          assert.doesNotMatch(text, /\b[1-5]\d\d\b/, `${gap.id} prints a status code: ${text}`)
         }
-        assert.equal(
-          new Set(gap.citations).size,
-          gap.citations.length,
-          `${gap.id} cites the same place twice; name the symbol that tells them apart`,
-        )
-      })
-
-      it('says what would close it, concretely', () => {
-        assert.ok(gap.closes.length > 60, `${gap.id} does not say what would close it`)
       })
 
       it('never implies that something is on its way', () => {
@@ -121,69 +125,60 @@ describe('the gaps are declared as data, so they can be checked', () => {
 })
 
 function assertHonest(gap: KnownGap): void {
-  for (const text of [gap.title, gap.finding, gap.closes]) {
+  for (const text of [gap.title, gap.finding]) {
     assert.doesNotMatch(text, IMPLIES_LOADING, `${gap.id} implies something is coming: ${text}`)
   }
 }
 
 describe('the title-bridge gap says the specific true thing', () => {
-  it('names both routes worlds calls into a title', () => {
-    assert.match(TITLE_BRIDGE_GAP.finding, /GET \/v1\/title\b/)
-    assert.match(TITLE_BRIDGE_GAP.finding, /POST \/v1\/provision\b/)
+  /*
+   * The claims here are the ones a CUSTOMER needs, and each is asserted separately so a rewrite
+   * cannot quietly drop one while keeping the comfortable ones. The technical statement of the
+   * same gap — which two routes, in which file, and why the bridge itself is correct — is in the
+   * comment above `TITLE_BRIDGE_GAP` in `src/lib/worlds.ts`, where the person who can close it
+   * will read it.
+   */
+  it('says a private world is the thing that cannot be delivered', () => {
+    assert.match(TITLE_BRIDGE_GAP.finding, /private world/i)
   })
 
-  it('cites the two functions in worlds/src/titleclient.ts that make those calls', () => {
-    // `test/worlds.test.ts` finds both functions in the real file and requires each to still
-    // request its path. Here we only assert that the gap entry names them, so the two halves
-    // cannot drift apart. They were line numbers until a service edit elsewhere in the estate
-    // moved seven routes at once and broke every client that had cited one.
-    assert.ok(TITLE_BRIDGE_GAP.citations.includes('worlds/src/titleclient.ts describe()'))
-    assert.ok(TITLE_BRIDGE_GAP.citations.includes('worlds/src/titleclient.ts provision()'))
+  it('says you can pay and not receive it — the part it would be easiest to leave out', () => {
+    assert.match(TITLE_BRIDGE_GAP.finding, /pay for and not receive/i)
   })
 
-  it('says the bridge is CORRECT, not broken — it checks capability before it calls', () => {
-    // The distinction matters and is easy to lose. `worlds/src/provisioning.ts` asks the
-    // title's declared capabilities BEFORE making the request, so the outcome is a readable
-    // terminal row rather than a blind 404. Saying "the bridge is broken" would be false and would
-    // point whoever fixes this at the wrong repository.
-    assert.match(TITLE_BRIDGE_GAP.finding, /before it calls/i)
-    assert.ok(TITLE_BRIDGE_GAP.citations.includes('worlds/src/provisioning.ts'))
+  it('says nothing is retrying, so nobody sits and waits', () => {
+    assert.match(TITLE_BRIDGE_GAP.finding, /nothing is quietly retrying/i)
   })
 
-  it('still says the customer outcome plainly: a row, not a world', () => {
-    // The honest bottom line. A gap entry that stopped at "the bridge handles it correctly" would
-    // be technically true and would leave out the only part a customer cares about.
-    assert.match(TITLE_BRIDGE_GAP.finding, /row and not as a world/i)
-  })
-
-  it('names both titles as the things that do not serve it', () => {
+  it('names both titles as the ones that cannot be asked', () => {
     assert.match(TITLE_BRIDGE_GAP.finding, /Ninety Days After/)
     assert.match(TITLE_BRIDGE_GAP.finding, /Emberkin/)
   })
 
-  it('says which direction they DO integrate in, so the gap is not overstated', () => {
-    assert.match(TITLE_BRIDGE_GAP.finding, /report achievements/i)
+  it('does not overstate the gap: it says what DOES work', () => {
+    // The two titles integrate in the achievement direction, and the rest of the platform works.
+    // A finding that stopped at "cannot be delivered" would read as a broken estate, which is a
+    // different false statement from the one it is there to prevent.
+    assert.match(TITLE_BRIDGE_GAP.finding, /achieved/i)
+    assert.match(TITLE_BRIDGE_GAP.finding, /works today/i)
   })
 })
 
 describe('the empty-registry gap says an empty list is an ANSWER', () => {
   it('says so in as many words', () => {
-    assert.match(EMPTY_REGISTRY_GAP.finding, /a 200 and\s+a true answer/i)
+    assert.match(EMPTY_REGISTRY_GAP.finding, /the real answer/i)
   })
 
   it('says explicitly that it is not a page still loading', () => {
-    assert.match(EMPTY_REGISTRY_GAP.finding, /not.*finished loading/i)
+    assert.match(EMPTY_REGISTRY_GAP.finding, /not finished loading/i)
   })
 
-  it('names the route that would populate it and the authority it needs', () => {
-    assert.match(EMPTY_REGISTRY_GAP.finding, /POST \/v1\/titles/)
+  it('says who would add one, so the emptiness is explained rather than mysterious', () => {
     assert.match(EMPTY_REGISTRY_GAP.finding, /administrator/i)
   })
 
-  it('points at the idempotency that makes self-registration the obvious fix', () => {
-    // `worlds/src/titles.ts` — registerTitle is idempotent on the slug precisely so a
-    // service can re-register on every boot.
-    assert.match(EMPTY_REGISTRY_GAP.closes, /idempotent on the slug/i)
+  it('says there is nothing to wait for', () => {
+    assert.match(EMPTY_REGISTRY_GAP.finding, /nothing to wait for/i)
   })
 })
 
@@ -230,7 +225,7 @@ describe('the front page states both gaps', () => {
     // The category error this estate has made twice. The index opens with the platform's own
     // responsibilities; the registry is a section within it, and it is read at runtime.
     const owns = platformCode.indexOf('const OWNS')
-    const registry = platformCode.indexOf('The register')
+    const registry = platformCode.indexOf('The games on the platform')
     assert.ok(owns > 0 && registry > owns, 'the registry section must come after what it owns')
     assert.match(platform, /Forge Worlds is not itself a game/)
   })
@@ -332,6 +327,6 @@ describe('a title that cannot be sold to is marked as such', () => {
     // The bridge checks capabilities before calling (`worlds/src/provisioning.ts`), so a
     // title with none is one whose every purchase ends undeliverable. Saying it on the row is
     // cheaper than saying it after somebody has paid.
-    assert.match(platformCode, /can be asked for nothing/)
+    assert.match(platformCode, /nothing it can be asked to do/)
   })
 })

@@ -9,16 +9,18 @@
  *      estate does not have, and erases the record of why.
  *   2. It carries **no control that would exercise it** — not a disabled button, which reads as
  *      "not yet" and gets clicked at, but no button at all, with the reason in its place.
- *   3. It carries the **citations**, so a reader can check it. A claim nobody can check is worse
- *      than no claim, because it is believed.
  *
- * And the fourth rule, which is this surface's own: **it must never look like loading.** A
+ * And the third rule, which is this surface's own: **it must never look like loading.** A
  * spinner, a skeleton or an empty state that implies "any moment now" is a lie with a specific
  * cost here — a customer who paid for a private world would sit and wait for something that is
  * never going to arrive. `useResource` already ranks failure above emptiness
- * (`src/lib/resource.ts` — the citation here once named a line range that file has never had,
- * which is one of the reasons citations no longer carry lines); this component is what emptiness
- * renders AS.
+ * (`src/lib/resource.ts`); this component is what emptiness renders AS.
+ *
+ * It used to carry two more things: a `⊘ NOT BUILT` badge and a list of repository files under
+ * "Check this for yourself in:". Both were written for an engineer auditing the estate and were
+ * put in front of a customer, who cannot open `worlds/src/provisioning.ts` and did not come here
+ * to. The provenance is kept in full in `src/lib/worlds.ts`, where the person who can act on it
+ * will find it; the sentence a customer needs is the finding, which is all this now renders.
  * ══════════════════════════════════════════════════════════════════════════════════════════════
  */
 import type { KnownGap } from '../lib/worlds.ts'
@@ -26,26 +28,8 @@ import type { KnownGap } from '../lib/worlds.ts'
 export function GapNotice({ gap }: { gap: KnownGap }) {
   return (
     <article className="ww-gap" aria-label={gap.title}>
-      <h3 className="ww-gap__title">
-        <span className="ww-gap__badge">
-          <span aria-hidden="true">⊘</span> NOT BUILT
-        </span>
-        {gap.title}
-      </h3>
+      <h3 className="ww-gap__title">{gap.title}</h3>
       <p className="ww-gap__finding">{gap.finding}</p>
-      <div className="ww-gap__closes">
-        <h4 className="ww-gap__closes-title">What would fix it</h4>
-        <p>{gap.closes}</p>
-      </div>
-      <p className="ww-gap__cites">
-Check this for yourself in:{' '}
-        {gap.citations.map((cite, index) => (
-          <span key={cite}>
-            {index > 0 && ', '}
-            <code className="cf-num">{cite}</code>
-          </span>
-        ))}
-      </p>
     </article>
   )
 }

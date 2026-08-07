@@ -102,10 +102,9 @@ export function AppShell({ unregistered = false }: { unregistered?: boolean }) {
               and the order on screen was wrong, which is a defect no source read finds.
             */}
             <span className="ww-note__body">
-              This page is being served from an address the CloudsForge surface registry does not
-              know, so every host it resolves — including the account portal and this platform’s
-              own API — is derived from the wrong apex. Its home is the{' '}
-              <code className="cf-num">worlds</code> surface.
+              This page is being served from an address CloudsForge does not recognise, so the
+              links it works out from it — including the one to your account — point somewhere
+              wrong. Open Forge Worlds from its own address instead.
             </span>
           </p>
         )}

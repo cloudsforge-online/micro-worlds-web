@@ -220,8 +220,8 @@ function ProfileForm({
       <label className="ww-field">
         <span className="ww-field__label">Display name</span>
         <span className="ww-field__hint">
-          The name every title puts beside you. Between 1 and 40 characters; the platform turns down
-          anything longer (<code className="cf-num">worlds/src/players.ts</code>).
+          The name every game puts beside you. Between 1 and 40 characters — anything longer is
+          turned down.
         </span>
         <input
           className="ww-field__input"

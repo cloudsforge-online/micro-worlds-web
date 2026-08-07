@@ -477,12 +477,6 @@ body {
   line-height: 1.6;
 }
 
-.ww-owns__cite {
-  margin: var(--cf-space-sm) 0 0;
-  font-size: var(--cf-text-2xs);
-  color: var(--cf-fg-mute);
-}
-
 /* ------------------------- the registry ---------------------------- */
 
 .ww-titles,
@@ -564,11 +558,6 @@ body {
   align-items: baseline;
   flex-wrap: wrap;
   font-size: var(--cf-text-sm);
-}
-
-.ww-cap__key {
-  min-width: 9rem;
-  color: var(--cf-accent-text);
 }
 
 .ww-cap__meaning {
@@ -671,51 +660,11 @@ body {
   font-size: var(--cf-text-md);
 }
 
-.ww-gap__badge {
-  padding: 0.15em 0.6em;
-  border: 1px solid var(--cf-danger);
-  border-radius: var(--cf-radius-sm);
-  color: var(--cf-danger);
-  font-size: var(--cf-text-2xs);
-  letter-spacing: 0.06em;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
 .ww-gap__finding {
   margin: 0;
   max-width: 72ch;
   color: var(--cf-fg);
   line-height: 1.7;
-}
-
-.ww-gap__closes {
-  margin: var(--cf-space-lg) 0 0;
-  padding: var(--cf-space-md) var(--cf-space-lg);
-  border-left: 2px solid var(--cf-accent);
-  background: var(--cf-surface);
-}
-
-.ww-gap__closes-title {
-  margin: 0 0 var(--cf-space-2xs);
-  font-size: var(--cf-text-2xs);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--cf-fg-mute);
-}
-
-.ww-gap__closes p {
-  margin: 0;
-  color: var(--cf-fg-dim);
-  font-size: var(--cf-text-sm);
-  line-height: 1.6;
-}
-
-.ww-gap__cites {
-  margin: var(--cf-space-md) 0 0;
-  font-size: var(--cf-text-2xs);
-  color: var(--cf-fg-mute);
-  line-height: 1.8;
 }
 
 /*

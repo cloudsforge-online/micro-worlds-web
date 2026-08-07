@@ -189,8 +189,7 @@ On sale in Forge Market since {timestamp(item.listedAt)}, under{' '}
         <span className="ww-field__label">Listing reference</span>
         <span className="ww-field__hint">
           The reference of the Forge Market listing this item sits behind. Forge Worlds only notes
-          which listing it is; the sale itself belongs to the market
-          (<code className="cf-num">worlds/src/server.ts</code>).
+          which listing it is; the sale itself happens on the market.
         </span>
         <input
           className="ww-field__input cf-num"

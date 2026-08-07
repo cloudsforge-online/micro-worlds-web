@@ -61,19 +61,24 @@ const signedIn = (routes: Routes): Routes => ({ 'GET /auth/me': { body: fx.ME },
    ══════════════════════════════════════════════════════════════════════════════════════════ */
 
 describe('BJ-WLD — Forge Worlds', () => {
-  it('BJ-WLD-01 ★ T2: an empty registry is a stated finding with citations, not a spinner', async () => {
+  it('BJ-WLD-01 ★ T2: an empty registry is a stated finding, not a spinner', async () => {
     await withScreen(
       page(h(PlatformPage), '/'),
       { url: `${ORIGIN}/`, routes: { 'GET /v1/titles': { body: { titles: [] } } } },
       async (s) => {
-        // `{"titles":[]}` is a 200 and a true answer. It is rendered as the finding it is.
+        // An empty list is a true answer. It is rendered as the finding it is.
         const gap = s.document.querySelector('.ww-gap')
         assert.ok(gap, 'an empty registry rendered no finding at all')
-        assert.match(s.textOf(gap), /NOT BUILT/i)
-        // With citations — the thing that makes it checkable rather than an opinion.
-        assert.ok(
-          gap.querySelectorAll('code').length > 0,
-          'the finding cites nothing, so a reader cannot check it',
+        // In a sentence a reader can act on. This used to require a `⊘ NOT BUILT` badge and at
+        // least one `<code>` naming a repository file — an audit rendered at a customer, which is
+        // what that reader is. The provenance moved to `src/lib/worlds.ts`; what has to survive
+        // here is that the emptiness is EXPLAINED rather than merely displayed.
+        assert.match(s.textOf(gap), /administrator/i)
+        assert.match(s.textOf(gap), /not finished loading/i)
+        assert.equal(
+          gap.querySelectorAll('code').length,
+          0,
+          'the finding prints a repository path at a customer again',
         )
         // And never a spinner, a skeleton or an empty state implying something is on its way.
         assert.equal(
@@ -101,8 +106,10 @@ describe('BJ-WLD — Forge Worlds', () => {
       { url: `${ORIGIN}/`, routes: { 'GET /v1/titles': { body: { titles } } } },
       async (s) => {
         for (const t of titles) assert.ok(s.text().includes(t.name), `${t.name} has no row`)
-        // And the finding is gone, because the registry is no longer empty.
-        assert.equal(s.document.querySelector('.ww-gap[aria-label*="registry" i]'), null)
+        // And the empty-register finding is gone, because the register is no longer empty. Matched
+        // on the aria-label this app actually sets — `*="registry"` matched nothing after the
+        // heading was rewritten, so it passed without measuring anything.
+        assert.equal(s.document.querySelector('.ww-gap[aria-label*="no titles in the register" i]'), null)
       },
     )
   })
@@ -122,7 +129,9 @@ describe('BJ-WLD — Forge Worlds', () => {
           'the front page leads with a title rather than with the platform',
         )
         // The registry is a SECTION within the page, so it comes after what the platform owns.
-        const registry = s.orderOf(/registry|titles/i)
+        // Matched on the words the section now uses: it was headed "The register" and called the
+        // rows "titles", which is the platform's own vocabulary rather than a player's.
+        const registry = s.orderOf(/games on the platform/i)
         assert.ok(registry > 0, 'there is no registry section')
         assert.ok(
           s.orderOf(s.textOf(h1)) < registry,

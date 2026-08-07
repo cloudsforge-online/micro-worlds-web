@@ -186,10 +186,9 @@ No reason was written down for this, which is itself worth telling us about. Quo
 
       {provision.state === 'unsupported' && (
         <p className="ww-provision__aside">
-Undeliverable is a decision rather than a breakage. The platform establishes what a title is
-          willing to be asked before it asks, so what you have here is a clear answer instead of a
-          request that would have gone unanswered. Nothing will try again. Where money changed
-          hands, the remedy is a refund.
+          This could not be delivered. Nothing broke: Forge Worlds finds out what a game is able to
+          do before it asks, so you get a straight answer now rather than a request that hangs.
+          Nothing will try again. If you paid for this, ask us for a refund.
         </p>
       )}
 

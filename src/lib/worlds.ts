@@ -552,7 +552,15 @@ export function listSeasons(
  * renders `EMPTY` as the finding it is, with this text under it.
  *
  * Held as DATA rather than as prose inside a component so `test/gap.test.ts` can assert that the
- * screens render it, and so the citations are in one place when the gap closes.
+ * screens render it.
+ *
+ * ── WHAT IS WRITTEN HERE, AND FOR WHOM ────────────────────────────────────────────────────────
+ *
+ * The provenance above is for whoever fixes this. The two entries below are read by somebody
+ * deciding whether to buy something, so they say what is true in the words that person already
+ * has: no route names, no file paths, no status codes, and no "what would fix it" — none of which
+ * a customer can act on. `test/gap.test.ts` holds them to that, and holds them to still saying the
+ * unwelcome part rather than softening it away.
  */
 export interface KnownGap {
   /** A stable id, used as the test's handle on this entry. */
@@ -560,56 +568,26 @@ export interface KnownGap {
   readonly title: string
   /** What is true today. Written as a finding, never as "coming soon". */
   readonly finding: string
-  /** The lines somebody can check it against. */
-  readonly citations: readonly string[]
-  /** What would close it. Concrete enough to act on. */
-  readonly closes: string
 }
 
 export const TITLE_BRIDGE_GAP: KnownGap = {
   id: 'title-bridge-unimplemented',
-  title: 'No title implements the provisioning side of the bridge',
+  title: 'Private worlds cannot be delivered yet',
   finding:
-    'Forge Worlds calls two routes on a title service: GET /v1/title to read what it is, and ' +
-    'POST /v1/provision to raise what a customer bought. Neither Ninety Days After nor Emberkin ' +
-    'serves either. They report achievements to this platform; this platform cannot ask them for ' +
-    'anything. The bridge checks a title’s declared capabilities before it calls, so the outcome ' +
-    'is a terminal row that says why rather than a 404 nobody can read — but a private-world ' +
-    'entitlement still ends as a row and not as a world.',
-  // The SYMBOL, not a line. Two of these name the same file and were told apart by their line
-  // numbers until micro-trade demonstrated what a line number in another repository is worth: it
-  // moved seven of them at once and broke every client that had cited one. `describe()` and
-  // `provision()` move with the code, and they are also what a reader would search for.
-  citations: [
-    'worlds/src/titleclient.ts describe()',
-    'worlds/src/titleclient.ts provision()',
-    'worlds/src/provisioning.ts',
-    'emberkin/src/server.ts',
-    'nda/src/server.ts',
-  ],
-  closes:
-    'A title serves GET /v1/title and POST /v1/provision, honouring the entitlement id as its ' +
-    'idempotency key in both the Idempotency-Key header and the body ' +
-    '(worlds/src/titleclient.ts), and passes worlds/src/conformance.ts.',
+    'A private world is the one thing on this platform you can pay for and not receive. Ninety ' +
+    'Days After and Emberkin tell Forge Worlds what you have achieved, but neither can yet be ' +
+    'asked to raise a world for you, so a purchase is recorded, stops, and tells you why. Nothing ' +
+    'is quietly retrying in the background. Everything else here — your account, what you own, ' +
+    'your achievements and the seasons you play through — works today.',
 }
 
 export const EMPTY_REGISTRY_GAP: KnownGap = {
   id: 'registry-unpopulated',
-  title: 'Nothing registers a title, so the registry starts empty',
+  title: 'There are no titles in the register yet',
   finding:
-    'POST /v1/titles is the only writer of the registry and it requires an administrator. No ' +
-    'service calls it on boot, no migration seeds it, and no deploy step inserts a row — so a ' +
-    'freshly deployed Forge Worlds knows about no titles at all. An empty list here is a 200 and ' +
-    'a true answer, not a page that has not finished loading.',
-  citations: [
-    'worlds/src/server.ts GET /v1/titles',
-    'worlds/src/server.ts POST /v1/titles',
-    'worlds/src/titles.ts registerTitle()',
-  ],
-  closes:
-    'Each title service registers itself on boot — registerTitle is idempotent on the slug ' +
-    '(worlds/src/titles.ts) precisely so that re-registering every boot produces one row ' +
-    '— or an operator registers it once with an admin token.',
+    'This is the real answer rather than a page that has not finished loading. A title appears ' +
+    'here once an administrator adds it, and none has been added on this deployment. Nothing is ' +
+    'arriving in a moment, so there is nothing to wait for.',
 }
 
 export const KNOWN_GAPS: readonly KnownGap[] = [EMPTY_REGISTRY_GAP, TITLE_BRIDGE_GAP]

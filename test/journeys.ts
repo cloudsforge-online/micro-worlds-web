@@ -31,7 +31,7 @@ export const SCENARIOS: readonly Scenario[] = [
   /* ── 6.7 Group G — Forge Worlds ───────────────────────────────────────────────────────────── */
   {
     id: 'BJ-WLD-01',
-    what: 'an empty title registry renders as a stated finding with citations — never a spinner, a skeleton or an empty state implying something is on its way',
+    what: 'an empty title registry renders as a stated finding a reader can act on — never a spinner, a skeleton or an empty state implying something is on its way',
     asserts: 'presentation',
     tier: 'T2',
     gate: true,
