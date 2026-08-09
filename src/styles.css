@@ -768,6 +768,53 @@ body {
   color: var(--cf-fg);
 }
 
+/*
+ * A sealed season's rank banner — three 512² FLUX 2 Pro pieces stacked into one picture.
+ *
+ * THE STACK IS A GRID, NOT `position: absolute`. All three layers are placed in the same single
+ * grid cell, so the figure is sized by the pictures themselves and nothing has to be told a
+ * height. An absolutely-positioned stack collapses its parent to zero and then needs a hard
+ * `padding-top` percentage to get it back — a number that is right for 512² and wrong the day the
+ * set is regenerated at another size.
+ *
+ * `aspect-ratio` rather than a height, for the same reason: the set's own dimensions decide.
+ */
+.ww-banner {
+  margin: var(--cf-space-lg) 0 0;
+  padding: 0;
+}
+
+.ww-banner__art {
+  display: grid;
+  width: 100%;
+  max-width: 13rem;
+  aspect-ratio: 1;
+  border: 1px solid var(--cf-line);
+  border-radius: var(--cf-radius-sm);
+  overflow: hidden;
+  /*
+   * The pieces are drawn on the art set's own near-black ground (#12100f, normalised numerically
+   * across all 96 generated files). A plate behind them is deliberately NOT set here — the layers
+   * are opaque and fill the frame, so a token ground would never be seen, and declaring one would
+   * be a rule that looks like it does something.
+   */
+}
+
+.ww-banner__layer {
+  grid-area: 1 / 1;
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+}
+
+.ww-banner__caption {
+  margin: var(--cf-space-md) 0 0;
+  font-size: var(--cf-text-sm);
+  color: var(--cf-fg-dim);
+  line-height: 1.6;
+}
+
 .ww-listing {
   margin: var(--cf-space-lg) 0 0;
   padding-top: var(--cf-space-lg);
