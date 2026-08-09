@@ -20,11 +20,21 @@
  * screen may describe an item as an advantage. See `sourceMeaning` and `boundMeaning` in
  * src/lib/format.ts — every sentence there is about what an item IS and where it may go.
  * ══════════════════════════════════════════════════════════════════════════════════════════════
+ *
+ * ── AND ONE KIND OF ITEM IS A PICTURE ─────────────────────────────────────────────────────────
+ *
+ * A sealed Aetherholm season mints ranked heraldry onto this profile — bound, cross-title, one urn
+ * per rank (`worlds/src/heraldry.ts`). Sixteen FLUX 2 Pro pieces were generated to draw them and
+ * this client referenced none of them, so a player who held first place was shown a shortened urn
+ * (micro-org#185). `src/lib/heraldry.ts` resolves the urn to field + charge + crest, and the row
+ * below draws it — with the sentence that says which layer is a fact and which two are decoration,
+ * because they share one frame.
  */
 import { useCallback, useState } from 'react'
 import { Empty, Failed, Forbidden, Loading } from '../components/states.tsx'
 import { Fact } from '../components/tone.tsx'
 import { boundMeaning, shortId, shortUrn, sourceMeaning, timestamp } from '../lib/format.ts'
+import { bannerFor, type Banner } from '../lib/heraldry.ts'
 import { useMutation } from '../lib/mutation.ts'
 import { useResource } from '../lib/resource.ts'
 import {
@@ -86,6 +96,9 @@ export function InventoryPage() {
 
 function ItemRow({ item, onChanged }: { item: InventoryItem; onChanged: () => void }) {
   const listed = item.listedAt !== null
+  // `null` for every item that is not sealed-season heraldry, which is nearly all of them, and
+  // the row then renders exactly as it did before the art was wired.
+  const banner = bannerFor(item.itemUrn)
 
   return (
     <li className={`ww-item${item.bound ? ' ww-item--bound' : ''}`}>
@@ -99,6 +112,8 @@ function ItemRow({ item, onChanged }: { item: InventoryItem; onChanged: () => vo
           </span>
         )}
       </div>
+
+      {banner && <BannerArt banner={banner} />}
 
       <dl className="ww-facts">
         <Fact label="How you got it">{sourceMeaning(item.source)}</Fact>
@@ -125,6 +140,40 @@ function ItemRow({ item, onChanged }: { item: InventoryItem; onChanged: () => vo
       */}
       {!item.bound && <Listing item={item} listed={listed} onChanged={onChanged} />}
     </li>
+  )
+}
+
+/**
+ * The banner itself: three 512² pieces stacked, and the sentence that keeps them honest.
+ *
+ * ────────────────────────────────────────────────────────────────────────────────────────────────
+ * ONE `alt`, ON THE WHOLE THING, AND IT NAMES ONLY THE RANK.
+ *
+ * The three layers are one picture, so the field and the charge are `aria-hidden` decoration and
+ * the composition carries a single description. That description says "Rank 3 banner from a sealed
+ * Aetherholm season" and stops: a reader who cannot see the image gets the fact and none of the
+ * illustration, which is the same split the caption below makes for a reader who can.
+ *
+ * The caption is not ornament. The rank IS data — the service put it on the urn — and the field
+ * and the charge are chosen from the season's id by this bundle, so without a sentence a reader
+ * would take all three for facts about the season. `test/heraldry.test.ts` asserts the sentence is
+ * still here, because when it goes the picture becomes a claim.
+ * ────────────────────────────────────────────────────────────────────────────────────────────────
+ */
+function BannerArt({ banner }: { banner: Banner }) {
+  return (
+    <figure className="ww-banner">
+      <div className="ww-banner__art" role="img" aria-label={banner.description}>
+        <img className="ww-banner__layer" src={banner.field} alt="" aria-hidden="true" loading="lazy" decoding="async" />
+        <img className="ww-banner__layer" src={banner.charge} alt="" aria-hidden="true" loading="lazy" decoding="async" />
+        <img className="ww-banner__layer" src={banner.crest} alt="" aria-hidden="true" loading="lazy" decoding="async" />
+      </div>
+      <figcaption className="ww-banner__caption">
+        The crest is your placing, which the season recorded. The field behind it and the emblem on
+        it are decoration chosen from the season's own reference — every banner from that season
+        wears the same pair — and they are not facts about how it went.
+      </figcaption>
+    </figure>
   )
 }
 

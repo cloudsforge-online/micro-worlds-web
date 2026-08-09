@@ -140,6 +140,27 @@ jobs:
           sparse-checkout: |
             src
 
+      # ══════════════════════════════════════════════════════════════════════════════════════════
+      # THE ART SET, because sixteen of its files are COPIED into this repository.
+      #
+      # `public/art/heraldry/` holds the pieces a sealed season's rank banner is composed from, and
+      # `src/art/heraldry.ts` is generated from the set's MANIFEST.json. Both are copies, and a
+      # copy is only as good as the check under it: without this checkout `test/heraldry.test.ts`
+      # prints UNCHECKED for the byte comparison and for the catalogue re-derivation, and a
+      # hand-edited picture or a stale catalogue would ship silently.
+      #
+      # `assets/heraldry` and the manifest only — the set is 22 MB and this repository serves
+      # 1.3 MB of it.
+      # ══════════════════════════════════════════════════════════════════════════════════════════
+      - uses: actions/checkout@v4
+        with:
+          repository: cloudsforge-online/micro-aetherholm-assets
+          path: aetherholm-assets
+          token: ${{ secrets.ESTATE_READ_TOKEN }}
+          sparse-checkout: |
+            MANIFEST.json
+            assets/heraldry
+
       # Pinned, because the checkout lives at worlds-web/ and the action looks for the
       # packageManager field in the workspace root, where there is no package.json.
       - uses: pnpm/action-setup@v4
@@ -164,6 +185,35 @@ jobs:
       - name: Test
         working-directory: worlds-web
         run: pnpm test
+
+      # ── The heraldry copy must have been COMPARED, not merely not failed ─────────────────────
+      #
+      # Same rule as the route cross-check below, for the same reason. `test/heraldry.test.ts`
+      # prints UNCHECKED and returns when micro-aetherholm-assets is absent, so that `pnpm test`
+      # passes for somebody who cloned only this repository. On the runner the set IS there, so a
+      # skipped comparison means the checkout produced nothing — which looks exactly like sixteen
+      # pictures that match the art they came from.
+      - name: The heraldry was compared against the set it was copied from
+        working-directory: worlds-web
+        run: |
+          set -euo pipefail
+          test -f ../aetherholm-assets/MANIFEST.json || {
+            echo "::error::micro-aetherholm-assets was not checked out; the heraldry copy was never compared"
+            exit 1
+          }
+          out=$(node --import tsx --test test/heraldry.test.ts 2>&1 || true)
+          if grep -q 'UNCHECKED: micro-aetherholm-assets' <<<"$out"; then
+            echo "::error::the heraldry comparison skipped itself while the asset set was present"
+            exit 1
+          fi
+          grep -q 'byte-identical to micro-aetherholm-assets' <<<"$out" || {
+            echo "::error::the heraldry byte comparison did not run"
+            exit 1
+          }
+          # And the generator agrees with what is committed. `--check` is the same derivation the
+          # suite makes, run as a tool, so a regenerated set that nobody re-synced fails here with
+          # the command to fix it rather than as an assertion diff.
+          pnpm sync-heraldry:check
 
       # ── The route cross-check must have RUN, not merely not failed ────────────────────────────
       #
@@ -300,6 +350,21 @@ jobs:
             test -f "dist/$asset" || { echo "::error::dist/$asset is missing from the build output"; exit 1; }
           done
           echo "ok: the favicons and the og card are in dist"
+
+      # The rank banners travel the same path and are lost the same way. Sixteen files and the
+      # provenance manifest beside them: a build that dropped public/ would leave every sealed
+      # season's reward rendering as a urn again, which is the state micro-org#185 recorded.
+      - name: The heraldry reached the bundle
+        working-directory: worlds-web
+        run: |
+          set -euo pipefail
+          count=$(find dist/art/heraldry -name '*.png' | wc -l | tr -d ' ')
+          [ "$count" = "16" ] || { echo "::error::dist/art/heraldry holds $count pictures, not 16"; exit 1; }
+          test -f dist/art/heraldry/MANIFEST.json || {
+            echo "::error::the AI disclosure is not served beside the pictures"
+            exit 1
+          }
+          echo "ok: 16 heraldry pieces and their provenance are in dist"
 
   rules:
     name: Estate rules
@@ -680,6 +745,18 @@ jobs:
             code=$(curl -s -m 5 -o /dev/null -w '%{http_code}' "http://127.0.0.1:8080/$asset" || true)
             [ "$code" = "200" ] || { echo "::error::/$asset returned $code from the image"; fail=1; }
           done
+
+          # The rank banners, and — the half that only a running image can answer — that a picture
+          # which is NOT there says so. Without `location /art/` a missing asset falls through to
+          # the app shell with a 200, and this probe is the only thing in the estate that can tell
+          # the difference between a served picture and a served apology.
+          for piece in crest-rank1 crest-rank4 field-storm charge-spire; do
+            code=$(curl -s -m 5 -o /dev/null -w '%{http_code}' "http://127.0.0.1:8080/art/heraldry/$piece-512x512.png" || true)
+            [ "$code" = "200" ] || { echo "::error::/art/heraldry/$piece returned $code from the image"; fail=1; }
+          done
+          gone=$(curl -s -m 5 -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/art/heraldry/crest-rank9-512x512.png || true)
+          [ "$gone" = "404" ] || { echo "::error::a missing picture answered $gone, not 404"; fail=1; }
+          check "http://127.0.0.1:8080/art/heraldry/crest-rank1-512x512.png" Cache-Control "immutable" "a heraldry piece"
 
           docker rm -f ci-worlds-web >/dev/null 2>&1 || true
           exit $fail

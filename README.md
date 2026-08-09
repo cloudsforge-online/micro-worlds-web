@@ -128,7 +128,7 @@ sends the entitlement id to a title. Different direction, different file.)
 | --- | --- | --- | --- |
 | `/` | The platform: what it owns, the registry, and what does not work yet | **public** | `GET /v1/titles` |
 | `/player` | The one account: profile, sanctions, wardrobe, achievements | required | `GET`/`PUT /v1/players/me`, `PUT /v1/players/me/cosmetics` |
-| `/inventory` | What the account carries, and what may leave it | required | `GET /v1/players/me/inventory`, `POST`/`DELETE …/list` |
+| `/inventory` | What the account carries, and what may leave it — including a sealed season's [rank banner](#the-rank-banners-a-sealed-season-pays-out), drawn | required | `GET /v1/players/me/inventory`, `POST`/`DELETE …/list` |
 | `/entitlements` | What you were sold and whether it arrived | required | `GET /v1/provisions` |
 | `/entitlements/:id` | One purchase, with the platform's own refusal if it could not be delivered | required | `GET /v1/provisions/:id` |
 | `/titles/:id` | One title's achievements and seasons | **public** | `GET /v1/titles/:id/achievements`, `GET /v1/titles/:id/seasons` |
@@ -144,6 +144,64 @@ existence, which makes a "page not found" screen a success: crawlers index it, u
 healthy, and a deploy that drops a route looks exactly like a deploy that did not. `/titles/<uuid>`
 is a public, shareable address, so this matters here. The CI image job curls a route the app does
 not own and requires a 404 with the shell in the body.
+
+## The rank banners a sealed season pays out
+
+A sealed Aetherholm season mints ranked heraldry onto the **shared** player profile — bound,
+`titleScope: '*'`, one item per victor member, one URN per rank
+(`worlds/src/heraldry.ts`):
+
+```
+cf:aetherholm:heraldry:<seasonId>:rank:<n>
+```
+
+That service's own header says why the rank is on the URN: "so first place and fifth place are
+different artwork, decided by the asset pipeline later — the urn is an identity, not a file path."
+The pipeline made that decision — **sixteen FLUX 2 Pro pieces** in
+`micro-aetherholm-assets/assets/heraldry/`, four fields, eight charges and four rank crests, set out
+in that repository's README §5 — and **nothing read it**. A player who held first place was shown a
+shortened URN (micro-org#185, measured 2026-08-10). The art is not Aetherholm's to draw: heraldry is
+cross-title, so `micro-aetherholm-web` names all sixteen in its own `UNSHIPPED` table with the
+reason "no rank exists in this client", and this bundle is the consumer they were made for.
+
+`src/lib/heraldry.ts` composes a banner from **field + charge + crest**, and the split between the
+three is the point:
+
+| Layer | Where it comes from | What it is |
+| --- | --- | --- |
+| crest | the rank on the URN, clamped to four tiers | **data.** Gold closed laurel, blued silver open wreath, bronze circlet, and the iron pennon bar for rank 4 and below — metal, silhouette and coverage stepping down together so the tiers survive monochrome |
+| field | the season id, mixed | **illustration.** Four, rank-neutral, "combine freely" (set README §5) |
+| charge | the season id, mixed | **illustration.** Eight, the same |
+
+No season carries a field on any wire in this estate. The pair is derived from the season's own id
+so a banner is **stable** — the same season shows the same picture on every visit and to every
+player, and two members of one alliance placed second and fourth can see they were in the same
+season — and the inventory row **says so in a sentence**, because the rank is a fact and the other
+two are decoration and all three share one frame. That is the line `micro-aetherholm-web` draws
+around island biomes, applied to the one other place in the estate where art direction sits beside
+data. `test/heraldry.test.ts` asserts the sentence rather than trusting it: if it goes, the field
+and the charge go with it and the crest stands alone.
+
+`grantHeraldry` walks `input.victors.entries()` and the list is **unbounded**, so "every declared
+rank" is every positive integer rather than four. The suite walks ranks 1 to 60 against five season
+ids and requires all three layers to resolve for each — a rank that renders nothing fails the build.
+
+### Where the files come from
+
+`pnpm sync-heraldry` copies the sixteen PNGs out of a sibling `micro-aetherholm-assets` checkout
+into `public/art/heraldry/`, writes the generated catalogue `src/art/heraldry.ts`, and writes
+`public/art/heraldry/MANIFEST.json` — **the sixteen manifest entries verbatim, with the AI
+disclosure and the licence**. The art is AI-generated; the disclosure is served beside the pictures
+rather than summarised by the code that displays them, which is how `micro-aetherholm-web` serves
+its whole manifest for all 101. The FLUX prompt of every image is about 2.5 kB and stays out of the
+bundle.
+
+`pnpm sync-heraldry:check` fails if the committed files are stale. CI checks the set out and
+`test/heraldry.test.ts` compares the pictures **byte for byte** against it — "copied once" is not a
+property that stays true — and the image job curls four of them, requires a **404** for one that is
+not there, and checks the `immutable` header. Without `location /art/` in `nginx.conf`, a missing
+picture would fall through to the app shell with a 200 and anything probing the URL would be told
+the file is fine.
 
 ## Configuration
 
@@ -353,7 +411,10 @@ Reported, not fixed — none of them blocks this repository.
 
 ## Tests
 
-`pnpm test` — 285 tests across 12 files, no DOM.
+`pnpm test` — **402 tests across 18 files**, of which 401 run and 1 skips itself when a sibling
+checkout is absent (CI checks the siblings out and requires the skip not to happen). Measured
+2026-08-10; the line said "285 across 12, no DOM" and all three had gone stale — the journey tier
+in `test/dom.ts` brought a document in deliberately, and its own header argues the case.
 
 | File | What it holds |
 | --- | --- |
@@ -365,6 +426,7 @@ Reported, not fixed — none of them blocks this repository.
 | `hosts.test.ts` | two surface keys; runtime resolution; the dev-port disagreement pinned in both directions |
 | `auth.test.ts` | the nested `/auth/me` shape, the flat fallback, and neither read by accident |
 | `brand-chrome.test.ts` | the icons and the og card exist, are linked, are byte-identical to `brand/assets/worlds/`, and the Dockerfile copies `public/` |
+| `heraldry.test.ts` | **the reward the platform mints has a picture.** The URN template read out of `worlds/src/heraldry.ts`; every rank from 1 to 60 against five season ids resolves all three layers; the four crest tiers and the clamp above them; a field and charge stable per season and shared across its ranks; the sixteen pictures byte-identical to the asset set and on disk; nothing under `/art/` that the catalogue does not name; the disclosure served beside them; and the inventory page really importing it |
 | `api.test.ts`, `obs.test.ts`, `resource.test.ts`, `no-build-time-config.test.ts` | the inherited infrastructure, unweakened |
 
 ### The shape check, and why it is not a prefix check
