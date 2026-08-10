@@ -26,10 +26,11 @@ import {
   MainRegion,
   SkipLink,
   SubNav,
+  miningOnHub,
 } from '@cloudsforge/ui'
 import { applyHead, surfaceMeta } from '@cloudsforge/ui/seo'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
-import { PRODUCT } from '../lib/hosts.ts'
+import { PRODUCT, hosts } from '../lib/hosts.ts'
 import { pageMetaFor } from '../lib/meta.ts'
 import { NAV } from '../lib/routes.ts'
 import { useSession } from '../lib/auth.tsx'
@@ -55,11 +56,29 @@ export function AppShell({ unregistered = false }: { unregistered?: boolean }) {
       */}
       <SkipLink>Skip to the page</SkipLink>
       <DocumentMeta />
+      {/*
+        `mining` is the design system's own control, and the bar puts it immediately before the
+        account menu — which is to say on every address this surface serves, rather than on one
+        page of one other one.
+
+        What is passed is `miningOnHub()`, the control's `elsewhere` state, and that is not a
+        degraded version of it. A session is a WebSocket to the pool plus two Web Workers, pinned
+        to one origin and one page; `hub.<apex>` is not this origin, and nothing in this bundle can
+        start, observe or stop a session over there. So the control renders an ANCHOR to the
+        surface that can — middle-clickable, openable in a new tab, and readable by everything that
+        reads links, which is the same argument the shared `SkipLink` above makes about targets
+        this file used to express by hand.
+
+        `hosts().hub` and never a written-out URL: `hosts()` derives the apex from the address the
+        page was served from, which is the whole reason `unregistered` below exists. A literal
+        would be right on the apex and wrong on localhost and on every preview host.
+      */}
       <CloudsForgeBar
         current={PRODUCT}
         account={account}
         onSignIn={() => signIn()}
         onSignOut={signOut}
+        mining={miningOnHub(hosts().hub)}
       />
       {/*
         The sections strip is the SHARED one now. It was `.wt-subnav` in src/styles.css — inherited
