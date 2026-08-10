@@ -31,10 +31,17 @@
  */
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { AccountMenu, CloudsForgeBar, MAIN_ID, ProductSwitcher } from '@cloudsforge/ui'
+import {
+  AccountMenu,
+  CloudsForgeBar,
+  HUB_MINE_PATH,
+  MAIN_ID,
+  NOT_PAID_CLAUSE,
+  ProductSwitcher,
+} from '@cloudsforge/ui'
 import { createElement as h } from 'react'
 import { App } from '../src/app.tsx'
-import { PRODUCT } from '../src/lib/hosts.ts'
+import { PRODUCT, hosts } from '../src/lib/hosts.ts'
 import { SURFACE_DESCRIPTION } from '../src/lib/meta.ts'
 import * as fx from './fixtures.ts'
 import { withScreen, type Screen } from './dom.ts'
@@ -249,5 +256,69 @@ test('nothing is stored and nothing is fetched before anybody has been asked', a
       s.api.wire.map((w) => w.path),
       ['/v1/titles'],
     )
+  })
+})
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+   BROWSER MINING, OFFERED FROM THE BAR
+
+   The owner's report was that starting a browser miner is "hidden deep in mining page, it should be
+   easily found near the account on all pages". It is in the shared chrome now, so it is on every
+   address this surface serves — and it belongs with the four above rather than in render.test.ts
+   for the same reason they do: a shell that passes the prop and a bar that quietly drops it are
+   indistinguishable in source, and only a document can be asked which happened.
+
+   What this surface renders is the `elsewhere` state, which is a LINK. A session is a WebSocket and
+   two Web Workers on `hub.<apex>`, a different origin, so nothing in this bundle can start, observe
+   or stop one. Pressing the session itself is micro-hub-web's to assert; it mounts the miner.
+   ══════════════════════════════════════════════════════════════════════════════════════════════ */
+
+test('the bar offers browser mining, beside the account, and promises no payment', async () => {
+  await withScreen(h(App), { url: `${ORIGIN}/`, routes: { ...REGISTRY } }, async (s) => {
+    await s.settle(20)
+
+    const bar = s.document.querySelector('.cf-bar')
+    assert.ok(bar, 'this surface no longer renders the company bar')
+    const found = [...bar.querySelectorAll('.cf-mine')]
+    assert.equal(found.length, 1, `expected one mining control in the bar, found ${found.length}`)
+    const mine = found[0] as Element
+
+    // An anchor, not an onClick. A destination expressed as a handler cannot be middle-clicked or
+    // opened in a new tab, its target cannot be copied, and it is invisible to everything that
+    // reads links — which is how the estate's account entry pointed at the wrong page for months.
+    assert.equal(mine.tagName, 'A', 'the mining control is not a link')
+    assert.equal(
+      mine.getAttribute('href'),
+      `${hosts().hub}${HUB_MINE_PATH}`,
+      'the mining control does not point at Forge Hub’s mining address',
+    )
+
+    // Beside the account as TAB ORDER, not as a CSS neighbour: a stylesheet can move a box anywhere,
+    // and only document order moves this. It is also the ordering this file's header calls "the
+    // whole point" of the shell's element order.
+    const order = s.tabbables()
+    const account = s.byRole('button', 'Sign in')
+    assert.equal(
+      order.indexOf(account) - order.indexOf(mine),
+      1,
+      'the mining control is no longer immediately before the account in the tab order',
+    )
+
+    // And it claims nothing the pool pays. `pool/src/payouts.ts` derives `payoutsImplemented` and
+    // it is false today — on a surface whose pages are about owning and selling items, a figure
+    // beside the word Mine would be read as what the mining is worth.
+    const described = s.document.getElementById(mine.getAttribute('aria-describedby') ?? '')
+    assert.ok(described, 'the mining control carries no description for a screen reader')
+    assert.ok(
+      s.textOf(described).includes(NOT_PAID_CLAUSE),
+      'the mining control does not carry the not-paid clause',
+    )
+    assert.doesNotMatch(
+      `${s.textOf(mine)} ${s.textOf(described)}`,
+      /[$€£]|\d/,
+      'the mining control shows a figure, and nothing is paid',
+    )
+
+    s.clean('the bar’s mining control')
   })
 })
