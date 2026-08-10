@@ -36,6 +36,7 @@ import { createElement as h } from 'react'
 import { App } from '../src/app.tsx'
 import { PRODUCT } from '../src/lib/hosts.ts'
 import { SURFACE_DESCRIPTION } from '../src/lib/meta.ts'
+import { NAV } from '../src/lib/routes.ts'
 import * as fx from './fixtures.ts'
 import { withScreen, type Screen } from './dom.ts'
 
@@ -157,6 +158,61 @@ test('the skip link is first, and its target is a main region that can take focu
     assert.ok(main.classList.contains('wt-main'), 'the main region lost this surface’s layout class')
 
     s.clean('the shell, at the platform page')
+  })
+})
+
+test('the strip of sections on screen is the SHARED one, and it can be scrolled to', async () => {
+  /*
+   * THE ASSERTION THAT WOULD HAVE CAUGHT THE DEFECT, AND WHY IT IS IN A DOCUMENT.
+   *
+   * Measured 2026-08-10: this surface declared the section strip itself, as `.wt-subnav` in
+   * src/styles.css. `.wt-subnav__inner` was a `display: flex` row with neither `overflow-x: auto`
+   * nor `white-space: nowrap`, so on a phone the five labels squeezed and broke mid-word and the
+   * ones past the edge could not be reached at all. Nine of the ten frontends carrying a copy of
+   * this strip had the same hole; only hub-web's scrolled.
+   *
+   * test/styles.test.ts proves the shared rules exist and the local ones are gone, which is a fact
+   * about two files. This is the fact about the PAGE: that the landmark React renders is
+   * `class="cf-subnav"` and every section link is a `cf-subnav__link`, so the rules that scroll are
+   * the rules that apply. A source-text check on shell.tsx would pass on a `<SubNav>` whose links
+   * still carried `wt-subnav__link` — which is precisely the half-adoption that leaves a surface
+   * looking right and behaving the way it did before.
+   */
+  await withScreen(h(App), { url: `${ORIGIN}/`, routes: { ...REGISTRY } }, async (s) => {
+    await s.settle(20)
+
+    const strips = [...s.document.querySelectorAll('nav.cf-subnav')]
+    assert.equal(strips.length, 1, 'the page renders no shared sub-nav, or more than one')
+    const strip = strips[0] as Element
+    // Named, because the company bar is the document's other `<nav>` and two unnamed landmarks are
+    // two landmarks a screen reader user cannot tell apart. The wording is this surface's own.
+    assert.equal(strip.getAttribute('aria-label'), 'Sections')
+    assert.ok(strip.querySelector('.cf-subnav__inner'), 'the scroll container is missing')
+
+    // EVERY section link, not merely one: a partial rename is the failure this is here for.
+    const links = [...strip.querySelectorAll('a')]
+    assert.equal(links.length, NAV.length, `the strip renders ${links.length} of ${NAV.length} sections`)
+    for (const link of links) {
+      assert.ok(
+        link.classList.contains('cf-subnav__link'),
+        `“${s.textOf(link)}” is not a cf-subnav__link, so none of the shared rules reach it`,
+      )
+      assert.ok(!link.className.includes('wt-subnav'), 'a link still asks for the deleted local class')
+    }
+
+    // The current section is marked with the SHARED modifier. `is-active` was this repo's spelling
+    // and ui.css declares no rule for it, so a link left carrying it would lose all three channels
+    // — ink, weight and underline — while still looking like a marked link in the source.
+    const current = links.filter((a) => a.classList.contains('cf-subnav__link--current'))
+    assert.equal(current.length, 1, 'exactly one section is the address being read')
+    assert.equal(s.textOf(current[0] as Element), 'The platform')
+    assert.equal(
+      s.document.querySelector('.is-active'),
+      null,
+      'a link still carries the local modifier, which nothing styles',
+    )
+
+    s.clean('the shared sub-nav, at the platform page')
   })
 })
 

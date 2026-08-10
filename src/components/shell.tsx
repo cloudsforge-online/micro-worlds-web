@@ -11,6 +11,9 @@
  * say whether it REPLACED a local copy or closed a defect, because those are different claims and
  * two of the four are the second one.
  *
+ * `SubNav` is the fifth, and it is the second kind: the local `.wt-subnav` it replaced did not
+ * scroll on a phone and was 16px wider than the bar above it. The note beside it records both.
+ *
  * `test/shared-chrome.test.ts` mounts this in a document and asserts them as BEHAVIOUR rather than
  * as imports: the skip link's target takes focus, the head follows the address, and no analytics
  * cookie exists before anybody has agreed to one. Source text proves none of those three.
@@ -22,6 +25,7 @@ import {
   CookieBanner,
   MainRegion,
   SkipLink,
+  SubNav,
 } from '@cloudsforge/ui'
 import { applyHead, surfaceMeta } from '@cloudsforge/ui/seo'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
@@ -58,23 +62,43 @@ export function AppShell({ unregistered = false }: { unregistered?: boolean }) {
         onSignOut={signOut}
       />
       {/*
-        The sub-nav is sticky at exactly `var(--cf-bar-h)` — the bar's own height token, not a
-        number copied out of it. When the bar's height changes, this moves with it.
+        The sections strip is the SHARED one now. It was `.wt-subnav` in src/styles.css — inherited
+        from the web template — and the census taken on 2026-08-10 found ten frontends carrying that
+        same strip under six class prefixes, each edited in place. This copy had drifted in two ways
+        a reader can see:
+
+          - it did not survive a phone. `.wt-subnav__inner` was a `display: flex` row with no
+            `overflow-x` and no `white-space: nowrap`, so the five section labels squeezed and broke
+            mid-word on a narrow viewport and the ones past the edge could not be reached at all.
+            Only hub-web's copy scrolled;
+          - it was 16px wider than the chrome above and below it. `max-width: 76rem` is 1216px,
+            while `.cf-bar__inner` and `.cf-foot__inner` use `var(--cf-max-w)` — 1200px — so this
+            row sat 8px proud of the bar on each side on every wide screen.
+
+        `SubNav` carries the sticky offset (`var(--cf-bar-h)`, the bar's own height token, never a
+        number copied out of it), the scroll behaviour and the measure. The LINKS stay here, because
+        the active state is react-router's `NavLink` and the design system does not depend on
+        react-router. The modifier changes name with the strip: this repo spelled it `is-active`,
+        the shared one is `cf-subnav__link--current`.
+
+        The label stays this surface's own wording. `SubNav` requires one rather than defaulting it:
+        the company bar is the document's other `<nav>`, and two landmarks called "Navigation" are
+        two landmarks nobody can tell apart.
       */}
-      <nav className="wt-subnav" aria-label="Sections">
-        <div className="wt-subnav__inner">
-          {NAV.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.to === '/'}
-              className={({ isActive }) => `wt-subnav__link${isActive ? ' is-active' : ''}`}
-            >
-              {item.label}
-            </NavLink>
-          ))}
-        </div>
-      </nav>
+      <SubNav label="Sections">
+        {NAV.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            end={item.to === '/'}
+            className={({ isActive }) =>
+              `cf-subnav__link${isActive ? ' cf-subnav__link--current' : ''}`
+            }
+          >
+            {item.label}
+          </NavLink>
+        ))}
+      </SubNav>
       {/*
         `MainRegion` rather than a hand-written `<main>`: it sets `id={MAIN_ID}` and `tabIndex={-1}`
         together, which is the pair the skip link needs and the pair this file used to get half

@@ -1,7 +1,7 @@
 /**
  * This app's own layer, on top of @cloudsforge/ui.
  *
- * Two prefixes, deliberately. `wt-` is the shell inherited from the web template — the sub-nav,
+ * Two prefixes, deliberately. `wt-` is the shell inherited from the web template — the page frame,
  * the four states, the spinner — and is left alone so a fix upstream can be taken without a
  * merge. `ww-` is this app's own layer. Neither can collide with, or quietly override, a `cf-`
  * class from the design system: `.cf-btn` is used as the design system defines it and is never
@@ -10,7 +10,14 @@
  *
  * EVERY COLOUR, SPACE AND FONT IS A TOKEN. A literal hex here is a colour that will not follow
  * the substrate, and a page that does not follow the substrate is the one page in the estate that
- * looks wrong on a dark display.
+ * looks wrong on a dark display. The same argument holds for a literal LENGTH, which is why this
+ * file spends none: `--cf-text-md` was raised from 0.82rem to 1rem when the body step was fixed
+ * (the note is beside it in tokens.css) and every literal font-size in here — 0.82rem to 1.35rem,
+ * measured 2026-08-10 — stayed where it was, so this app's body copy read smaller than the chrome
+ * above it. The lengths still written as literals are the ones that are not rhythm — grid tracks,
+ * reading measures, the spinner's box, and the two badge pads that are in `em` because they belong
+ * to their own label — plus two page paddings larger than the scale's top step. Each says so beside
+ * itself, because "why is this one not a token" is the question the next reader will have.
  *
  * The token names are the REAL ones, checked against `ui/packages/ui/src/tokens.css`:
  * `--cf-line` and `--cf-line-strong`, `--cf-danger`, `--cf-warn`,
@@ -62,74 +69,58 @@ body {
 /* ----------------------------- sub-nav ----------------------------- */
 
 /*
- * Docked at exactly the bar's height. `--cf-bar-h` is the token the bar itself is sized with, so
- * the two cannot drift; a copied `46px` would leave a gap or an overlap the day the bar changes,
- * on every surface at once and on none of the ones anybody rechecked.
+ * `.wt-subnav`, `.wt-subnav__inner`, `.wt-subnav__link`, `.wt-subnav__link.is-active` and the hover
+ * and focus rules WERE HERE, AND THEY ARE GONE. The strip is `SubNav` from @cloudsforge/ui, which
+ * brings `.cf-subnav*` with it; src/components/shell.tsx renders it.
+ *
+ * Deleting them is the point rather than a tidy-up. Measured 2026-08-10: ten frontends declared
+ * this same strip in their own stylesheet under six class prefixes, from one original that had been
+ * copied and then edited in place. Leaving a private copy beside the shared one is how the ten got
+ * here, and it ages silently — nothing fails when it drifts.
+ *
+ * What the deleted copy had got wrong, both visible to a reader:
+ *
+ *   - `display: flex` with neither `overflow-x: auto` nor `white-space: nowrap`, so the five
+ *     section labels squeezed and broke mid-word on a phone with no way to reach the ones past the
+ *     edge. Only hub-web's copy scrolled;
+ *   - `max-width: 76rem` — 1216px — against the 1200px `.cf-bar__inner` and `.cf-foot__inner` take
+ *     from `var(--cf-max-w)`, so the row sat 8px proud of the bar on each side on a wide screen.
+ *
+ * The one thing it had right is preserved upstream and asserted there: the sticky offset is
+ * `var(--cf-bar-h)`, the bar's own height token, so a copied `46px` cannot leave a gap the day the
+ * bar changes. `ui/packages/ui/src/subnav.test.ts` pins it.
  */
-.wt-subnav {
-  position: sticky;
-  top: var(--cf-bar-h);
-  z-index: 40;
-  background: var(--cf-bg-raised);
-  border-bottom: 1px solid var(--cf-line);
-}
-
-.wt-subnav__inner {
-  display: flex;
-  gap: 0.25rem;
-  align-items: stretch;
-  max-width: 76rem;
-  margin: 0 auto;
-  padding: 0 1rem;
-}
-
-.wt-subnav__link {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.7rem 0.85rem;
-  color: var(--cf-fg-dim);
-  text-decoration: none;
-  font-size: 0.875rem;
-  /* The active marker is a 2px underline in the accent, and the LABEL also changes weight and
-     colour: colour is never the only channel. */
-  border-bottom: 2px solid transparent;
-}
-
-.wt-subnav__link:hover {
-  color: var(--cf-fg);
-  background: var(--cf-surface-hover);
-}
-
-.wt-subnav__link.is-active {
-  color: var(--cf-fg);
-  font-weight: 600;
-  border-bottom-color: var(--cf-accent);
-}
-
-.wt-subnav__link:focus-visible {
-  outline: 2px solid var(--cf-accent);
-  outline-offset: -2px;
-}
 
 /* ------------------------------ page ------------------------------- */
 
 .wt-main {
-  max-width: 76rem;
+  /* The token the shared bar and the shared footer are measured with. It was `76rem` — 1216px —
+     which put the page content 8px proud of the chrome above and below it on each side, measured
+     2026-08-10. A second number that has to equal `--cf-max-w` is a number that stops equalling it. */
+  max-width: var(--cf-max-w);
   margin: 0 auto;
-  padding: 1.5rem 1rem 4rem;
+  /* 4rem — 64px — is left a literal deliberately: the spacing scale in tokens.css tops out at
+     `--cf-space-3xl` (32px), and halving the page's bottom breathing room is not what putting the
+     scale back is supposed to do. Inventing a step for it here would put a length in this file that
+     the design system cannot move. */
+  padding: var(--cf-space-2xl) var(--cf-space-xl) 4rem;
 }
 
 .wt-page__head {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 1.25rem;
+  gap: var(--cf-space-xl);
+  /* 1.25rem — 20px — sat exactly between `--cf-space-xl` (16px) and `--cf-space-2xl` (24px), so
+     "nearest" did not decide it. Rounded UP to match `.ww-head`, which is this app's own head and
+     already spends `--cf-space-2xl` under it; two heads on one surface separated by 4px was the
+     drift, not the fix. */
+  margin-bottom: var(--cf-space-2xl);
 }
 
 .wt-page__title {
   margin: 0;
-  font-size: 1.35rem;
+  font-size: var(--cf-text-xl);
   letter-spacing: -0.01em;
 }
 
@@ -137,37 +128,43 @@ body {
   background: var(--cf-surface-solid);
   border: 1px solid var(--cf-line);
   border-radius: 10px;
-  padding: 1rem 1.1rem;
-  margin-bottom: 1rem;
+  /* Was `1rem 1.1rem`. Both are nearest `--cf-space-xl` (16px), and 1.1rem — 17.6px — was an
+     asymmetry nobody chose: it makes the horizontal pad 1.6px deeper than the vertical one. */
+  padding: var(--cf-space-xl);
+  margin-bottom: var(--cf-space-xl);
 }
 
 .wt-panel__title {
-  margin: 0 0 0.75rem;
-  font-size: 0.95rem;
+  margin: 0 0 var(--cf-space-lg);
+  /* 0.95rem was 15.2px, under chrome set at 14–16px. `--cf-text-md` is the BODY step and is nearest;
+     it was raised from 0.82rem to 1rem when the body size was fixed (the note is in tokens.css) and
+     the literals in this file never followed. */
+  font-size: var(--cf-text-md);
   color: var(--cf-fg-dim);
   font-weight: 600;
 }
 
 .wt-tiles {
   display: grid;
+  /* A grid track, not rhythm: 11rem is the width below which a tile's value wraps. Left alone. */
   grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
-  gap: 0.75rem;
-  margin-bottom: 1rem;
+  gap: var(--cf-space-lg);
+  margin-bottom: var(--cf-space-xl);
 }
 
 .wt-banner {
-  margin: 0 0 1rem;
-  padding: 0.6rem 0.8rem;
+  margin: 0 0 var(--cf-space-xl);
+  padding: var(--cf-space-md) var(--cf-space-lg);
   border-radius: 8px;
   border: 1px dashed var(--cf-line-strong);
+  font-size: var(--cf-text-sm);
   color: var(--cf-fg-dim);
-  font-size: 0.85rem;
 }
 
 .wt-note {
   color: var(--cf-fg-dim);
-  font-size: 0.85rem;
-  margin: 0.5rem 0 0;
+  font-size: var(--cf-text-sm);
+  margin: var(--cf-space-sm) 0 0;
 }
 
 .wt-link {
@@ -176,10 +173,11 @@ body {
 
 .wt-facts {
   display: grid;
+  /* A grid track, not rhythm: 8rem is the label column's floor. Left alone. */
   grid-template-columns: minmax(8rem, auto) 1fr;
-  gap: 0.35rem 1rem;
+  gap: var(--cf-space-xs) var(--cf-space-xl);
   margin: 0;
-  font-size: 0.9rem;
+  font-size: var(--cf-text-sm);
 }
 
 .wt-facts dt {
@@ -192,7 +190,10 @@ body {
 
 .wt-facts--mono dd {
   font-family: var(--cf-font-mono);
-  font-size: 0.82rem;
+  /* 0.82rem is 13.1px, which is the size `--cf-text-md` USED to be before the body step was fixed.
+     The nearest step to it is `--cf-text-xs` (13px), and that is the right one here: this is the
+     mono secondary line, not body copy. */
+  font-size: var(--cf-text-xs);
 }
 
 /* ------------------------- the four states ------------------------- */
@@ -206,14 +207,17 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--cf-space-sm);
   text-align: center;
-  padding: 3rem 1rem;
+  /* 3rem — 48px — is left a literal for the same reason as `.wt-main`'s 4rem: the scale stops at
+     `--cf-space-3xl` (32px), and a state panel that loses a third of its height is a visible change
+     that has nothing to do with putting the type scale back. The inline pad is on the scale. */
+  padding: 3rem var(--cf-space-xl);
   border-radius: 10px;
 }
 
 .wt-state__icon {
-  font-size: 1.5rem;
+  font-size: var(--cf-text-2xl);
   line-height: 1;
 }
 
@@ -226,7 +230,8 @@ body {
 .wt-state__meta {
   margin: 0;
   color: var(--cf-fg-dim);
-  font-size: 0.875rem;
+  font-size: var(--cf-text-sm);
+  /* A paragraph measure, not spacing. Left alone. */
   max-width: 34rem;
 }
 
@@ -261,7 +266,7 @@ body {
  */
 .wt-reqid {
   user-select: all;
-  padding: 0.1rem 0.35rem;
+  padding: var(--cf-space-3xs) var(--cf-space-xs);
   border-radius: 4px;
   background: var(--cf-bg-sunken);
   font-family: var(--cf-font-mono);
@@ -605,6 +610,12 @@ body {
 
 /* ----------------------------- badges ------------------------------ */
 
+/*
+ * The pill's pad and gap are in `em` and stay that way. They are proportional to the badge's OWN
+ * label — `--cf-text-2xs` — not to the page's rhythm, so a `--cf-space` step here would fix the
+ * pill's proportion to whatever the body step happens to be and break the shape the day either
+ * moves. This is the one place in this file where a length is deliberately not on the spacing scale.
+ */
 .ww-badge {
   display: inline-flex;
   gap: 0.4em;
@@ -744,6 +755,7 @@ body {
   font-size: var(--cf-text-md);
 }
 
+/* `em` for the same reason as `.ww-badge` above: proportional to its own label, not to the page. */
 .ww-item__badge {
   display: inline-flex;
   gap: 0.4em;
