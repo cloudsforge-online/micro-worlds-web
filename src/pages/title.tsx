@@ -11,7 +11,7 @@
  * A season's REMAINING reward budget. `GET /v1/seasons/:id/budget` (`worlds/src/server.ts`)
  * would serve it to any signed-in account, and it is declined for two reasons, in this order:
  *
- *   1. It is an operator's number. "1,412 Shards left in the pot" in front of players is an
+ *   1. It is an operator's number. "1,412 EMBER left in the pot" in front of players is an
  *      invitation to race for it, and a season budget exists to bound an exploit
  *      (`worlds/src/env.ts`), not to be a scoreboard.
  *   2. It is unreachable in production anyway. `deploy/gateway/dynamic/public-api.yml` routes
@@ -27,9 +27,21 @@ import { useCallback } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { Empty, Failed, Loading } from '../components/states.tsx'
 import { Fact, StateBadge } from '../components/tone.tsx'
-import { seasonTone, shards, shortId, timestamp } from '../lib/format.ts'
+import { ember, seasonTone, shortId, timestamp } from '../lib/format.ts'
 import { useResource } from '../lib/resource.ts'
 import { listAchievements, listSeasons } from '../lib/worlds.ts'
+
+/**
+ * Whether a reward is worth a sentence.
+ *
+ * A POSITIVE test, not `!== '0'`. The clause this guards rendered for a year against a field the
+ * service had renamed away, because the comparison it used answers "yes" to `undefined` — and to
+ * `''`, and to `'00'`, and to anything else a wire can put where a number was. Parsing decides it
+ * instead: a value that is not a positive integer of digits pays nothing, and nothing is said.
+ */
+function paysReward(wei: string | undefined): boolean {
+  return typeof wei === 'string' && /^\d+$/.test(wei.trim()) && BigInt(wei.trim()) > 0n
+}
 
 export function TitlePage() {
   const { id = '' } = useParams<{ id: string }>()
@@ -103,11 +115,18 @@ export function TitlePage() {
                 <p className="ww-achievement__meta">
                   <code className="cf-num">{achievement.key}</code> ·{' '}
                   <span className="cf-num">{achievement.points}</span> points
-                  {achievement.rewardShards !== '0' && (
+                  {/*
+                    `!== '0'` was the whole guard, and it is why this clause rendered empty for a
+                    year: the field it tested had been renamed on the service, so it read
+                    `undefined`, and `undefined !== '0'` is true. The guard now tests a POSITIVE
+                    amount rather than an inequality — `paysReward` parses it — so a field that goes
+                    missing again renders nothing rather than a sentence with a hole in it.
+                  */}
+                  {paysReward(achievement.rewardWei) && (
                     <>
                       {' '}
-                      · pays <span className="cf-num">{shards(achievement.rewardShards)}</span>{' '}
-                      Shards out of the season&rsquo;s budget
+                      · pays <span className="cf-num">{ember(achievement.rewardWei)}</span> EMBER
+                      out of the season&rsquo;s budget
                     </>
                   )}
                 </p>
@@ -120,7 +139,7 @@ export function TitlePage() {
       <section className="ww-panel" aria-label="Seasons this title runs">
         <h2 className="ww-panel__title">Seasons</h2>
         <p className="ww-panel__subtitle">
-          Every season opens with a sum in Shards set aside for rewards. When the title asks for a
+          Every season opens with a sum in EMBER set aside for rewards. When the title asks for a
           payout, the platform takes it from that sum and writes the ledger entry in a single
           transaction, so a title carrying a bug cannot pay out more than the season was funded
           for.
@@ -152,10 +171,10 @@ export function TitlePage() {
                       {timestamp(season.startsAt)} → {timestamp(season.endsAt)}
                     </Fact>
                     <Fact label="Funded with">
-                      <span className="cf-num">{shards(season.rewardBudgetShards)}</span> Shards
+                      <span className="cf-num">{ember(season.rewardBudgetWei)}</span> EMBER
                     </Fact>
                     <Fact label="Paid out so far">
-                      <span className="cf-num">{shards(season.rewardsGrantedShards)}</span> Shards
+                      <span className="cf-num">{ember(season.rewardsGrantedWei)}</span> EMBER
                     </Fact>
                   </dl>
                 </li>

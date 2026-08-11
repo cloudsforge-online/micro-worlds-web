@@ -284,16 +284,50 @@ export function shortUrn(urn: string | null): string {
 }
 
 /**
- * A Shard amount, as text.
+ * EMBER's exponent. 10^18 — `contracts/packages/chain/src/index.ts`.
  *
- * It arrives as a decimal STRING and stays one — `worlds/src/server.ts` ("A budget is money")
- * and `worlds/src/env.ts` ("an approximate cap is a cap that is either slightly too generous
- * or refuses a legitimate grant"). Never put through `Number`: the point of the string is that
- * some of these do not survive it. A value that is not all digits is returned verbatim rather than
- * mangled into `NaN`.
+ * A named constant rather than `10n ** 18n` inline, so that the one place this surface commits to
+ * an exponent is greppable. `micro-network-site` takes `decimals` as a parameter for a reason it
+ * spells out at length: Hearth's own `params.js` still defines `SPARKS_PER_EMBER = 1e8` and the
+ * project's README records the disagreement as open. Here there is exactly one caller and exactly
+ * one asset, so the choice is made once, at the top, where a reader will find it — not defaulted
+ * quietly inside a helper.
  */
-export function shards(value: string): string {
-  return /^[0-9]+$/.test(value) ? value.replace(/\B(?=(\d{3})+(?!\d))/g, ',') : value
+const WEI_PER_EMBER = 1_000_000_000_000_000_000n
+
+/**
+ * A wei amount as whole EMBER, with `BigInt` only.
+ *
+ * ── THIS FUNCTION USED TO BE `shards()`, AND THAT IS THE DEFECT, NOT THE NAME ──────────────────
+ *
+ * It arrives as a decimal STRING and stays one — `worlds/src/server.ts` ("A budget is money") and
+ * `worlds/src/env.ts` ("an approximate cap is a cap that is either slightly too generous or
+ * refuses a legitimate grant"). Never put through `Number`: the point of the string is that some of
+ * these do not survive it.
+ *
+ * The old version grouped digits and stopped. That was right when a season budget was an integer
+ * count of Shards with no sub-unit. `micro-worlds` re-denominated to wei on 2026-08-10
+ * (micro-org#226) and this file did not follow, so it was grouping a wei figure as though it were a
+ * whole-unit one — which, had any reward been non-zero, would have printed a number 10^18 times too
+ * large under a currency name that no longer existed. Every reward on mainnet is `0`, which is the
+ * only reason nobody read a wrong figure.
+ *
+ * Nothing is rounded and no digit is invented: the fraction is the remainder, padded to the
+ * exponent and then trimmed from the right. Shape-checked before `BigInt`, because **`BigInt('')`
+ * is `0n` rather than a throw** — an absent field stringifies to `''`, and a confident `0` is the
+ * plausible default this whole surface exists to refuse. `micro-network-site`'s `weiToEmber` found
+ * that by driving itself with `''`; the check is here for the same reason and not by copying.
+ */
+export function ember(value: string): string {
+  const trimmed = value.trim()
+  if (!/^-?\d+$/.test(trimmed)) return trimmed
+  const raw = BigInt(trimmed)
+  const negative = raw < 0n
+  const magnitude = negative ? -raw : raw
+  const whole = (magnitude / WEI_PER_EMBER).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+  const fraction = (magnitude % WEI_PER_EMBER).toString().padStart(18, '0').replace(/0+$/, '')
+  const sign = negative ? '-' : ''
+  return fraction.length === 0 ? `${sign}${whole}` : `${sign}${whole}.${fraction}`
 }
 
 /** A cosmetic slot key, as a person reads it: `head_frame` → `Head frame`. */
