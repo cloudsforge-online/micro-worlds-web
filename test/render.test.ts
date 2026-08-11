@@ -18,8 +18,9 @@
  * `resourceState` — is proven properly, as pure functions, by its own tests.
  */
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { describe, it } from 'node:test'
+import { fileURLToPath } from 'node:url'
 
 const read = (file: string): string => readFileSync(new URL(`../${file}`, import.meta.url), 'utf8')
 
@@ -270,18 +271,75 @@ describe('no page reaches the API directly', () => {
 })
 
 describe('money is never put through Number', () => {
-  it('no page parses a Shard amount', () => {
-    // Both Shard fields arrive as decimal strings and stay strings — `worlds/src/server.ts`,
+  it('no page parses a money amount', () => {
+    // Both money fields arrive as decimal strings and stay strings — `worlds/src/server.ts`,
     // "A budget is money." The formatter is the only thing that touches them.
     for (const [name, source] of PAGES) {
       const code = withoutComments(source)
-      assert.doesNotMatch(code, /Number\((.*)Shards/, `${name} parses a Shard amount`)
+      assert.doesNotMatch(code, /Number\((.*)(Wei|Shards)/, `${name} parses a money amount`)
       assert.doesNotMatch(code, /parseInt|parseFloat/, `${name} parses a number out of a string`)
     }
   })
 
-  it('the title page renders both Shard fields through the formatter', () => {
-    assert.match(withoutComments(title), /shards\(season\.rewardBudgetShards\)/)
-    assert.match(withoutComments(title), /shards\(season\.rewardsGrantedShards\)/)
+  /*
+   * ── THE ASSERTION BELOW USED TO NAME THE WRONG FIELDS, AND THAT IS WHY IT PASSED ─────────────
+   *
+   * It read
+   *
+   *     assert.match(withoutComments(title), /shards\(season\.rewardBudgetShards\)/)
+   *
+   * which is a statement about this repository agreeing with itself. `micro-worlds` renamed those
+   * fields to `rewardBudgetWei` and `rewardsGrantedWei` on 2026-08-10 (micro-org#226); this file
+   * went on asserting that the page reached for the old names, and it was green for doing so. The
+   * page rendered "Funded with  Shards" — no number, because the field was `undefined` — and
+   * nothing anywhere went red.
+   *
+   * So the field names are no longer written here twice. They are read out of `micro-worlds`'s own
+   * `toSeasonWire` and asserted against the page, which makes the next rename a red test in this
+   * repository rather than a blank on a screen.
+   */
+  it('the title page reads the money fields micro-worlds actually sends', () => {
+    const wire = seasonWireFields()
+    const code = withoutComments(title)
+    for (const field of wire) {
+      assert.match(
+        code,
+        new RegExp(`ember\\(season\\.${field}\\)`),
+        `the title page does not render season.${field}, which worlds/src/server.ts sends`,
+      )
+    }
   })
 })
+
+/**
+ * The money fields `toSeasonWire` puts on the wire, read from `micro-worlds`.
+ *
+ * Throws rather than returning nothing when the sibling checkout is absent or the function has
+ * moved. A parser degraded to an empty list makes the loop above iterate zero times and pass, which
+ * is the precise failure this test replaces — an assertion that was true of nothing.
+ */
+function seasonWireFields(): readonly string[] {
+  const path = fileURLToPath(new URL('../../worlds/src/server.ts', import.meta.url))
+  if (!existsSync(path)) {
+    throw new Error(
+      `${path} is missing. Check micro-worlds out as 'worlds' beside this repository — this test ` +
+        'does not skip, because a field this app reads and that service stopped sending renders ' +
+        'as a blank rather than as an error.',
+    )
+  }
+  const source = readFileSync(path, 'utf8')
+  // The RETURNED object, not the function — `toSeasonWire`'s parameter type names the same fields
+  // one indent shallower, and a parser that read those would be describing what the function
+  // accepts rather than what it puts on the wire. Those are the same list today and need not stay
+  // one.
+  const wire = /function toSeasonWire[\s\S]*?\breturn \{([\s\S]*?)\n  \}/.exec(source)
+  if (!wire?.[1]) {
+    throw new Error(
+      'worlds/src/server.ts no longer declares toSeasonWire as a function returning an object ' +
+        'literal. Read it and re-point this parser — do not delete the check.',
+    )
+  }
+  const fields = [...wire[1].matchAll(/^\s+(\w*(?:Wei|Shards))\s*:/gm)].map((m) => m[1] as string)
+  if (fields.length === 0) throw new Error('toSeasonWire sends no money field; re-point this parser')
+  return fields
+}

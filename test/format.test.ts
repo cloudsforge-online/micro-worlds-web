@@ -18,11 +18,11 @@ import { describe, it } from 'node:test'
 import {
   boundMeaning,
   capabilityMeaning,
+  ember,
   kindMeaning,
   provisionTone,
   relative,
   seasonTone,
-  shards,
   shortId,
   shortUrn,
   slotName,
@@ -175,21 +175,37 @@ describe('money is text, never a number', () => {
    * `worlds/src/server.ts` — "A budget is money." — and `worlds/src/env.ts`: reading a
    * budget through `Number()` makes a large one approximate, "and an approximate cap is a cap that
    * is either slightly too generous or refuses a legitimate grant".
+   *
+   * These assertions used to drive `shards()`, which grouped digits and stopped. Every one of them
+   * still passed on 2026-08-11, on a page rendering a currency the service had stopped speaking
+   * eight months earlier — because grouping a decimal string is true of a Shard count and true of a
+   * wei figure and says nothing about which one arrived. So the exponent is now asserted too.
    */
-  it('groups a plain decimal string', () => {
-    assert.equal(shards('100000'), '100,000')
-    assert.equal(shards('0'), '0')
-    assert.equal(shards('999'), '999')
+  it('groups the whole part of a wei amount', () => {
+    assert.equal(ember('100000000000000000000000'), '100,000')
+    assert.equal(ember('0'), '0')
+    assert.equal(ember('999000000000000000000'), '999')
+  })
+
+  it('places the point at 18 and invents no digit either side of it', () => {
+    // Half an EMBER, and one wei. The second is the one that a double would round away, and it is
+    // exactly the figure a reader would use to check that nothing here is approximate.
+    assert.equal(ember('500000000000000000'), '0.5')
+    assert.equal(ember('1'), '0.000000000000000001')
+    // A whole number keeps no point, and no trailing zero survives.
+    assert.equal(ember('2000000000000000000'), '2')
   })
 
   it('survives a value no JSON number could carry', () => {
     const huge = '123456789012345678901234567890'
-    assert.equal(shards(huge).replace(/,/g, ''), huge)
+    assert.equal(ember(huge), '123,456,789,012.34567890123456789')
   })
 
   it('returns anything that is not all digits VERBATIM rather than mangling it to NaN', () => {
-    assert.equal(shards('not-a-number'), 'not-a-number')
-    assert.equal(shards(''), '')
+    assert.equal(ember('not-a-number'), 'not-a-number')
+    // `BigInt('')` is 0n, not a throw. An absent field stringifies to this, and a confident '0'
+    // under a money label is the plausible default this surface refuses.
+    assert.equal(ember(''), '')
   })
 })
 

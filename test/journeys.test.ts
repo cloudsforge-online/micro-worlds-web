@@ -292,9 +292,11 @@ describe('BJ-WLD — Forge Worlds', () => {
                   name: 'First light',
                   description: 'Arrive.',
                   points: 10,
-                  // A decimal STRING: `worlds/src/server.ts` calls `.toString()` on a bigint,
-                  // and a JSON number cannot hold what a bigint can.
-                  rewardShards: '25',
+                  // WEI, as a decimal STRING: `worlds/src/server.ts` calls `.toString()` on a
+                  // bigint, and a JSON number cannot hold what a bigint can. 25 EMBER, so the
+                  // assertion below is about a figure a reader would recognise rather than about
+                  // twenty-five of the smallest unit there is.
+                  rewardWei: '25000000000000000000',
                 },
               ],
             },
@@ -305,6 +307,18 @@ describe('BJ-WLD — Forge Worlds', () => {
       async (s) => {
         await s.settle(20)
         assert.ok(s.text().includes('First light'), 'the achievements did not render')
+        /*
+          THE REWARD, AS A READER SEES IT, AND THE CURRENCY IT IS IN.
+
+          This journey mounted the page and asserted the achievement's NAME. That passed for eight
+          months over a payout clause rendering "· pays  Shards out of the season's budget" — the
+          amount blank, because the fixture and the page agreed on a field name (`rewardShards`)
+          that `micro-worlds` had stopped sending. Asserting the name of a row says nothing about
+          the money on it, so the money is asserted here: the figure at the exponent the wire uses,
+          and the absence of the retired word.
+        */
+        assert.ok(s.text().includes('25 EMBER'), 'the reward figure is not on the page')
+        assert.doesNotMatch(s.text(), /shard/i, 'a retired currency is named on the title page')
         // Both routes are public. Sending a credential to a route that does not read one is the
         // defect; not sending it is the assertion.
         for (const w of s.api.wire) {

@@ -221,8 +221,17 @@ export interface Achievement {
   readonly name: string
   readonly description: string
   readonly points: number
-  /** A decimal STRING. `worlds/src/server.ts` calls `.toString()` on a bigint. */
-  readonly rewardShards: string
+  /**
+   * WEI, as a decimal STRING. `worlds/src/server.ts:772` calls `.toString()` on a bigint.
+   *
+   * This field was `rewardShards` here until 2026-08-11 and the service stopped sending that name
+   * on 2026-08-10 (micro-org#226). A missing field is `undefined` in TypeScript's structural world
+   * and nothing red went off — the page read it, compared it against `'0'`, found them unequal
+   * because `undefined` is unequal to everything, and rendered the payout clause with no number in
+   * it. Measured on mainnet the same day: `GET /v1/titles/<id>/achievements` answers `rewardWei`
+   * for all 47 rows.
+   */
+  readonly rewardWei: string
 }
 
 /** `worlds/src/rewards.ts`. */
@@ -230,10 +239,12 @@ export const SEASON_STATUSES = ['upcoming', 'active', 'ended', 'archived'] as co
 export type SeasonStatus = (typeof SEASON_STATUSES)[number]
 
 /**
- * One season, as `toSeasonWire` puts it on the wire — `worlds/src/server.ts`.
+ * One season, as `toSeasonWire` puts it on the wire — `worlds/src/server.ts:960`.
  *
- * Both Shard fields are STRINGS, always, and `worlds/src/server.ts` says why in three words:
- * "A budget is money."
+ * Both money fields are WEI and both are STRINGS, always, and `worlds/src/server.ts` says why in
+ * three words: "A budget is money." They were `rewardBudgetShards` and `rewardsGrantedShards` here
+ * until 2026-08-11; see `Achievement.rewardWei` above for how a rename on one side of a wire goes
+ * unnoticed on the other.
  */
 export interface Season {
   readonly id: string
@@ -243,8 +254,8 @@ export interface Season {
   readonly startsAt: string
   readonly endsAt: string
   readonly status: SeasonStatus
-  readonly rewardBudgetShards: string
-  readonly rewardsGrantedShards: string
+  readonly rewardBudgetWei: string
+  readonly rewardsGrantedWei: string
 }
 
 /** `worlds/src/provisioning.ts`. What a SKU means, resolved by a table not a heuristic. */
