@@ -221,13 +221,23 @@ describe('the front page states both gaps', () => {
     assert.doesNotMatch(gapComponentCode, /disabled/i, 'a gap must carry no disabled control either')
   })
 
-  it('leads with what the platform OWNS rather than with a list of games', () => {
-    // The category error this estate has made twice. The index opens with the platform's own
-    // responsibilities; the registry is a section within it, and it is read at runtime.
-    const owns = platformCode.indexOf('const OWNS')
-    const registry = platformCode.indexOf('The games on the platform')
-    assert.ok(owns > 0 && registry > owns, 'the registry section must come after what it owns')
+  it('leads with the games, and still never says the platform IS them', () => {
+    /*
+     * THIS TEST USED TO ASSERT THE OPPOSITE ORDER, and the reversal is deliberate. It read: "the
+     * index opens with the platform's own responsibilities; the registry is a section within it".
+     * That was written when the register was empty, and it cost nothing then. With three games
+     * registered it cost the owner the product — "we suppose to have 3 games but no one is
+     * visible or accessible on forge worlds".
+     *
+     * What was actually load-bearing in the old argument was never the ORDER. It was that the
+     * page must not say Forge Worlds is a games list: the `<h1>` names the platform, the lede
+     * says in as many words that it is not itself a game, and everything it looks after is still
+     * on the page. All three are asserted here; the order is asserted in `test/journeys.test.ts`,
+     * against the rendered document rather than the source text.
+     */
     assert.match(platform, /Forge Worlds is not itself a game/)
+    assert.ok(platformCode.indexOf('const OWNS') > 0, 'what the platform owns is gone from the page')
+    assert.match(platformCode, /The games on the platform/)
   })
 
   it('builds the registry from the SERVICE, never from a list in source', () => {

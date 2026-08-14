@@ -569,6 +569,186 @@ body {
   color: var(--cf-fg-dim);
 }
 
+/* --------------------- the register, as a shelf --------------------- */
+
+/*
+ * `.ww-reg` is the front page's rendering of the SAME rows `.ww-title` renders elsewhere, and the
+ * two are deliberately not one class. `.ww-title` is a record: a name, a status, a slug, the
+ * capabilities, and a link to the platform's file on it. `.ww-reg__entry` is a door: a picture,
+ * a sentence, and a way in. Merging them would mean one of the two surfaces got the wrong half —
+ * a title page with cover art it does not need, or a front page with no way to reach a game,
+ * which is the defect this block exists to end.
+ *
+ * Three columns, and the first is the argument. The SLUG runs down the left edge of every entry,
+ * set in the mono face and rotated. It is not ornament: the slug is the entitlement scope id
+ * (`worlds/src/titles.ts` constrains its shape for exactly that reason), so it is the one
+ * string on the card that the platform itself keys on. A shelf of games with their machine names
+ * printed on the spine is what a REGISTER looks like, and it is the thing that keeps this page
+ * from reading as a storefront.
+ */
+
+.ww-reg {
+  list-style: none;
+  margin: var(--cf-space-lg) 0 0;
+  padding: 0;
+  display: grid;
+  gap: var(--cf-space-lg);
+}
+
+.ww-reg__entry {
+  display: grid;
+  /* spine · art · body. The art column is fixed so every cover lands on the same left edge and
+     the names below them line up; the body takes what is left. */
+  grid-template-columns: auto 18rem 1fr;
+  gap: var(--cf-space-lg);
+  align-items: start;
+  padding: var(--cf-space-lg);
+  border: 1px solid var(--cf-line);
+  border-radius: var(--cf-radius-sm);
+  background: var(--cf-bg-raised);
+}
+
+/*
+ * The one entry you can walk into gets the accent edge, and nothing else on the card does.
+ * A status badge says what the register holds; this says what YOU can do about it, which is a
+ * different question and the one a visitor is actually asking.
+ */
+.ww-reg__entry--playable {
+  border-left: 3px solid var(--cf-accent);
+}
+
+.ww-reg__spine {
+  margin: 0;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-size: var(--cf-text-2xs);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--cf-fg-mute);
+  /* Aligned to the top of the art beside it rather than centred down the whole card: the entries
+     are different heights, and a spine that floated with the text would make a ragged left edge
+     out of the one column whose job is to be a straight one. */
+  align-self: stretch;
+  border-right: 1px solid var(--cf-line);
+  padding-right: var(--cf-space-xs);
+}
+
+.ww-reg__art {
+  border-radius: var(--cf-radius-sm);
+  overflow: hidden;
+  background: var(--cf-bg-sunken);
+  border: 1px solid var(--cf-line);
+}
+
+.ww-reg__cover {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 900 / 472;
+  object-fit: cover;
+}
+
+/* A game with neither art nor a motif. Sunken and empty, and never a broken-image icon. */
+.ww-reg__cover--none {
+  background: var(--cf-bg-sunken);
+}
+
+/*
+ * NINETY CELLS, ONE PER DAY — the device standing in for cover art on *Ninety Days After*.
+ *
+ * Fifteen across and six down because that is 90 exactly, with no remainder cell to explain away.
+ * The shaded run is the days already behind the survivors when the game opens; the rest are the
+ * ones still to resolve. Decorative in the accessibility sense — the entry's own sentence carries
+ * the same fact in words — but not decorative in the design sense: it is the game's rules drawn
+ * at a glance, which is what the other two entries get from a photograph.
+ */
+.ww-reg__days {
+  display: grid;
+  grid-template-columns: repeat(15, 1fr);
+  gap: var(--cf-space-3xs);
+  padding: var(--cf-space-md);
+  aspect-ratio: 900 / 472;
+  align-content: center;
+}
+
+.ww-reg__day {
+  aspect-ratio: 1;
+  border: 1px solid var(--cf-line);
+  border-radius: var(--cf-radius-sm);
+}
+
+.ww-reg__day--past {
+  background: var(--cf-line-strong);
+  border-color: var(--cf-line-strong);
+}
+
+.ww-reg__body {
+  min-width: 0;
+}
+
+.ww-reg__head {
+  display: flex;
+  gap: var(--cf-space-md);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.ww-reg__name {
+  margin: 0;
+  font-family: var(--cf-font-display);
+  font-size: var(--cf-text-xl);
+  color: var(--cf-fg);
+}
+
+.ww-reg__kind {
+  margin: var(--cf-space-2xs) 0 0;
+  font-size: var(--cf-text-2xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cf-accent-text);
+}
+
+.ww-reg__blurb {
+  margin: var(--cf-space-sm) 0 var(--cf-space-md);
+  color: var(--cf-fg-dim);
+  font-size: var(--cf-text-sm);
+  line-height: 1.65;
+}
+
+.ww-reg__actions {
+  display: flex;
+  gap: var(--cf-space-sm);
+  flex-wrap: wrap;
+  margin-bottom: var(--cf-space-md);
+}
+
+/* Why there is no way in. Dimmed, but never italic-absent: this is a fact about the estate, not
+   a missing value. */
+.ww-reg__shut {
+  margin: 0 0 var(--cf-space-md);
+  font-size: var(--cf-text-sm);
+  color: var(--cf-fg-mute);
+  line-height: 1.6;
+}
+
+/*
+ * One breakpoint, and it drops the spine rather than shrinking it.
+ *
+ * A rotated line of type in a narrow column is the first thing that stops working on a phone: it
+ * either wraps into two vertical lines or forces the card wider than the screen. The slug is
+ * still on the page — it is the entry's `key` and it is on the title page — so losing it here
+ * costs a reader nothing they cannot get one tap away.
+ */
+@media (max-width: 52rem) {
+  .ww-reg__entry {
+    grid-template-columns: 1fr;
+  }
+
+  .ww-reg__spine {
+    display: none;
+  }
+}
+
 /* ------------------------------ facts ------------------------------ */
 
 .ww-facts {

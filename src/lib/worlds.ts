@@ -142,6 +142,19 @@ export function isSellable(title: Title): boolean {
   return title.status === 'beta' || title.status === 'live'
 }
 
+/**
+ * A title that is OPEN TO PLAY — `worlds/src/titles.ts`, the predicate beside `isSellable`'s.
+ *
+ * The same two statuses, and deliberately not the same function. They are equal today by
+ * coincidence of policy rather than by definition: `sunset` is the status that will separate them,
+ * because a game winding down stops taking money before it stops taking players. Writing one
+ * predicate and calling it from both places would make that day a search for every caller that
+ * meant the other thing.
+ */
+export function isOpenToPlay(title: Title): boolean {
+  return title.status === 'beta' || title.status === 'live'
+}
+
 /** The cross-title key in `equippedCosmetics` — `worlds/src/players.ts`. */
 export const CROSS_TITLE = '*'
 

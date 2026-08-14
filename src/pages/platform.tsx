@@ -1,27 +1,34 @@
 /**
- * The index. **Forge Worlds is the platform, not a game.**
+ * The index. **The games first, then the platform they run on.**
  *
  * ══════════════════════════════════════════════════════════════════════════════════════════════
- * WHAT THIS PAGE IS NOT: TWO GAME CARDS.
+ * WHAT THIS PAGE USED TO BE, AND WHY IT CHANGED
  *
- * Forge Worlds owns the title REGISTRY, one shared account, inventory, achievements, seasons and
- * the entitlement bridge. Ninety Days After and Emberkin are titles that run ON it — they are not
- * what it is, and `worlds/src/titles.ts` draws the boundary in the service's own words: "A
- * title owns SIMULATION… What this service owns is anything that must outlive a season or cross a
- * title." A front page made of two game cards says the platform is those two games, which is the
- * category error this estate has already made twice on its own front page, and which is exactly
- * the error the registry exists to end: `worlds/src/titles.ts` records that a grep for
- * `title_id` across the frozen game service returns nothing at all, "so every table is implicitly
- * its, and the second game has nowhere to go".
+ * It opened with six panels about what the platform OWNS, and put the register of games below
+ * them. The argument was sound and is preserved further down this file: Forge Worlds owns the
+ * title registry, one shared account, inventory, achievements, seasons and the entitlement bridge,
+ * and a front page made of game cards would say the platform IS its games — the category error the
+ * registry exists to end.
  *
- * So the page opens with what the platform OWNS, and the registry is a section within it.
+ * It was also written when the register was EMPTY, so the choice cost nothing: there were no games
+ * to lead with. Now there are three, and the owner has reported the consequence in the plainest
+ * possible terms — "we suppose to have 3 games but no one is visible or accessible on forge
+ * worlds". Both halves of that were true. Nothing had ever registered a title, so the register
+ * answered `{"titles":[]}` and the page rendered the finding; and even with rows in it the page
+ * offered no way to REACH a game, because a row linked only to `/titles/<id>` — achievements and
+ * seasons, which is a record about a game rather than a door into it.
  *
- * ── AND THE REGISTRY IS EMPTY, WHICH IS NOT A LOADING STATE ───────────────────────────────────
+ * So the order is inverted and the row has grown a way in. What is kept from the old argument is
+ * the part that was actually about honesty: the `<h1>` still names the PLATFORM and never a game,
+ * and everything the platform looks after is still on this page, immediately under the games.
  *
- * `GET /v1/titles` answers `{"titles":[]}` on a fresh deployment, because nothing registers a
- * title — see `EMPTY_REGISTRY_GAP` in src/lib/worlds.ts. That is a 200 and a true answer. It is
- * rendered as the finding it is, with citations, and never as a spinner, a skeleton or an empty
- * state that implies something is on its way.
+ * ── THE REGISTER IS STILL THE AUTHORITY ON WHICH GAMES EXIST ──────────────────────────────────
+ *
+ * Every entry below is a row from `GET /v1/titles`. This page adds a sentence and an address from
+ * `lib/catalogue.ts` where it has one, and renders the row regardless where it does not — a title
+ * an administrator registers tomorrow appears here tomorrow. The empty case is unchanged and still
+ * renders `EMPTY_REGISTRY_GAP` rather than a spinner: a fresh deployment has registered nothing,
+ * and `{"titles":[]}` is the whole of the answer rather than a stage on the way to one.
  * ══════════════════════════════════════════════════════════════════════════════════════════════
  */
 import { useCallback } from 'react'
@@ -29,11 +36,14 @@ import { Link } from 'react-router-dom'
 import { Failed, Loading } from '../components/states.tsx'
 import { GapNotice } from '../components/gap.tsx'
 import { StateBadge } from '../components/tone.tsx'
+import { cardFor } from '../lib/catalogue.ts'
 import { capabilityMeaning, titleTone } from '../lib/format.ts'
 import { useResource } from '../lib/resource.ts'
+import { viewedSurfaceUrl } from '../lib/viewed.ts'
 import {
   EMPTY_REGISTRY_GAP,
   TITLE_BRIDGE_GAP,
+  isOpenToPlay,
   isSellable,
   listTitles,
   type Title,
@@ -104,56 +114,27 @@ export function PlatformPage() {
     <>
       <header className="ww-head">
         <p className="ww-head__eyebrow">Forge Worlds</p>
-        <h1 className="ww-head__title">The platform our games run on</h1>
+        {/*
+          THE HEADING NAMES THE PLATFORM, NOT A GAME, AND THAT PART OF THE OLD ARGUMENT STANDS.
+          It also refuses to count: "three games" would be wrong the day a fourth is registered,
+          and this page reads the register rather than telling it what to contain.
+        */}
+        <h1 className="ww-head__title">One account, every game we make</h1>
         <p className="ww-head__lede">
-          Forge Worlds is not itself a game. It holds the one account you carry between games, looks
-          after everything that account owns, keeps the record of what you have achieved, funds the
-          seasons you play through, and turns whatever you buy into something a game actually hands
-          you. Ninety Days After and Emberkin run on top of it.
+          Forge Worlds is not itself a game. It is what our games run on: the account you sign in
+          with, everything that account owns, the record of what you have done, and the seasons that
+          pay out. Start a game below and your account is already in it.
         </p>
       </header>
-
-      <section className="ww-panel" aria-label="What Forge Worlds owns">
-        <h2 className="ww-panel__title">What it looks after</h2>
-        <div className="ww-owns">
-          {OWNS.map((item) => (
-            <article className="ww-owns__item" key={item.heading}>
-              <h3 className="ww-owns__heading">{item.heading}</h3>
-              <p className="ww-owns__body">{item.body}</p>
-            </article>
-          ))}
-        </div>
-        <p className="ww-panel__note">
-          Nothing you can buy here makes you better at a game. What is for sale is how you look, how
-          much time something saves you, or admission to something — never an advantage. Items that
-          would give you one are marked as yours alone the moment you get them, and the platform
-          refuses to sell them on in three separate places, so no single mistake can undo it.
-        </p>
-      </section>
-
-      <section className="ww-panel" aria-label="What Forge Worlds is built on">
-        <h2 className="ww-panel__title">What it is built on</h2>
-        <p className="ww-panel__subtitle">
-          Forge Worlds is one product on the wider CloudsForge platform, and it borrows the rest of
-          it rather than rebuilding it. The account you sign in with is the same one that holds your
-          wallet. Season rewards are posted to the same double-entry ledger that records every other
-          movement of money in the estate.
-        </p>
-        <p className="ww-panel__note">
-          Underneath all of it is Forge Network, our own blockchain. It runs the same kind of
-          contracts Ethereum does and is tested against Ethereum’s own published test suites, so
-          tools built for Ethereum work against it unchanged. Its coin, EMBER, is mined with an
-          ordinary processor — the Forge Network site will mine it in a browser tab, using a key
-          that is created inside the page, stays there, and is never sent to us.
-        </p>
-      </section>
 
       <section className="ww-panel" aria-label="The title registry">
         <h2 className="ww-panel__title">The games on the platform</h2>
         <p className="ww-panel__subtitle">
-          Every game Forge Worlds has been told about, and what each one can be asked to do for you.
-          You do not need an account to read this list — a launcher has to be able to show you what
-          there is before you have signed in to anything.
+          Every game Forge Worlds has been told about. Each of these is its own game with its own
+          rules, and they all run on top of it — the platform holds your account, the things you own
+          and the record of what you have done; the game holds the play. You do not need an account
+          to read this list — a launcher has to be able to show you what there is before you have
+          signed in to anything — and you will need one to play.
         </p>
 
         {registry.state === 'loading' && <Loading label="Fetching the register" />}
@@ -191,19 +172,54 @@ export function PlatformPage() {
         )}
 
         {registry.state === 'ok' && registry.data !== null && (
-          <ul className="ww-titles">
+          <ul className="ww-reg">
             {registry.data.titles.map((title) => (
-              <TitleRow key={title.id} title={title} />
+              <TitleEntry key={title.id} title={title} />
             ))}
           </ul>
         )}
       </section>
 
+      <section className="ww-panel" aria-label="What Forge Worlds owns">
+        <h2 className="ww-panel__title">What it looks after</h2>
+        <div className="ww-owns">
+          {OWNS.map((item) => (
+            <article className="ww-owns__item" key={item.heading}>
+              <h3 className="ww-owns__heading">{item.heading}</h3>
+              <p className="ww-owns__body">{item.body}</p>
+            </article>
+          ))}
+        </div>
+        <p className="ww-panel__note">
+          Nothing you can buy here makes you better at a game. What is for sale is how you look, how
+          much time something saves you, or admission to something — never an advantage. Items that
+          would give you one are marked as yours alone the moment you get them, and the platform
+          refuses to sell them on in three separate places, so no single mistake can undo it.
+        </p>
+      </section>
+
+      <section className="ww-panel" aria-label="What Forge Worlds is built on">
+        <h2 className="ww-panel__title">What it is built on</h2>
+        <p className="ww-panel__subtitle">
+          Forge Worlds is one product on the wider CloudsForge platform, and it borrows the rest of
+          it rather than rebuilding it. The account you sign in with is the same one that holds your
+          wallet. Season rewards are posted to the same double-entry ledger that records every other
+          movement of money in the estate.
+        </p>
+        <p className="ww-panel__note">
+          Underneath all of it is Forge Network, our own blockchain. It runs the same kind of
+          contracts Ethereum does and is tested against Ethereum’s own published test suites, so
+          tools built for Ethereum work against it unchanged. Its coin, EMBER, is mined with an
+          ordinary processor — the Forge Network site will mine it in a browser tab, using a key
+          that is created inside the page, stays there, and is never sent to us.
+        </p>
+      </section>
+
       {/*
         STATED ON THE FRONT PAGE, ALWAYS, AND NOT ONLY WHEN THE REGISTRY IS EMPTY.
-        A registry with rows in it would make the platform look complete; the bridge would still
-        have nothing on the other end of it, and a customer would still be able to buy a private
-        world that never gets raised. The gap is a property of the estate, not of the response.
+        A registry with rows in it makes the platform look complete; the bridge still has nothing
+        on the other end of it, and a customer would still be able to buy a private world that
+        never gets raised. The gap is a property of the estate, not of the response.
       */}
       <section className="ww-panel ww-panel--gap" aria-label="What you cannot buy yet">
         <h2 className="ww-panel__title">One thing you cannot buy yet</h2>
@@ -216,48 +232,139 @@ export function PlatformPage() {
   )
 }
 
-function TitleRow({ title }: { title: Title }) {
+/**
+ * One game, as an entry in the register.
+ *
+ * The three parts are a spine, a picture and the entry itself, and the spine is the one that needs
+ * explaining. It carries the SLUG, set down the left edge — and the slug is not decoration here:
+ * it is the entitlement scope id, the value `worlds/src/titles.ts` constrains to a URL-safe shape
+ * precisely because everything the platform keys on a game is keyed on it. Putting it on the entry
+ * is the register saying, in its own vocabulary, that these rows are records rather than adverts.
+ * `aria-hidden` because the name above it already says which game this is; a screen reader reading
+ * "emberkin, Emberkin" learns nothing the second time.
+ */
+function TitleEntry({ title }: { title: Title }) {
   const tone = titleTone(title.status)
+  const card = cardFor(title.slug)
+  // Two conditions, and both are real. The register decides whether a game is open at all, and the
+  // catalogue decides whether anything in this estate can render it. A game that is `live` with no
+  // client, and a game with a client that is still `draft`, are different situations with different
+  // sentences — neither of them is a Play button.
+  const open = isOpenToPlay(title)
+  const playable = open && card?.surface != null
+
   return (
-    <li className="ww-title">
-      <div className="ww-title__head">
-        <Link className="ww-title__name" to={`/titles/${title.id}`}>
-          {title.name}
-        </Link>
-        <StateBadge tone={tone} />
+    <li className={`ww-reg__entry${playable ? ' ww-reg__entry--playable' : ''}`}>
+      <p className="ww-reg__spine cf-num" aria-hidden="true">
+        {title.slug}
+      </p>
+
+      <div className="ww-reg__art">
+        {card?.art != null ? (
+          <img
+            className="ww-reg__cover"
+            src={card.art}
+            alt=""
+            width={900}
+            height={472}
+            loading="lazy"
+            decoding="async"
+          />
+        ) : card?.motif === 'ninety-days' ? (
+          <NinetyDays />
+        ) : (
+          <div className="ww-reg__cover ww-reg__cover--none" aria-hidden="true" />
+        )}
       </div>
-      <p className="ww-title__slug cf-num">{title.slug}</p>
-      <p className="ww-title__meaning">{tone.meaning}</p>
 
-      {title.capabilities.length === 0 ? (
-        <p className="ww-absent">
-          This game has told the platform there is nothing it can be asked to do, so it never will
-          be asked. Anything bought for it would stop as a record of a purchase that cannot be
-          delivered, rather than become a request it was only going to turn down.
-        </p>
-      ) : (
-        <ul className="ww-caps">
-          {title.capabilities.map((capability) => (
-            <li className="ww-cap" key={capability}>
-              <span className="ww-cap__meaning">{capabilityMeaning(capability)}</span>
-            </li>
-          ))}
-        </ul>
-      )}
+      <div className="ww-reg__body">
+        <div className="ww-reg__head">
+          <h3 className="ww-reg__name">{title.name}</h3>
+          <StateBadge tone={tone} />
+        </div>
+        {card !== null && <p className="ww-reg__kind">{card.kind}</p>}
+        <p className="ww-reg__blurb">{card?.blurb ?? tone.meaning}</p>
 
-      {!isSellable(title) && (
-        <p className="ww-note ww-note--warn">
-          <span className="ww-note__icon" aria-hidden="true">
-            ▲
-          </span>
-          {/* One flex item, not three — see `.ww-note__body` in styles.css. Interleaving text with
-              a <code> inside a flex container laid the status out on the wrong line. */}
-          <span className="ww-note__body">
-            Nothing can be bought for this game while it is {tone.word.toLowerCase()}, because a
-            purchase aimed here would never be delivered.
-          </span>
-        </p>
-      )}
+        <div className="ww-reg__actions">
+          {playable && card?.surface != null ? (
+            <a className="cf-btn" href={viewedSurfaceUrl(card.surface)}>
+              Play {title.name}
+            </a>
+          ) : null}
+          <Link className="cf-btn ww-btn-quiet" to={`/titles/${title.id}`}>
+            Achievements and seasons
+          </Link>
+        </div>
+
+        {/*
+          WHY THERE IS NO WAY IN, WHEN THERE IS NO WAY IN — and the two reasons are not the same
+          sentence. Promising either one is on its way would be the thing this estate does not do.
+        */}
+        {!playable && (
+          <p className="ww-reg__shut">
+            {card?.surface == null
+              ? 'This game is built and running — the platform reaches it, and it answers. It has ' +
+                'no screen yet, so there is nowhere to send you. Nothing you do here is waiting ' +
+                'on it.'
+              : `Not open to play while it is ${tone.word.toLowerCase()}.`}
+          </p>
+        )}
+
+        {title.capabilities.length > 0 ? (
+          <ul className="ww-caps">
+            {title.capabilities.map((capability) => (
+              <li className="ww-cap" key={capability}>
+                <span className="ww-cap__meaning">{capabilityMeaning(capability)}</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          /*
+            THE BRIDGE CHECKS CAPABILITIES BEFORE IT CALLS (`worlds/src/provisioning.ts`), so a
+            title declaring none is one whose every purchase ends undeliverable. Saying it on the
+            row costs nothing; saying it after somebody has paid costs them.
+          */
+          <p className="ww-reg__shut">
+            This game declares nothing it can be asked to do, so nothing bought for it could be
+            handed over.
+          </p>
+        )}
+
+        {!isSellable(title) && (
+          <p className="ww-note ww-note--warn">
+            <span className="ww-note__icon" aria-hidden="true">
+              ▲
+            </span>
+            {/* One flex item, not three — see `.ww-note__body` in styles.css. Interleaving text with
+                a <code> inside a flex container laid the status out on the wrong line. */}
+            <span className="ww-note__body">
+              Nothing can be bought for this game while it is {tone.word.toLowerCase()}, because a
+              purchase aimed here would never be delivered.
+            </span>
+          </p>
+        )}
+      </div>
     </li>
+  )
+}
+
+/**
+ * Ninety cells, one per day.
+ *
+ * *Ninety Days After* has no art and no client, and a grey rectangle where the other two entries
+ * have a picture would read as a page that failed to load rather than as a game with a different
+ * story. This is drawn from the game's own rules instead: it resolves exactly one day at a time
+ * for everybody at once, and it ends after ninety of them. The first stretch is shaded because
+ * those are the days already behind the survivors when the game opens.
+ *
+ * Decorative, so it is `aria-hidden` and the blurb beside it carries the same fact in words.
+ */
+function NinetyDays() {
+  return (
+    <div className="ww-reg__days" aria-hidden="true">
+      {Array.from({ length: 90 }, (_, index) => (
+        <span className={`ww-reg__day${index < 30 ? ' ww-reg__day--past' : ''}`} key={index} />
+      ))}
+    </div>
   )
 }

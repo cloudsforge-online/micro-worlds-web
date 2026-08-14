@@ -160,6 +160,30 @@ jobs:
           sparse-checkout: |
             MANIFEST.json
             assets/heraldry
+            assets/title
+
+      # ══════════════════════════════════════════════════════════════════════════════════════════
+      # AND EMBERKIN'S SET, for its key art, for the same reason.
+      #
+      # The two covers the platform register shows each game by are DERIVATIVES — a 900px JPEG
+      # re-encoded from each game's own 1200x630 key art, because a register that lists every game
+      # is the first thing a visitor loads. A derivative cannot be byte-compared, so what
+      # `test/titles.test.ts` compares instead is the SOURCE: it must still exist and still have
+      # the checksum `src/art/titles.ts` recorded. Without these two files on the runner that
+      # check prints UNCHECKED, and a regenerated key art would leave a cover on this site that
+      # nothing on earth says came from somewhere else.
+      #
+      # `assets/title` only: actions/checkout uses cone mode, where each pattern is a DIRECTORY —
+      # naming the single file would match nothing and the check would quietly go UNCHECKED.
+      # ══════════════════════════════════════════════════════════════════════════════════════════
+      - uses: actions/checkout@v4
+        with:
+          repository: cloudsforge-online/micro-emberkin-assets
+          path: emberkin-assets
+          token: ${{ secrets.ESTATE_READ_TOKEN }}
+          sparse-checkout: |
+            MANIFEST.json
+            assets/title
 
       # Pinned, because the checkout lives at worlds-web/ and the action looks for the
       # packageManager field in the workspace root, where there is no package.json.
@@ -210,6 +234,19 @@ jobs:
             echo "::error::the heraldry byte comparison did not run"
             exit 1
           }
+          # ── And the covers were compared against the key art they were derived from ─────────
+          #
+          # Same rule, one layer weaker because the comparison itself is weaker: `titles.test.ts`
+          # prints UNCHECKED per cover when its asset set is absent, so a sparse-checkout that
+          # stopped fetching `assets/title` would look exactly like two covers
+          # that still match their sources.
+          out=$(node --import tsx --test test/titles.test.ts 2>&1 || true)
+          if grep -q 'UNCHECKED:' <<<"$out"; then
+            echo "::error::a title cover skipped its source comparison while the asset set was present"
+            echo "$out" | grep 'UNCHECKED:'
+            exit 1
+          fi
+
           # And the generator agrees with what is committed. `--check` is the same derivation the
           # suite makes, run as a tool, so a regenerated set that nobody re-synced fails here with
           # the command to fix it rather than as an assertion diff.
