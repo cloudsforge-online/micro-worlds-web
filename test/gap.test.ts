@@ -237,7 +237,7 @@ describe('the front page states both gaps', () => {
      */
     assert.match(platform, /Forge Worlds is not itself a game/)
     assert.ok(platformCode.indexOf('const OWNS') > 0, 'what the platform owns is gone from the page')
-    assert.match(platformCode, /The games on the platform/)
+    assert.match(platformCode, /The games/)
   })
 
   it('builds the registry from the SERVICE, never from a list in source', () => {
@@ -274,9 +274,15 @@ describe('the front page states both gaps', () => {
   })
 
   it('frames the two titles as things that RUN on the platform', () => {
-    // The sentence that does the work. Asserted so a rewrite cannot drop it and leave the page
-    // describing a platform with nothing to say about what a title is.
-    assert.match(platform, /run on top of it/i)
+    // The sentence that used to do this was a four-line preamble above the shelf — "Each of these
+    // is its own game with its own rules, and they all run on top of it…" — and it was the exact
+    // thing standing between somebody arriving and a cover they could click. It is gone.
+    //
+    // The claim it was making is not. The `<h1>` still names the platform rather than a game, and
+    // the panel below the shelf still says what the platform holds for you while a game holds the
+    // play. So this assertion moves to the sentence that carries it now, rather than pinning copy
+    // the redesign was right to cut.
+    assert.match(platform, /what the platform holds for you/i)
   })
 })
 

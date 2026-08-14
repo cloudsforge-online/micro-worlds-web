@@ -59,46 +59,28 @@ import {
  */
 const OWNS: ReadonlyArray<{ heading: string; body: string }> = [
   {
-    heading: 'A register of the games',
-    body:
-      'One entry per game: its name, whether anything can be bought for it, what it is able to be ' +
-      'asked for, and where the platform reaches it. Adding a second game is filling in an entry ' +
-      'rather than rebuilding everything around the first.',
-  },
-  {
-    heading: 'One account, wherever you play',
-    body:
-      'Your name, your standing and any restrictions on your account live with you rather than ' +
-      'with a game. Your outfit is kept per game on top of a default, so dressing differently in ' +
-      'one place does not change how you look everywhere else.',
+    heading: 'One account',
+    body: 'Your name and your standing travel with you. Your outfit is kept per game.',
   },
   {
     heading: 'A bag that follows you',
-    body:
-      'Everything your account holds, each item remembering how it arrived: bought, awarded, ' +
-      'crafted, traded or given. Anything that could give you an advantage in a game is tied to ' +
-      'you and can never be sold on. That is the design, not a restriction we mean to lift.',
+    body: 'Everything you own, remembering how it arrived. Nothing that gives an advantage can be sold on.',
   },
   {
-    heading: 'Achievements that outlast the game',
-    body:
-      'A game tells the platform what you managed and the platform keeps the record, so it ' +
-      'survives that game going quiet. Points are a score and never a currency: they cannot be ' +
-      'spent on anything.',
+    heading: 'Achievements kept off-game',
+    body: 'The record survives a game going quiet. Points are a score, never a currency.',
   },
   {
-    heading: 'Seasons with a budget behind them',
-    body:
-      'A season opens with a fixed amount set aside for rewards. Every payout is taken from that ' +
-      'amount and written into the accounts in the same movement, so a game with a bug in it ' +
-      'cannot pay out more than its season was given.',
+    heading: 'Seasons with a pot behind them',
+    body: 'Every payout comes out of a fixed amount, so a buggy game cannot overpay.',
   },
   {
-    heading: 'Purchases that turn into something real',
-    body:
-      'When you buy something, the platform is told what it was, checks the message really came ' +
-      'from the billing system, works out which game has to hand it over, and asks that game to ' +
-      'do it. If the same message arrives twice you still get your item once.',
+    heading: 'Purchases that arrive',
+    body: 'Bought once, handed over once, by whichever game owes it to you.',
+  },
+  {
+    heading: 'A register, not a storefront',
+    body: 'One entry per game: what it is, what it can be asked for, where to reach it.',
   },
 ]
 
@@ -121,21 +103,13 @@ export function PlatformPage() {
         */}
         <h1 className="ww-head__title">One account, every game we make</h1>
         <p className="ww-head__lede">
-          Forge Worlds is not itself a game. It is what our games run on: the account you sign in
-          with, everything that account owns, the record of what you have done, and the seasons that
-          pay out. Start a game below and your account is already in it.
+          Forge Worlds is not itself a game — it is what our games run on. Pick one below; your
+          account is already in it.
         </p>
       </header>
 
-      <section className="ww-panel" aria-label="The title registry">
-        <h2 className="ww-panel__title">The games on the platform</h2>
-        <p className="ww-panel__subtitle">
-          Every game Forge Worlds has been told about. Each of these is its own game with its own
-          rules, and they all run on top of it — the platform holds your account, the things you own
-          and the record of what you have done; the game holds the play. You do not need an account
-          to read this list — a launcher has to be able to show you what there is before you have
-          signed in to anything — and you will need one to play.
-        </p>
+      <section className="ww-shelf" aria-label="The title registry">
+        <h2 className="ww-shelf__title">The games</h2>
 
         {registry.state === 'loading' && <Loading label="Fetching the register" />}
         {registry.state === 'failed' && registry.error !== null && (
@@ -181,7 +155,7 @@ export function PlatformPage() {
       </section>
 
       <section className="ww-panel" aria-label="What Forge Worlds owns">
-        <h2 className="ww-panel__title">What it looks after</h2>
+        <h2 className="ww-panel__title">What the platform holds for you</h2>
         <div className="ww-owns">
           {OWNS.map((item) => (
             <article className="ww-owns__item" key={item.heading}>
@@ -190,28 +164,22 @@ export function PlatformPage() {
             </article>
           ))}
         </div>
+        {/*
+          KEPT, AND CUT TO ONE LINE. The no-pay-to-win rule is the one sentence on this page a
+          player has a right to before they spend anything; the three-places-enforced detail that
+          used to follow it was writing for engineers and is in the repository.
+        */}
         <p className="ww-panel__note">
-          Nothing you can buy here makes you better at a game. What is for sale is how you look, how
-          much time something saves you, or admission to something — never an advantage. Items that
-          would give you one are marked as yours alone the moment you get them, and the platform
-          refuses to sell them on in three separate places, so no single mistake can undo it.
+          Nothing on sale makes you better at a game — only how you look, what you skip, or what
+          you get into. Anything that would give you an advantage is yours alone and never resold.
         </p>
       </section>
 
       <section className="ww-panel" aria-label="What Forge Worlds is built on">
-        <h2 className="ww-panel__title">What it is built on</h2>
+        <h2 className="ww-panel__title">Built on the rest of CloudsForge</h2>
         <p className="ww-panel__subtitle">
-          Forge Worlds is one product on the wider CloudsForge platform, and it borrows the rest of
-          it rather than rebuilding it. The account you sign in with is the same one that holds your
-          wallet. Season rewards are posted to the same double-entry ledger that records every other
-          movement of money in the estate.
-        </p>
-        <p className="ww-panel__note">
-          Underneath all of it is Forge Network, our own blockchain. It runs the same kind of
-          contracts Ethereum does and is tested against Ethereum’s own published test suites, so
-          tools built for Ethereum work against it unchanged. Its coin, EMBER, is mined with an
-          ordinary processor — the Forge Network site will mine it in a browser tab, using a key
-          that is created inside the page, stays there, and is never sent to us.
+          Same account as your wallet. Season rewards land in the same ledger as every other
+          movement of money here, on Forge Network — our own Ethereum-compatible chain.
         </p>
       </section>
 
@@ -223,9 +191,6 @@ export function PlatformPage() {
       */}
       <section className="ww-panel ww-panel--gap" aria-label="What you cannot buy yet">
         <h2 className="ww-panel__title">One thing you cannot buy yet</h2>
-        <p className="ww-panel__subtitle">
-          Said here, before you pay, rather than left for you to find out afterwards.
-        </p>
         <GapNotice gap={TITLE_BRIDGE_GAP} />
       </section>
     </>

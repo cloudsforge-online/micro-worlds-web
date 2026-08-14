@@ -456,30 +456,40 @@ body {
 
 /* ------------------------- what it owns ---------------------------- */
 
+/*
+ * SIX SHORT FACTS, NOT SIX ESSAYS.
+ *
+ * These were six bordered cards carrying a paragraph each, and stacked above the games they read
+ * as the page — the owner's words were "just useless text tiles and 2 games below". They are now
+ * a ledger rather than a card grid: a hairline between rows, no box around anything, the heading
+ * on one line and a single clause under it. The visual weight goes to the shelf, which is where a
+ * player is trying to get to; this block stays because every line of it is a promise the platform
+ * actually keeps, and a reader deciding whether to make an account is owed them.
+ */
 .ww-owns {
   display: grid;
-  gap: var(--cf-space-lg);
-  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+  gap: 0;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  border-top: 1px solid var(--cf-line);
 }
 
 .ww-owns__item {
-  padding: var(--cf-space-lg);
-  background: var(--cf-bg-raised);
-  border: 1px solid var(--cf-line);
-  border-radius: var(--cf-radius-sm);
+  padding: var(--cf-space-md) var(--cf-space-lg) var(--cf-space-md) 0;
+  border-bottom: 1px solid var(--cf-line);
 }
 
 .ww-owns__heading {
-  margin: 0 0 var(--cf-space-xs);
-  font-size: var(--cf-text-md);
-  color: var(--cf-accent-text);
+  margin: 0 0 var(--cf-space-3xs);
+  font-family: var(--cf-font-display);
+  font-size: var(--cf-text-sm);
+  color: var(--cf-fg);
 }
 
 .ww-owns__body {
   margin: 0;
-  color: var(--cf-fg-dim);
-  font-size: var(--cf-text-sm);
-  line-height: 1.6;
+  color: var(--cf-fg-mute);
+  font-size: var(--cf-text-xs);
+  line-height: 1.55;
 }
 
 /* ------------------------- the registry ---------------------------- */
@@ -572,6 +582,34 @@ body {
 /* --------------------- the register, as a shelf --------------------- */
 
 /*
+ * THE SHELF IS THE PAGE, AND IT HAS NO PANEL AROUND IT.
+ *
+ * The games used to sit inside a `.ww-panel` — a border, a fill, a title and four sentences of
+ * preamble — which put a box and a paragraph between somebody arriving and the thing they came
+ * for. A panel is right for a block ABOUT something; the games are not about anything, they are
+ * the subject. So the chrome is gone, the heading is two words, and the first cover art starts
+ * within a screen of the top on every viewport.
+ *
+ * The heading keeps a rule under it rather than a background: it still separates, and it does not
+ * make a container out of the one section that should read as the page itself.
+ */
+.ww-shelf {
+  margin: 0 0 var(--cf-space-3xl);
+}
+
+.ww-shelf__title {
+  margin: 0;
+  padding-bottom: var(--cf-space-sm);
+  border-bottom: 1px solid var(--cf-line-strong);
+  font-family: var(--cf-font-display);
+  font-size: var(--cf-text-sm);
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--cf-fg-mute);
+}
+
+/*
  * `.ww-reg` is the front page's rendering of the SAME rows `.ww-title` renders elsewhere, and the
  * two are deliberately not one class. `.ww-title` is a record: a name, a status, a slug, the
  * capabilities, and a link to the platform's file on it. `.ww-reg__entry` is a door: a picture,
@@ -598,9 +636,11 @@ body {
 .ww-reg__entry {
   display: grid;
   /* spine · art · body. The art column is fixed so every cover lands on the same left edge and
-     the names below them line up; the body takes what is left. */
-  grid-template-columns: auto 18rem 1fr;
-  gap: var(--cf-space-lg);
+     the names below them line up; the body takes what is left. Widened from 18rem: with the
+     preamble gone the shelf is what the page spends its space on, and a cover big enough to be
+     read as a picture rather than a thumbnail is the whole point of putting it first. */
+  grid-template-columns: auto minmax(0, 26rem) 1fr;
+  gap: var(--cf-space-xl);
   align-items: start;
   padding: var(--cf-space-lg);
   border: 1px solid var(--cf-line);

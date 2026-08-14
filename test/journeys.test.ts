@@ -151,8 +151,12 @@ describe('BJ-WLD — Forge Worlds', () => {
         // the order is now the other way round. Somebody arriving at Forge Worlds is asking what
         // they can play; the six panels about entitlements and seasons answer a question they have
         // not asked yet.
-        const registry = s.orderOf(/games on the platform/i)
-        const owns = s.orderOf(/what it looks after/i)
+        // The two headings were "The games on the platform" and "What it looks after". Both were
+        // cut in the redesign — the shelf lost its four-sentence preamble and its panel chrome so
+        // the first cover art starts within a screen of the top, and the six paragraphs became six
+        // one-line facts. What this assertion is FOR survives the rename: the games come first.
+        const registry = s.orderOf(/The games/)
+        const owns = s.orderOf(/what the platform holds for you/i)
         assert.ok(registry > 0, 'there is no registry section')
         assert.ok(owns > 0, 'the platform no longer says what it owns')
         assert.ok(registry < owns, 'the register is below the platform panels again')
