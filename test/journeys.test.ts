@@ -114,28 +114,79 @@ describe('BJ-WLD — Forge Worlds', () => {
     )
   })
 
-  it('BJ-WLD-02 T1: the index opens with what the platform owns, not with two game cards', async () => {
+  it('BJ-WLD-02 T1: the heading names the platform, and the register is read before the plumbing', async () => {
     await withScreen(
       page(h(PlatformPage), '/'),
-      { url: `${ORIGIN}/`, routes: { 'GET /v1/titles': { body: { titles: [fx.title()] } } } },
+      {
+        url: `${ORIGIN}/`,
+        // `emberkin`, not the fixture's default `ninety-days-after`: this scenario is about a game
+        // a reader can REACH, and Ninety Days After is the one registered title with no client in
+        // the estate to reach. Its own case — a registered game that renders nowhere — is
+        // BJ-WLD-02b below.
+        routes: {
+          'GET /v1/titles': {
+            body: { titles: [fx.title({ slug: 'emberkin', name: 'Emberkin' })] },
+          },
+        },
+      },
       async (s) => {
+        await s.settle(20)
         const h1 = s.allByRole('heading').find((el) => el.tagName === 'H1')
         assert.ok(h1)
-        // The platform, named as the platform. A front page made of two game cards says the
-        // platform IS those two games, which is the category error the registry exists to end.
+        // UNCHANGED, AND THE HALF OF THE ORIGINAL ARGUMENT THAT SURVIVED. The platform is named
+        // as the platform: a front page whose headline is a game says the platform IS that game,
+        // which is the category error the registry exists to end.
         assert.doesNotMatch(
           s.textOf(h1),
           /ninety days after|emberkin/i,
           'the front page leads with a title rather than with the platform',
         )
-        // The registry is a SECTION within the page, so it comes after what the platform owns.
-        // Matched on the words the section now uses: it was headed "The register" and called the
-        // rows "titles", which is the platform's own vocabulary rather than a player's.
+
+        // ── AND THE HALF THAT WAS OVERRULED, RECORDED RATHER THAN DELETED ──────────────────
+        //
+        // This assertion used to be `owns < registry`: what the platform owns came first and the
+        // register was a section beneath it. That was written when the register was EMPTY, so the
+        // ordering cost nothing. With three titles registered the owner reported the consequence —
+        // "we suppose to have 3 games but no one is visible or accessible on forge worlds" — and
+        // the order is now the other way round. Somebody arriving at Forge Worlds is asking what
+        // they can play; the six panels about entitlements and seasons answer a question they have
+        // not asked yet.
         const registry = s.orderOf(/games on the platform/i)
+        const owns = s.orderOf(/what it looks after/i)
         assert.ok(registry > 0, 'there is no registry section')
-        assert.ok(
-          s.orderOf(s.textOf(h1)) < registry,
-          'the registry is the first thing on the page rather than a section within it',
+        assert.ok(owns > 0, 'the platform no longer says what it owns')
+        assert.ok(registry < owns, 'the register is below the platform panels again')
+
+        // A REGISTERED TITLE MUST BE REACHABLE, which is the other half of the same report. The
+        // fixture title is `emberkin` at `live`, and `lib/catalogue.ts` gives that slug a surface,
+        // so the entry carries a link a person can follow and not only the platform's file on it.
+        const play = s.allByRole('link').find((el) => /^play /i.test(s.textOf(el)))
+        assert.ok(play, 'a live registered title offers no way into the game')
+        assert.match(play.getAttribute('href') ?? '', /^https?:\/\//, 'the play link goes nowhere')
+      },
+    )
+  })
+
+  it('BJ-WLD-02b T1: a registered game with no client says so, and offers no Play button', async () => {
+    await withScreen(
+      page(h(PlatformPage), '/'),
+      // The fixture's own default. `micro-nda` serves the whole game — worlds, tiles, homesteads,
+      // the day-resolution engine — and nothing in the estate renders it, so `lib/catalogue.ts`
+      // gives the slug `surface: null`.
+      { url: `${ORIGIN}/`, routes: { 'GET /v1/titles': { body: { titles: [fx.title()] } } } },
+      async (s) => {
+        await s.settle(20)
+        // The register still lists it. Invisibility was the reported defect; a game with no client
+        // is not a game to hide.
+        assert.ok(s.text().includes('Ninety Days After'), 'the title is missing from the register')
+        // But no way in, because there is none. A Play button opening a 404 is worse than the
+        // sentence beside it.
+        const play = s.allByRole('link').find((el) => /^play /i.test(s.textOf(el)))
+        assert.equal(play, undefined, 'a game with no client is offering a way into it')
+        assert.match(
+          s.text(),
+          /no screen yet/i,
+          'nothing on the page says why this game cannot be opened',
         )
       },
     )

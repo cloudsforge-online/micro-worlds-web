@@ -1,0 +1,35 @@
+{
+  "$comment": "The covers the platform register shows each game by. These are DERIVATIVES: each is a 900px JPEG re-encoded from that game's own 1200x630 key art, because a register that lists every game would otherwise carry 1.6 MB of PNG before it said a word. The re-encode drops the C2PA chunk and the invisible watermark, which is why sourceSha256 is recorded — the provenance of these files is the provenance of the file each came from. The catalogue that names them is src/art/titles.ts; nothing else in this repository spells these paths.",
+  "derivation": "sips -Z 900 -s format jpeg -s formatOptions 78",
+  "provider": "flux-2-pro",
+  "providerLabel": "FLUX 2 Pro",
+  "disclosure": "Every image here is AI-generated. Each source file carries C2PA provenance and a Microsoft invisible watermark; the JPEGs served here are re-encoded derivatives and carry neither, so each one names the file it came from and that file's checksum.",
+  "licence": "cloudsforge-generated: commercial use permitted; AI-generated, C2PA provenance retained by the source",
+  "assetCount": 2,
+  "assets": [
+    {
+      "slug": "emberkin",
+      "name": "Emberkin",
+      "path": "/art/titles/emberkin.jpg",
+      "size": "900x472",
+      "accent": "#e8622c",
+      "sourceRepo": "micro-emberkin-assets",
+      "sourceFile": "assets/title/og-1200x630.png",
+      "sourceSize": "1200x630",
+      "sourceSha256": "0838fe73eee99699d4dba2f0831b3d691176eff40ccd71451f4f58a27d84c552",
+      "c2pa": "not retained by the derivative"
+    },
+    {
+      "slug": "aetherholm",
+      "name": "Aetherholm",
+      "path": "/art/titles/aetherholm.jpg",
+      "size": "900x472",
+      "accent": "#8f7ae8",
+      "sourceRepo": "micro-aetherholm-assets",
+      "sourceFile": "assets/title/og-1200x630.png",
+      "sourceSize": "1200x630",
+      "sourceSha256": "e936631f422c0d3b809342eba72e42afe3f1793c50f7ae824526f871da9f822c",
+      "c2pa": "not retained by the derivative"
+    }
+  ]
+}
