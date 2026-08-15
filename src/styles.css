@@ -354,6 +354,21 @@ body {
   color: var(--cf-fg-mute);
 }
 
+/*
+ * THE GAME'S OWN SIGN, WHERE THE EYEBROW WOULD OTHERWISE BE.
+ *
+ * `/play` opens with the wordmark from `src/art/nda.ts` instead of setting the game's name in this
+ * stylesheet's display face — it is the game's mark, not this surface's typography, and the two
+ * would fight. Alpha-keyed WebP, so the `block-size` is what sizes it and the width follows; the
+ * cap keeps a 768px picture from becoming a banner on a wide screen.
+ */
+.ww-head__mark {
+  display: block;
+  block-size: auto;
+  inline-size: min(100%, 22rem);
+  margin: 0 0 var(--cf-space-md);
+}
+
 .ww-head__title {
   margin: 0;
   font-family: var(--cf-font-display);
@@ -688,38 +703,15 @@ body {
   object-fit: cover;
 }
 
-/* A game with neither art nor a motif. Sunken and empty, and never a broken-image icon. */
+/*
+ * A title this page has never been taught about. Sunken and empty, and never a broken-image icon.
+ *
+ * All three games the register knows have a cover now, so this is reached only by a fourth title
+ * registered by an administrator — which is exactly the case the register is built to survive.
+ */
 .ww-reg__cover--none {
   background: var(--cf-bg-sunken);
-}
-
-/*
- * NINETY CELLS, ONE PER DAY — the device standing in for cover art on *Ninety Days After*.
- *
- * Fifteen across and six down because that is 90 exactly, with no remainder cell to explain away.
- * The shaded run is the days already behind the survivors when the game opens; the rest are the
- * ones still to resolve. Decorative in the accessibility sense — the entry's own sentence carries
- * the same fact in words — but not decorative in the design sense: it is the game's rules drawn
- * at a glance, which is what the other two entries get from a photograph.
- */
-.ww-reg__days {
-  display: grid;
-  grid-template-columns: repeat(15, 1fr);
-  gap: var(--cf-space-3xs);
-  padding: var(--cf-space-md);
   aspect-ratio: 900 / 472;
-  align-content: center;
-}
-
-.ww-reg__day {
-  aspect-ratio: 1;
-  border: 1px solid var(--cf-line);
-  border-radius: var(--cf-radius-sm);
-}
-
-.ww-reg__day--past {
-  background: var(--cf-line-strong);
-  border-color: var(--cf-line-strong);
 }
 
 .ww-reg__body {
@@ -1205,4 +1197,960 @@ body {
 .ww-field__input:focus-visible {
   outline: 2px solid var(--cf-accent);
   outline-offset: 1px;
+}
+
+/* ==================================================================== */
+/* ================== NINETY DAYS AFTER: /play and /play/:id ========== */
+/* ==================================================================== */
+
+/*
+ * ONE READING COLUMN, AND THE ORDERS NEAR THE TOP OF IT.
+ *
+ * There is no side rail in this section and there will not be one. The estate has already shipped a
+ * page whose primary control sat in a right-hand column below the fold, and the report on it was
+ * that the control did not exist. So the game screen is a stack: vitals, then TOMORROW, then the
+ * map, then every panel that is a reason rather than a decision. The only visual emphasis spent is
+ * on `.ww-orders`, which carries the accent edge; everything below it is the same quiet panel.
+ */
+
+/* ---------------------------- the world list ------------------------ */
+
+.ww-worlds {
+  display: grid;
+  gap: var(--cf-space-lg);
+  /* 22rem: a card narrower than this puts the four facts onto four lines. Not rhythm; a track. */
+  grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr));
+  margin: var(--cf-space-xl) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ww-world {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cf-space-sm);
+  padding: var(--cf-space-lg);
+  background: var(--cf-surface);
+  border: 1px solid var(--cf-line);
+  border-radius: var(--cf-radius);
+}
+
+.ww-world__head {
+  display: flex;
+  gap: var(--cf-space-md);
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.ww-world__name {
+  margin: 0;
+  font-family: var(--cf-font-display);
+  font-size: var(--cf-text-lg);
+}
+
+.ww-world__meaning {
+  margin: 0;
+  color: var(--cf-fg-dim);
+  font-size: var(--cf-text-sm);
+  line-height: 1.6;
+}
+
+.ww-world__facts {
+  display: grid;
+  gap: var(--cf-space-sm);
+  grid-template-columns: repeat(auto-fit, minmax(6rem, 1fr));
+  margin: 0;
+}
+
+.ww-world__fact dt {
+  font-size: var(--cf-text-2xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cf-fg-mute);
+}
+
+.ww-world__fact dd {
+  margin: var(--cf-space-3xs) 0 0;
+  font-size: var(--cf-text-sm);
+}
+
+.ww-world__enter {
+  margin-top: auto;
+  align-self: flex-start;
+}
+
+/*
+ * The season bar. A season is ninety days on a clock, so how far through it is the single fact that
+ * decides whether settling now is worth doing — and it is a length, which reads faster than "day 61
+ * of 90". The number is under it anyway, because a bar alone is not a value.
+ */
+.ww-season {
+  /* 0.4rem: the bar's own thickness, proportional to nothing on the page's rhythm. */
+  block-size: 0.4rem;
+  background: var(--cf-bg-sunken);
+  border: 1px solid var(--cf-line);
+  border-radius: var(--cf-radius-sm);
+  overflow: hidden;
+}
+
+.ww-season__bar {
+  block-size: 100%;
+  background: var(--cf-accent);
+}
+
+.ww-season__label {
+  margin: 0;
+  font-size: var(--cf-text-xs);
+  color: var(--cf-fg-mute);
+}
+
+/* ---------------------------- the world page ------------------------ */
+
+.ww-backlink {
+  margin: 0 0 var(--cf-space-md);
+  font-size: var(--cf-text-sm);
+}
+
+.ww-worldhead__line {
+  display: flex;
+  gap: var(--cf-space-md);
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+
+/*
+ * The roundel beside a world's name. `align-items: baseline` on the row would hang a picture off
+ * the text baseline and leave it sitting low, so this one aligns to the middle of its own box and
+ * takes the display face's cap height as its size.
+ */
+.ww-worldhead__mark {
+  align-self: center;
+  inline-size: 2.5rem;
+  block-size: 2.5rem;
+  flex: none;
+}
+
+.ww-sub {
+  margin: var(--cf-space-lg) 0 var(--cf-space-sm);
+  font-size: var(--cf-text-md);
+  letter-spacing: 0.02em;
+}
+
+.ww-arrival__lede {
+  margin: 0 0 var(--cf-space-lg);
+  max-width: 62ch;
+  color: var(--cf-fg-dim);
+  line-height: 1.7;
+}
+
+.ww-arrival__go {
+  align-self: flex-start;
+}
+
+/* ------------------------------- vitals ----------------------------- */
+
+.ww-vitals__state {
+  margin: 0;
+  color: var(--cf-fg-dim);
+  font-size: var(--cf-text-sm);
+}
+
+.ww-gauges {
+  display: grid;
+  gap: var(--cf-space-md);
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  margin: var(--cf-space-lg) 0 0;
+}
+
+.ww-gauge__line {
+  display: flex;
+  gap: var(--cf-space-sm);
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: var(--cf-space-3xs);
+}
+
+.ww-gauge__label {
+  font-size: var(--cf-text-2xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cf-fg-mute);
+}
+
+.ww-gauge__value {
+  font-size: var(--cf-text-xs);
+  color: var(--cf-fg-dim);
+}
+
+.ww-gauge__track {
+  /* 0.5rem: the gauge's thickness. See the note on `.ww-season`. */
+  block-size: 0.5rem;
+  background: var(--cf-bg-sunken);
+  border: 1px solid var(--cf-line);
+  border-radius: var(--cf-radius-sm);
+  overflow: hidden;
+}
+
+.ww-gauge__fill {
+  block-size: 100%;
+  background: var(--cf-accent);
+}
+
+/* ------------------------------ resources --------------------------- */
+
+/*
+ * SIX RESOURCES, EACH WITH ITS OWN DRAWN ICON.
+ *
+ * The icon sits in a column of its own and the number and the word share the next one, which is
+ * what makes a rack of six scannable: the eye finds the picture, then reads the count beside it,
+ * rather than reading six identical grey boxes in sequence. `grid-template-areas` rather than
+ * nesting, so the third row — the commune's allowance, which only the stores panel renders —
+ * lands under the count instead of pushing the icon off centre.
+ */
+.ww-stock {
+  display: grid;
+  gap: var(--cf-space-sm);
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ww-stock__item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas:
+    'icon count'
+    'icon word'
+    'allow allow';
+  gap: 0 var(--cf-space-sm);
+  align-items: center;
+  padding: var(--cf-space-sm) var(--cf-space-md);
+  background: var(--cf-bg-sunken);
+  border: 1px solid var(--cf-line);
+  border-radius: var(--cf-radius-sm);
+}
+
+.ww-stock__icon {
+  grid-area: icon;
+  inline-size: 2rem;
+  block-size: 2rem;
+}
+
+.ww-stock__n {
+  grid-area: count;
+  align-self: end;
+  font-size: var(--cf-text-lg);
+  line-height: 1.1;
+}
+
+.ww-stock__k {
+  grid-area: word;
+  align-self: start;
+  font-size: var(--cf-text-2xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cf-fg-mute);
+}
+
+.ww-stock__allow {
+  grid-area: allow;
+  margin-block-start: var(--cf-space-2xs);
+  font-size: var(--cf-text-2xs);
+  color: var(--cf-fg-dim);
+}
+
+/* ------------------------------- orders ----------------------------- */
+
+/*
+ * The one panel with the accent on it. `border-inline-start` rather than a fill, so the emphasis
+ * survives a reader who cannot separate moss from ash: the edge is a POSITION, and the heading and
+ * the action count say the same thing in words.
+ */
+.ww-orders {
+  border-inline-start: 3px solid var(--cf-accent);
+}
+
+.ww-orders__head {
+  display: flex;
+  gap: var(--cf-space-md);
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.ww-orders__left {
+  margin: 0;
+  font-size: var(--cf-text-sm);
+  color: var(--cf-fg-dim);
+}
+
+.ww-orders__lede {
+  margin: var(--cf-space-sm) 0 var(--cf-space-lg);
+  max-width: 68ch;
+  color: var(--cf-fg-dim);
+  font-size: var(--cf-text-sm);
+  line-height: 1.7;
+}
+
+.ww-orders__add {
+  display: flex;
+  gap: var(--cf-space-sm);
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.ww-orders__hint,
+.ww-orders__empty {
+  margin: var(--cf-space-sm) 0 0;
+  font-size: var(--cf-text-xs);
+  color: var(--cf-fg-mute);
+}
+
+.ww-orders__go {
+  display: flex;
+  gap: var(--cf-space-sm);
+  flex-wrap: wrap;
+  margin-top: var(--cf-space-lg);
+}
+
+.ww-raid {
+  display: inline-flex;
+  gap: var(--cf-space-xs);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.ww-raid__label {
+  font-size: var(--cf-text-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cf-fg-mute);
+}
+
+.ww-raid__pick {
+  padding: var(--cf-space-2xs) var(--cf-space-sm);
+  background: var(--cf-bg-sunken);
+  color: var(--cf-fg);
+  border: 1px solid var(--cf-line-strong);
+  border-radius: var(--cf-radius-sm);
+  font-family: var(--cf-font-sans);
+  font-size: var(--cf-text-sm);
+  max-inline-size: 100%;
+}
+
+.ww-raid__pick:focus-visible {
+  outline: 2px solid var(--cf-accent);
+  outline-offset: 1px;
+}
+
+/* --------------------------- the queued day ------------------------- */
+
+.ww-queue {
+  margin: var(--cf-space-lg) 0 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--cf-line);
+  border-radius: var(--cf-radius-sm);
+}
+
+.ww-queue__row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: var(--cf-space-md);
+  align-items: center;
+  padding: var(--cf-space-sm) var(--cf-space-md);
+  border-bottom: 1px solid var(--cf-line);
+}
+
+.ww-queue__row:last-child {
+  border-bottom: none;
+}
+
+.ww-queue__n {
+  font-family: var(--cf-font-mono);
+  font-size: var(--cf-text-xs);
+  color: var(--cf-fg-mute);
+}
+
+.ww-queue__what {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cf-space-3xs);
+  min-inline-size: 0;
+}
+
+.ww-queue__word {
+  font-size: var(--cf-text-sm);
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.ww-queue__means {
+  font-size: var(--cf-text-xs);
+  color: var(--cf-fg-mute);
+  line-height: 1.5;
+}
+
+.ww-queue__drop {
+  padding: 0 var(--cf-space-xs);
+  background: none;
+  color: var(--cf-fg-mute);
+  border: 1px solid var(--cf-line);
+  border-radius: var(--cf-radius-sm);
+  font-size: var(--cf-text-md);
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.ww-queue__drop:hover {
+  color: var(--cf-danger);
+  border-color: var(--cf-danger);
+}
+
+.ww-queue__drop:focus-visible {
+  outline: 2px solid var(--cf-accent);
+  outline-offset: 1px;
+}
+
+/* -------------------------------- the map --------------------------- */
+
+/*
+ * THE SIGNATURE, AND A CONTROL.
+ *
+ * Six terrains, each DRAWN — the game's own tiles, catalogued in `src/art/nda.ts` and handed to
+ * this stylesheet by `src/pages/world.tsx` as `--ww-tile-<terrain>`. The paths are not written
+ * here on purpose: `test/heraldry.test.ts` forbids spelling an `/art/` path anywhere in `src`
+ * outside `src/art/`, and it reads this file too, so a tile regenerated at another name fails a
+ * test instead of leaving a 404 nobody notices.
+ *
+ * THE TINT UNDERNEATH IS NOT DECORATION. It is what the cell looks like when the picture has not
+ * arrived — on a slow connection, on the first paint, or when the asset is missing — and it is the
+ * reason terrain was never colour alone in the first place: it is mixed from the four semantic
+ * tokens rather than being literal colour, so it follows the substrate. The channel that actually
+ * carries terrain to a reader who cannot see either is the accessible name on every cell, which
+ * says what the tile is and where it is.
+ *
+ * The track floor is why the column count arrives as a custom property rather than as a computed
+ * `grid-template-columns`: 24 columns of `1fr` on a phone is a 15px cell, and a drawn tile in it
+ * is a smudge. `minmax()` keeps the cell legible and lets the wrapper scroll instead. The floor
+ * went UP when the pictures arrived — a character reads at 24px and a drawn scene does not — so a
+ * default world is 672px of map, which scrolls on a phone rather than shrinking into mud.
+ */
+.ww-mapwrap {
+  margin: var(--cf-space-lg) 0 0;
+  overflow-x: auto;
+}
+
+.ww-map {
+  display: grid;
+  grid-template-columns: repeat(var(--ww-map-cols, 24), minmax(1.75rem, 1fr));
+  /* 1px: a hairline between cells, not a rhythm step. */
+  gap: 1px;
+  background: var(--cf-line);
+  border: 1px solid var(--cf-line-strong);
+  border-radius: var(--cf-radius-sm);
+  padding: 1px;
+  min-inline-size: max-content;
+}
+
+.ww-cell {
+  display: block;
+  aspect-ratio: 1;
+  margin: 0;
+  padding: 0;
+  appearance: none;
+  border: none;
+  /* `background-color` and not the shorthand, so the tint below survives the picture above it. */
+  background-color: var(--cf-bg-sunken);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+button.ww-cell {
+  cursor: pointer;
+}
+
+/*
+ * A drawn tile cannot be lit by changing its background, so hover and the pressable state are an
+ * OVERLAY: `box-shadow: inset` puts a wash over the picture without a second element in 576 cells.
+ */
+button.ww-cell:hover {
+  box-shadow: inset 0 0 0 999px color-mix(in oklab, var(--cf-fg) 18%, transparent);
+}
+
+button.ww-cell:focus-visible {
+  outline: 2px solid var(--cf-accent);
+  outline-offset: -1px;
+  z-index: 1;
+}
+
+.ww-cell--wilderness {
+  background-color: var(--cf-bg-sunken);
+  background-image: var(--ww-tile-wilderness);
+}
+
+.ww-cell--forest {
+  background-color: color-mix(in oklab, var(--cf-success) 22%, var(--cf-bg-sunken));
+  background-image: var(--ww-tile-forest);
+}
+
+.ww-cell--ruins {
+  background-color: color-mix(in oklab, var(--cf-warn) 26%, var(--cf-bg-sunken));
+  background-image: var(--ww-tile-ruins);
+}
+
+.ww-cell--water {
+  background-color: color-mix(in oklab, var(--cf-accent-text) 24%, var(--cf-bg-sunken));
+  background-image: var(--ww-tile-water);
+}
+
+.ww-cell--road {
+  background-color: color-mix(in oklab, var(--cf-fg-mute) 20%, var(--cf-bg-sunken));
+  background-image: var(--ww-tile-road);
+}
+
+.ww-cell--homestead {
+  background-color: color-mix(in oklab, var(--cf-danger) 20%, var(--cf-bg-sunken));
+  background-image: var(--ww-tile-homestead);
+}
+
+/* Your own tile, marked by a ring rather than by a colour of its own. */
+.ww-cell--mine {
+  outline: 2px solid var(--cf-accent);
+  outline-offset: -2px;
+  z-index: 1;
+}
+
+.ww-legend {
+  display: grid;
+  gap: var(--cf-space-sm);
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  margin: var(--cf-space-lg) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ww-legend__item {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  gap: var(--cf-space-sm);
+  align-items: center;
+  font-size: var(--cf-text-xs);
+}
+
+/*
+ * The key shows the TILE ITSELF, not a swatch of the tint behind it — a legend that showed a
+ * different thing from the map would be a legend for a map nobody is looking at. Slightly larger
+ * than a cell's floor, because this is the one place a reader is meant to study the picture.
+ */
+.ww-legend__tile {
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
+  border: 1px solid var(--cf-line-strong);
+  border-radius: var(--cf-radius-sm);
+  object-fit: cover;
+}
+
+.ww-legend__word {
+  text-transform: capitalize;
+  color: var(--cf-fg);
+}
+
+.ww-legend__means {
+  color: var(--cf-fg-mute);
+  line-height: 1.5;
+}
+
+/* ------------------------------- reports ---------------------------- */
+
+.ww-reports {
+  margin: var(--cf-space-lg) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ww-report {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: var(--cf-space-md);
+  align-items: baseline;
+  padding: var(--cf-space-sm) 0;
+  border-bottom: 1px solid var(--cf-line);
+}
+
+.ww-report:last-child {
+  border-bottom: none;
+}
+
+/* A line only you can read. Carried by an inset edge AND by the words beside it. */
+.ww-report--private {
+  padding-inline-start: var(--cf-space-md);
+  border-inline-start: 2px solid var(--cf-line-strong);
+}
+
+.ww-report__day {
+  font-size: var(--cf-text-2xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cf-fg-mute);
+  white-space: nowrap;
+}
+
+.ww-report__text {
+  font-size: var(--cf-text-sm);
+  line-height: 1.6;
+}
+
+.ww-report__only {
+  font-size: var(--cf-text-2xs);
+  color: var(--cf-fg-mute);
+  white-space: nowrap;
+}
+
+/* ------------------------------ the board --------------------------- */
+
+.ww-board {
+  margin: var(--cf-space-lg) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ww-board__row {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto auto;
+  gap: var(--cf-space-md);
+  align-items: baseline;
+  padding: var(--cf-space-sm) 0;
+  border-bottom: 1px solid var(--cf-line);
+  font-size: var(--cf-text-sm);
+}
+
+.ww-board__row:last-child {
+  border-bottom: none;
+}
+
+.ww-board__row--me {
+  border-inline-start: 3px solid var(--cf-accent);
+  padding-inline-start: var(--cf-space-sm);
+}
+
+/* Dead, and still on the board: the homestead stays on the map. Dimmed, and said in the tag. */
+.ww-board__row--gone {
+  color: var(--cf-fg-mute);
+}
+
+.ww-board__rank {
+  font-family: var(--cf-font-mono);
+  font-size: var(--cf-text-xs);
+  color: var(--cf-fg-mute);
+}
+
+.ww-board__who {
+  display: flex;
+  gap: var(--cf-space-xs);
+  align-items: baseline;
+  flex-wrap: wrap;
+  min-inline-size: 0;
+}
+
+.ww-board__handle {
+  font-weight: 600;
+}
+
+.ww-board__tag {
+  padding: 0.1em 0.5em;
+  border: 1px solid var(--cf-line-strong);
+  border-radius: var(--cf-radius-sm);
+  font-size: var(--cf-text-2xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cf-fg-mute);
+}
+
+.ww-board__tag--me {
+  color: var(--cf-accent-text);
+  border-color: currentColor;
+}
+
+.ww-board__commune {
+  font-size: var(--cf-text-xs);
+  color: var(--cf-fg-mute);
+}
+
+.ww-board__stat {
+  font-size: var(--cf-text-xs);
+  color: var(--cf-fg-dim);
+}
+
+.ww-board__score {
+  font-weight: 600;
+}
+
+/* ----------------------------- the skill tree ----------------------- */
+
+.ww-branches {
+  display: grid;
+  gap: var(--cf-space-xl);
+  grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+  margin: var(--cf-space-lg) 0 0;
+}
+
+.ww-branch__means {
+  margin: 0 0 var(--cf-space-sm);
+  font-size: var(--cf-text-xs);
+  color: var(--cf-fg-mute);
+}
+
+.ww-perks {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--cf-space-sm);
+}
+
+.ww-perk {
+  display: grid;
+  gap: var(--cf-space-3xs);
+  padding: var(--cf-space-md);
+  background: var(--cf-bg-sunken);
+  border: 1px solid var(--cf-line);
+  border-radius: var(--cf-radius-sm);
+}
+
+/* Learned. An edge and the word "learned" — never the colour on its own. */
+.ww-perk--held {
+  border-inline-start: 3px solid var(--cf-accent);
+}
+
+.ww-perk__name {
+  font-size: var(--cf-text-sm);
+  font-weight: 600;
+}
+
+.ww-perk__what {
+  font-size: var(--cf-text-xs);
+  color: var(--cf-fg-dim);
+  line-height: 1.5;
+}
+
+.ww-perk__state {
+  font-size: var(--cf-text-2xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cf-fg-mute);
+}
+
+.ww-perk .cf-btn {
+  justify-self: flex-start;
+  margin-top: var(--cf-space-2xs);
+}
+
+/* ----------------------------- objectives --------------------------- */
+
+.ww-objectives {
+  margin: var(--cf-space-lg) 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--cf-space-md);
+}
+
+.ww-objective {
+  display: grid;
+  gap: var(--cf-space-2xs);
+  padding: var(--cf-space-md);
+  background: var(--cf-bg-sunken);
+  border: 1px solid var(--cf-line);
+  border-radius: var(--cf-radius-sm);
+}
+
+.ww-objective__what {
+  font-size: var(--cf-text-sm);
+}
+
+.ww-objective__period,
+.ww-objective__count,
+.ww-objective__pays {
+  font-size: var(--cf-text-2xs);
+  letter-spacing: 0.04em;
+  color: var(--cf-fg-mute);
+}
+
+.ww-objective__period {
+  text-transform: uppercase;
+}
+
+.ww-objective__track {
+  margin: var(--cf-space-2xs) 0;
+}
+
+.ww-objective .cf-btn {
+  justify-self: flex-start;
+  margin-top: var(--cf-space-2xs);
+}
+
+/* ------------------------------ communes ---------------------------- */
+
+.ww-communes {
+  margin: var(--cf-space-lg) 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--cf-space-md);
+}
+
+.ww-commune {
+  display: grid;
+  gap: var(--cf-space-3xs);
+  padding: var(--cf-space-md);
+  background: var(--cf-bg-sunken);
+  border: 1px solid var(--cf-line);
+  border-radius: var(--cf-radius-sm);
+}
+
+.ww-commune__name {
+  font-size: var(--cf-text-md);
+  font-weight: 600;
+}
+
+.ww-commune__who,
+.ww-commune__stock {
+  font-size: var(--cf-text-xs);
+  color: var(--cf-fg-mute);
+}
+
+.ww-commune .cf-btn {
+  justify-self: flex-start;
+  margin-top: var(--cf-space-2xs);
+}
+
+.ww-members {
+  margin: var(--cf-space-lg) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ww-member {
+  display: flex;
+  gap: var(--cf-space-sm);
+  align-items: baseline;
+  flex-wrap: wrap;
+  padding: var(--cf-space-sm) 0;
+  border-bottom: 1px solid var(--cf-line);
+  font-size: var(--cf-text-sm);
+}
+
+.ww-member:last-child {
+  border-bottom: none;
+}
+
+.ww-member__handle {
+  font-weight: 600;
+}
+
+.ww-member__gave {
+  margin-inline-start: auto;
+  font-size: var(--cf-text-xs);
+  color: var(--cf-fg-mute);
+}
+
+.ww-bag {
+  display: grid;
+  gap: var(--cf-space-sm);
+  grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+}
+
+.ww-bag__field {
+  display: grid;
+  gap: var(--cf-space-3xs);
+}
+
+.ww-bag__label {
+  display: flex;
+  gap: var(--cf-space-2xs);
+  align-items: center;
+  font-size: var(--cf-text-2xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cf-fg-mute);
+}
+
+/* The same icon as the rack above, at label size, so a reader carrying food between the two can
+   see it is the same thing without reading either word. */
+.ww-bag__icon {
+  inline-size: 1.25rem;
+  block-size: 1.25rem;
+  flex: none;
+}
+
+.ww-leave {
+  margin-top: var(--cf-space-xl);
+}
+
+/* --------------------------- the season's own ----------------------- */
+
+.ww-events {
+  margin: var(--cf-space-lg) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ww-event {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: var(--cf-space-sm) var(--cf-space-md);
+  align-items: baseline;
+  padding: var(--cf-space-md) 0;
+  border-bottom: 1px solid var(--cf-line);
+}
+
+.ww-event:last-child {
+  border-bottom: none;
+}
+
+.ww-event__title {
+  font-size: var(--cf-text-sm);
+  font-weight: 600;
+}
+
+.ww-event__what {
+  grid-column: 2 / -1;
+  font-size: var(--cf-text-xs);
+  color: var(--cf-fg-dim);
+  line-height: 1.6;
+}
+
+.ww-event__how {
+  font-size: var(--cf-text-2xs);
+  color: var(--cf-warn-text);
+  letter-spacing: 0.1em;
+}
+
+.ww-achievements {
+  margin: var(--cf-space-lg) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+/*
+ * NARROW SCREENS. The board and the reports lose their trailing columns to a second line rather
+ * than squeezing: a rank, a handle and three numbers on a 360px viewport is five columns of nothing.
+ */
+@media (max-width: 40rem) {
+  .ww-board__row,
+  .ww-report,
+  .ww-event {
+    grid-template-columns: auto 1fr;
+  }
+
+  .ww-board__stat,
+  .ww-board__score,
+  .ww-report__only,
+  .ww-event__how {
+    grid-column: 2;
+  }
 }

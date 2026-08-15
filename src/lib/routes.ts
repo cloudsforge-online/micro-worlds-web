@@ -54,6 +54,21 @@ export const ROUTES: readonly AppRoute[] = [
   // Public, because `GET /v1/titles` is public.
   // ────────────────────────────────────────────────────────────────────────────────────────────
   { path: '', label: 'The platform', wildcard: false, public: true },
+  // ────────────────────────────────────────────────────────────────────────────────────────────
+  // WHERE THE GAMES ARE ACTUALLY PLAYED.
+  //
+  // Wildcard: `/play` lists the worlds open to settle in and `/play/<uuid>` IS the game — the
+  // homestead, the map, the day's actions, the reports, the commune. It is a platform route rather
+  // than a title's own address for the same reason the index is not two game cards: the register
+  // decides which titles exist, and a route named after one of them would have to be added and
+  // removed by hand every time that changes. The name of the game appears in the DATA, never here.
+  //
+  // Gated, and read off the service rather than chosen: every route behind this screen passes
+  // through `requirePrincipal`, `requireUser` or `communeContext` in `nda/src/server.ts`, and the
+  // one that settles you in a world resolves a subject from your token. There is nothing here an
+  // anonymous visitor could be shown.
+  // ────────────────────────────────────────────────────────────────────────────────────────────
+  { path: 'play', label: 'Play', wildcard: true, public: false },
   // Your account across every title: profile, reputation, sanctions, the wardrobe keyed by title.
   // Behind the gate: `GET /v1/players/me` authenticates (`worlds/src/server.ts`).
   { path: 'player', label: 'Your account', wildcard: false, public: false },

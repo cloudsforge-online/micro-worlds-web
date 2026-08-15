@@ -29,8 +29,10 @@ import { EntitlementPage, EntitlementsPage } from './pages/entitlements.tsx'
 import { InventoryPage } from './pages/inventory.tsx'
 import { NotFoundPage } from './pages/not-found.tsx'
 import { PlatformPage } from './pages/platform.tsx'
+import { PlayPage } from './pages/play.tsx'
 import { PlayerPage } from './pages/player.tsx'
 import { TitlePage } from './pages/title.tsx'
+import { WorldPage } from './pages/world.tsx'
 
 export function App() {
   const unregistered = !placementIsKnown()
@@ -43,6 +45,28 @@ export function App() {
           <Route element={<AppShell unregistered={unregistered} />}>
             {/* Public: what the platform is, and the registry. */}
             <Route index element={<PlatformPage />} />
+            {/* The games. `play` lists the worlds open to settle in; `play/:worldId` is the game
+                itself. Two sibling routes rather than one nested pair, each gated on its own,
+                because `test/routes.test.ts` reads every `<Route>` for this path and requires the
+                gate to match `ROUTES` at each one — a wrapper that gated the parent and left the
+                child bare would have looked identical from here and let a signed-out reader into
+                a world. */}
+            <Route
+              path="play"
+              element={
+                <ProtectedRoute>
+                  <PlayPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="play/:worldId"
+              element={
+                <ProtectedRoute>
+                  <WorldPage />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="player"
               element={

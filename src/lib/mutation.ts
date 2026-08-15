@@ -28,6 +28,17 @@
  * (`worlds/src/outbox.ts`). So this client sends none, and `test/worlds.test.ts` asserts the
  * service still reads none. There is no header that can make a second click safe here.
  *
+ * ── THAT IS ABOUT `worlds`, AND THIS BUNDLE NOW TALKS TO A SECOND SERVICE ─────────────────────
+ *
+ * `src/lib/nda.ts` reaches `micro-nda` for *Ninety Days After*, and nda is the opposite case: all
+ * fifteen of its writes are wrapped in `defineMutation(..., 'header', ...)` and answer **400**
+ * without an `Idempotency-Key`. Every one of those calls therefore sends one, and the key names
+ * the DECISION rather than the page view, because nda 409s a key reused with a different body.
+ *
+ * The latch below still matters for both, and for the same reason: it is what stops two events in
+ * one tick becoming two requests. But "this client sends no idempotency key" is a fact about the
+ * `worlds` half of this bundle only — read `src/lib/nda.ts` before restating it about the other.
+ *
  * ── The two PUTs are idempotent by method, and really are ──────────────────────────────────────
  *
  * `putProfile` is a full replace ending in `on conflict (user_id) do update set`

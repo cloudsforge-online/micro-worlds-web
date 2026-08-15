@@ -23,10 +23,24 @@
  *
  * ── AND A CARD WITH NO SURFACE IS NOT A BROKEN LINK ───────────────────────────────────────────
  *
- * `surface: null` says this game has no web client in the estate. *Ninety Days After* is that
- * today: `micro-nda` serves the whole game — worlds, tiles, homesteads, the day-resolution engine,
- * communes, reports — and nothing renders it. The entry says so in those words and offers what it
- * does have. A "Play" button that opened a 404 would be worse than the sentence.
+ * `surface: null` says this game has no web client of its own in the estate. A "Play" button that
+ * opened a 404 would be worse than the sentence beside it, so a card with neither `surface` nor
+ * `play` offers no button at all and `platform.tsx` says which of the two reasons it is.
+ *
+ * ── A GAME CAN ALSO BE SERVED BY *THIS* BUNDLE, WHICH IS WHAT `play` IS FOR ────────────────────
+ *
+ * *Ninety Days After* was the `surface: null` case, and the entry used to say so: `micro-nda`
+ * served the whole game — worlds, tiles, homesteads, the day-resolution engine, communes,
+ * reports — and nothing rendered it. **That is no longer true.** `src/pages/play.tsx` and
+ * `src/pages/world.tsx` render it, out of this bundle, against `micro-nda` through the public API
+ * host. So the game has a client without having a SURFACE, and those are different facts: a
+ * surface is a host in the estate's registry, and nda's client is two routes on the surface you
+ * are already reading.
+ *
+ * `surface` could not express that. It is a `SurfaceKey`, resolved by `viewedSurfaceUrl` into an
+ * absolute address on another host, and there is no key for "here". Hence a second, narrower
+ * field: an in-app path, followed with `<Link>`, which needs no network resolution because a
+ * reader looking at testnet is already reading testnet's copy of this bundle.
  * ══════════════════════════════════════════════════════════════════════════════════════════════
  */
 import type { SurfaceKey } from '@cloudsforge/ui'
@@ -46,6 +60,20 @@ export interface TitleCard {
    */
   readonly surface: SurfaceKey | null
   /**
+   * A route on THIS surface that plays this game, or null when nothing here does.
+   *
+   * A PATH, not a key and not a URL. It is followed with `<Link>`, so it stays inside the running
+   * bundle: no reload, no host to compose, and no way for it to land a testnet reader back on
+   * mainnet — the copy of this app they are reading is already the right one.
+   *
+   * `surface` and `play` are not two spellings of the same fact and a card may set either. A
+   * surface says the estate has a whole host serving the game; `play` says these routes do. Only
+   * *Ninety Days After* uses it today, and `src/lib/routes.ts` is the register that decides whether
+   * the path resolves — `test/routes.test.ts` fails if this points at an address the app, the
+   * router and nginx do not all agree exists.
+   */
+  readonly play: string | null
+  /**
    * The cover, joined from `src/art/titles.ts`, or null when the game has none drawn yet.
    *
    * Not written here. Every `/art/` path in this repository is spelled once, in the catalogue
@@ -53,15 +81,6 @@ export interface TitleCard {
    * repeated the string would fork that contract the first time the art was re-encoded.
    */
   readonly art: string | null
-  /**
-   * The alternative to art: a device drawn from the game's own premise.
-   *
-   * Only `ninety-days` today — ninety cells, one per day, because the game resolves exactly one
-   * day at a time and ends after ninety of them. It is the game's rules, not a decoration standing
-   * in for a picture, which is why it is named for what it means rather than for what it looks
-   * like.
-   */
-  readonly motif: 'ninety-days' | null
 }
 
 /** A card as it is WRITTEN. The cover is joined on by slug, so it is absent here. */
@@ -75,7 +94,7 @@ const CARDS: Readonly<Record<string, CardCopy>> = {
       'the pair can do together, so the team you end with is one you made rather than one you ' +
       'picked.',
     surface: 'emberkin',
-    motif: null,
+    play: null,
   },
   aetherholm: {
     kind: 'Sky-island strategy',
@@ -84,7 +103,7 @@ const CARDS: Readonly<Record<string, CardCopy>> = {
       'and it decides who your neighbours really are. Seasons run on a seed, so every one of them ' +
       'is a different map.',
     surface: 'aetherholm',
-    motif: null,
+    play: null,
   },
   'ninety-days-after': {
     kind: 'Survival strategy',
@@ -92,8 +111,9 @@ const CARDS: Readonly<Record<string, CardCopy>> = {
       'Ninety days after everything stopped. Hold a homestead, work the land around it and queue ' +
       'what your people will attempt tomorrow — then the day resolves for everyone at once and you ' +
       'read what it cost. Survivors band into communes or they do not last.',
+    // No surface: `micro-nda` is a service, not a host anybody visits. The client is `/play` here.
     surface: null,
-    motif: 'ninety-days',
+    play: '/play',
   },
 }
 
