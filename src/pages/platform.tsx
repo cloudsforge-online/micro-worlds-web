@@ -216,7 +216,10 @@ function TitleEntry({ title }: { title: Title }) {
   // client, and a game with a client that is still `draft`, are different situations with different
   // sentences — neither of them is a Play button.
   const open = isOpenToPlay(title)
-  const playable = open && card?.surface != null
+  // Two ways in, and they are followed differently. `surface` is another host in the estate and is
+  // resolved against the network being viewed; `play` is a route on THIS surface and is followed
+  // with the router, without a reload. A card sets one or neither.
+  const playable = open && (card?.surface != null || card?.play != null)
 
   return (
     <li className={`ww-reg__entry${playable ? ' ww-reg__entry--playable' : ''}`}>
@@ -235,8 +238,6 @@ function TitleEntry({ title }: { title: Title }) {
             loading="lazy"
             decoding="async"
           />
-        ) : card?.motif === 'ninety-days' ? (
-          <NinetyDays />
         ) : (
           <div className="ww-reg__cover ww-reg__cover--none" aria-hidden="true" />
         )}
@@ -251,7 +252,11 @@ function TitleEntry({ title }: { title: Title }) {
         <p className="ww-reg__blurb">{card?.blurb ?? tone.meaning}</p>
 
         <div className="ww-reg__actions">
-          {playable && card?.surface != null ? (
+          {open && card?.play != null ? (
+            <Link className="cf-btn" to={card.play}>
+              Play {title.name}
+            </Link>
+          ) : open && card?.surface != null ? (
             <a className="cf-btn" href={viewedSurfaceUrl(card.surface)}>
               Play {title.name}
             </a>
@@ -262,16 +267,25 @@ function TitleEntry({ title }: { title: Title }) {
         </div>
 
         {/*
-          WHY THERE IS NO WAY IN, WHEN THERE IS NO WAY IN — and the two reasons are not the same
-          sentence. Promising either one is on its way would be the thing this estate does not do.
+          WHY THERE IS NO WAY IN, WHEN THERE IS NO WAY IN — and the reasons are not one sentence.
+          Promising either is on its way would be the thing this estate does not do.
+
+          The middle branch used to be *Ninety Days After*'s, in those words, and it was true for as
+          long as `micro-nda` served the game with nothing rendering it. `/play` renders it now, so
+          the sentence is kept for the case it describes rather than for the game it was written
+          about: a registered title this bundle has never heard of, and a catalogued one that has
+          neither a surface nor a route.
         */}
         {!playable && (
           <p className="ww-reg__shut">
-            {card?.surface == null
-              ? 'This game is built and running — the platform reaches it, and it answers. It has ' +
-                'no screen yet, so there is nowhere to send you. Nothing you do here is waiting ' +
-                'on it.'
-              : `Not open to play while it is ${tone.word.toLowerCase()}.`}
+            {!open
+              ? `Not open to play while it is ${tone.word.toLowerCase()}.`
+              : card === null
+                ? 'The register lists this game, but nothing here knows where to send you. It was ' +
+                  'registered after this page was last taught about it.'
+                : 'This game is built and running — the platform reaches it, and it answers. It ' +
+                  'has no screen yet, so there is nowhere to send you. Nothing you do here is ' +
+                  'waiting on it.'}
           </p>
         )}
 
@@ -313,23 +327,12 @@ function TitleEntry({ title }: { title: Title }) {
   )
 }
 
-/**
- * Ninety cells, one per day.
- *
- * *Ninety Days After* has no art and no client, and a grey rectangle where the other two entries
- * have a picture would read as a page that failed to load rather than as a game with a different
- * story. This is drawn from the game's own rules instead: it resolves exactly one day at a time
- * for everybody at once, and it ends after ninety of them. The first stretch is shaded because
- * those are the days already behind the survivors when the game opens.
- *
- * Decorative, so it is `aria-hidden` and the blurb beside it carries the same fact in words.
+/*
+ * A `NinetyDays` DEVICE STOOD HERE — ninety cells, one per day — and it is gone because the thing
+ * it stood in for arrived. *Ninety Days After* had no picture in this bundle, and a grey rectangle
+ * beside two photographs reads as a page that failed to load, so the register drew the game's rules
+ * instead. The game's own art is now vendored (`src/art/nda.ts`, and a cover in `src/art/titles.ts`
+ * cropped from the master), every described slug has a cover, and `test/titles.test.ts` asserts
+ * that rather than recording the gap. The `--none` branch below is what remains for the case that
+ * is still real: a title this page has never been taught about.
  */
-function NinetyDays() {
-  return (
-    <div className="ww-reg__days" aria-hidden="true">
-      {Array.from({ length: 90 }, (_, index) => (
-        <span className={`ww-reg__day${index < 30 ? ' ww-reg__day--past' : ''}`} key={index} />
-      ))}
-    </div>
-  )
-}

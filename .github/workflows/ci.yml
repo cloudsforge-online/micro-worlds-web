@@ -185,6 +185,31 @@ jobs:
             MANIFEST.json
             assets/title
 
+      # ══════════════════════════════════════════════════════════════════════════════════════════
+      # AND *NINETY DAYS AFTER*'S OWN REPOSITORY, which is not an `-assets` set and carries two
+      # different claims at once.
+      #
+      # `apps/game/public/assets` holds the DERIVED files — six terrains, six resources, the sign
+      # and the roundel — that this repository copies BYTE FOR BYTE rather than re-encoding,
+      # because that repo's `art/build.mjs` already produces exactly what a browser should be sent.
+      # So `test/nda-art.test.ts` makes the strong claim, the `heraldry.ts` one: the bytes here are
+      # the bytes there. Without this checkout it prints UNCHECKED, and a hand-edited tile ships.
+      # Six of those fourteen files are what a 24x24 map draws 576 cells from.
+      #
+      # `apps/game/art` holds the 1024² masters, needed for two different assertions: every derived
+      # file's `masterFile` must still exist, or the provenance thread in the served manifest leads
+      # nowhere; and the register cover is a crop of `avatar-homestead.png`, the one entry in
+      # `src/art/titles.ts` whose source does not live in an `-assets` repository.
+      # ══════════════════════════════════════════════════════════════════════════════════════════
+      - uses: actions/checkout@v4
+        with:
+          repository: cloudsforge-online/ninety-days-after
+          path: ninety-days-after
+          token: ${{ secrets.ESTATE_READ_TOKEN }}
+          sparse-checkout: |
+            apps/game/art
+            apps/game/public/assets
+
       # Pinned, because the checkout lives at worlds-web/ and the action looks for the
       # packageManager field in the workspace root, where there is no package.json.
       - uses: pnpm/action-setup@v4
@@ -217,7 +242,7 @@ jobs:
       # passes for somebody who cloned only this repository. On the runner the set IS there, so a
       # skipped comparison means the checkout produced nothing — which looks exactly like sixteen
       # pictures that match the art they came from.
-      - name: The heraldry was compared against the set it was copied from
+      - name: The copied art was compared against the sets it came from
         working-directory: worlds-web
         run: |
           set -euo pipefail
@@ -246,6 +271,28 @@ jobs:
             echo "$out" | grep 'UNCHECKED:'
             exit 1
           fi
+
+          # ── And the game's own pictures, which are the strongest of the three claims ────────
+          #
+          # Copies rather than derivatives, so `nda-art.test.ts` compares BYTES — and it has the
+          # most to lose of the three: six of those fourteen files are what every cell of a 24x24
+          # map is drawn from, and a tile that drifted would be wrong 576 times on one screen.
+          # Same shape as the two guards above, and for the same reason: the test prints UNCHECKED
+          # so a lone clone of this repository still passes, which on the runner is
+          # indistinguishable from fourteen files that match.
+          test -d ../ninety-days-after/apps/game/public/assets || {
+            echo "::error::ninety-days-after was not checked out; the game's art was never compared"
+            exit 1
+          }
+          out=$(node --import tsx --test test/nda-art.test.ts 2>&1 || true)
+          if grep -q 'UNCHECKED: ninety-days-after' <<<"$out"; then
+            echo "::error::the nda art comparison skipped itself while the game repository was present"
+            exit 1
+          fi
+          grep -q 'byte-identical to the game repository' <<<"$out" || {
+            echo "::error::the nda art byte comparison did not run"
+            exit 1
+          }
 
           # And the generator agrees with what is committed. `--check` is the same derivation the
           # suite makes, run as a tool, so a regenerated set that nobody re-synced fails here with
@@ -669,10 +716,34 @@ jobs:
             echo "::error::no title may appear in the route table or the shell; the registry is data"
             exit 1
           fi
-          # No title on any page other than the front one, whose lede explains what a title is.
+          # No title on any page other than the front one — whose lede explains what a title is —
+          # and the pages that ARE a title's own client.
+          #
+          # ── WHY THE SECOND EXCEPTION IS NOT A HOLE IN THE RULE ──────────────────────────────
+          #
+          # The category error this step exists to catch is the PLATFORM presenting itself as one
+          # game. `src/pages/play.tsx` and `src/pages/world.tsx` are not the platform: they are
+          # *Ninety Days After* itself, rendered out of this bundle because micro-nda is a service
+          # and not a host anybody visits — see the `play` field in src/lib/catalogue.ts. A game's
+          # own client that could not name the game would be a screen with no title on it.
+          #
+          # The exception is ANCHORED rather than hand-kept. It holds only while the catalogue
+          # really sends players to /play; delete that field and this grep goes straight back to
+          # covering every page but the front one, which is the state the rule was written for.
+          if grep -q "play: '/play'" src/lib/catalogue.ts; then
+            exempt='^src/pages/(platform|play|world)\.tsx:'
+          else
+            exempt='^src/pages/platform\.tsx:'
+          fi
           if grep -iE "^src/pages/[^:]*:.*(emberkin|ninety days|kindred)" "$nc" \
-               | grep -v '^src/pages/platform.tsx:'; then
-            echo "::error::a page other than the front page names a title"
+               | grep -vE "$exempt"; then
+            echo "::error::a page other than the front page and a title's own client names a title"
+            exit 1
+          fi
+          # …and a client may name only the game it serves. Naming another one is the same
+          # category error one page over, and the exemption above would otherwise cover it.
+          if grep -iE '^src/pages/(play|world)\.tsx:.*(emberkin|kindred)' "$nc"; then
+            echo "::error::the game client names a title other than the one it serves"
             exit 1
           fi
           grep -q 'The platform' src/lib/routes.ts || {

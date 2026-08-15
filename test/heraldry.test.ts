@@ -38,6 +38,7 @@ import { fileURLToPath } from 'node:url'
 import { describe, it } from 'node:test'
 import { HERALDRY } from '../src/art/heraldry.ts'
 import { TITLE_ART } from '../src/art/titles.ts'
+import { NDA_ART } from '../src/art/nda.ts'
 import {
   CHARGES,
   CREST_TIERS,
@@ -313,11 +314,16 @@ describe('the sixteen pieces of art', () => {
       }
     }
     walk(artRoot)
-    // BOTH catalogues under `src/art/`, not just the heraldry one: this repository serves two
-    // sets — the sixteen banner parts, and the covers the register shows each game by — and a
-    // check that knew about one would call the other dead weight.
-    const catalogued = new Set<string>([...HERALDRY, ...TITLE_ART].map((e) => e.path))
-    const manifests = new Set(['/art/heraldry/MANIFEST.json', '/art/titles/MANIFEST.json'])
+    // EVERY catalogue under `src/art/`, not just the heraldry one: this repository serves three
+    // sets — the sixteen banner parts, the covers the register shows each game by, and the
+    // fourteen pictures *Ninety Days After* is played with — and a check that knew about one
+    // would call the others dead weight.
+    const catalogued = new Set<string>([...HERALDRY, ...TITLE_ART, ...NDA_ART].map((e) => e.path))
+    const manifests = new Set([
+      '/art/heraldry/MANIFEST.json',
+      '/art/titles/MANIFEST.json',
+      '/art/nda/MANIFEST.json',
+    ])
     const orphans = found.filter((p) => !manifests.has(p) && !catalogued.has(p))
     assert.deepEqual(orphans, [], `served from /art/ and referenced by nothing: ${orphans.join(', ')}`)
   })

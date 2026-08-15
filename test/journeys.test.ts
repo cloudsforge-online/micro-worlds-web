@@ -174,24 +174,56 @@ describe('BJ-WLD — Forge Worlds', () => {
   it('BJ-WLD-02b T1: a registered game with no client says so, and offers no Play button', async () => {
     await withScreen(
       page(h(PlatformPage), '/'),
-      // The fixture's own default. `micro-nda` serves the whole game — worlds, tiles, homesteads,
-      // the day-resolution engine — and nothing in the estate renders it, so `lib/catalogue.ts`
-      // gives the slug `surface: null`.
-      { url: `${ORIGIN}/`, routes: { 'GET /v1/titles': { body: { titles: [fx.title()] } } } },
+      // A slug the catalogue has never been taught. This scenario USED to be the fixture's own
+      // default, `ninety-days-after`, because `micro-nda` served the whole game and nothing in the
+      // estate rendered it. `src/pages/play.tsx` renders it now, so that slug has moved to the test
+      // below and the no-way-in case is proved with the situation that still produces it: a title
+      // an administrator registers that this bundle knows nothing about.
+      {
+        url: `${ORIGIN}/`,
+        routes: {
+          'GET /v1/titles': {
+            body: { titles: [fx.title({ slug: 'saltmarch', name: 'Saltmarch' })] },
+          },
+        },
+      },
       async (s) => {
         await s.settle(20)
-        // The register still lists it. Invisibility was the reported defect; a game with no client
-        // is not a game to hide.
-        assert.ok(s.text().includes('Ninety Days After'), 'the title is missing from the register')
+        // The register still lists it. Invisibility was the reported defect; a game this page
+        // cannot describe is not a game to hide.
+        assert.ok(s.text().includes('Saltmarch'), 'the title is missing from the register')
         // But no way in, because there is none. A Play button opening a 404 is worse than the
         // sentence beside it.
         const play = s.allByRole('link').find((el) => /^play /i.test(s.textOf(el)))
         assert.equal(play, undefined, 'a game with no client is offering a way into it')
         assert.match(
           s.text(),
-          /no screen yet/i,
+          /nothing here knows where to send you/i,
           'nothing on the page says why this game cannot be opened',
         )
+      },
+    )
+  })
+
+  it('BJ-WLD-02c T1: Ninety Days After is reachable, and the way in stays inside this app', async () => {
+    await withScreen(
+      page(h(PlatformPage), '/'),
+      // The fixture's own default slug. It is the one title served by this bundle rather than by a
+      // surface of its own: `micro-nda` holds the game, `/play` and `/play/:id` render it.
+      { url: `${ORIGIN}/`, routes: { 'GET /v1/titles': { body: { titles: [fx.title()] } } } },
+      async (s) => {
+        await s.settle(20)
+        const play = s.allByRole('link').find((el) => /^play /i.test(s.textOf(el)))
+        assert.ok(play, 'the game with a client in this very bundle offers no way into it')
+        // A ROUTER PATH, NOT AN ABSOLUTE ADDRESS, and that is the assertion rather than a detail of
+        // it. `viewedSurfaceUrl` composes another host and would take a reader viewing testnet to
+        // whichever estate the key resolved to; the copy of this app they are reading is already
+        // the right one, so the link must not leave it.
+        const href = play.getAttribute('href') ?? ''
+        assert.equal(href, '/play')
+        assert.doesNotMatch(href, /^https?:\/\//, 'the way in leaves this surface')
+        // And the sentence that stood in for the button is gone with it.
+        assert.doesNotMatch(s.text(), /no screen yet/i, 'the page still says the game has no client')
       },
     )
   })

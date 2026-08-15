@@ -70,13 +70,19 @@ describe('the title covers', () => {
 
   it('carries the disclosure and the licence beside the pictures, and says what the re-encode lost', () => {
     // The estate's rule for AI art: the disclosure travels with the images, not with the code
-    // that displays them. These two need one more sentence than the heraldry set, because
-    // re-encoding drops the C2PA chunk and the invisible watermark.
+    // that displays them. These need one more sentence than the heraldry set, because re-encoding
+    // drops the C2PA chunk and the invisible watermark.
     const served = JSON.parse(readFileSync(at('public/art/titles/MANIFEST.json'), 'utf8')) as {
       disclosure: string
       licence: string
       derivation: string
-      assets: readonly { path: string; sourceSha256: string; c2pa: string }[]
+      assets: readonly {
+        path: string
+        sourceSha256: string
+        c2pa: string
+        provider: string
+        derivation?: string
+      }[]
     }
     assert.match(served.disclosure, /AI-generated/i)
     assert.match(served.disclosure, /derivative/i)
@@ -87,8 +93,29 @@ describe('the title covers', () => {
       assert.ok(row, `${entry.path} is catalogued but the served manifest does not list it`)
       assert.equal(row.sourceSha256, entry.sourceSha256, `${entry.path}'s manifest and catalogue disagree`)
       assert.match(row.c2pa, /not retained/i)
+      // THE PROVIDER IS PER ASSET, and it stopped being decoration the moment a third game
+      // joined: two of these covers are FLUX 2 Pro and the third is an OpenAI image model. A
+      // single top-level provider would have made the manifest assert something false about one
+      // of the three, which is the failure a disclosure exists to prevent.
+      assert.ok(row.provider.length > 0, `${entry.path} does not say what generated it`)
+      // And where an entry needed more than the shared recipe, both copies must say the same
+      // thing — a crop recorded in the catalogue but not beside the picture is not disclosed.
+      assert.equal(row.derivation, entry.derivation)
     }
     assert.equal(served.assets.length, TITLE_ART.length)
+  })
+
+  it('names the crop where a square had to become a card, rather than leaving it to a laptop', () => {
+    // The two 1200x630 sources are a resize and nothing else. *Ninety Days After* keeps no wide
+    // key art — its best picture is a 1024² portrait of a survivor in front of the homestead —
+    // so WHICH 1024x538 of it became the cover is a decision, and an undocumented decision is one
+    // nobody can reproduce when the picture is regenerated.
+    for (const entry of TITLE_ART) {
+      const square = entry.sourceFile.includes('avatar')
+      if (!square) continue
+      assert.ok(entry.derivation, `${entry.slug}'s cover was cropped and does not say how`)
+      assert.match(entry.derivation, /--cropOffset/)
+    }
   })
 
   it('is reached only through the catalogue, which joins it to a described title', () => {
@@ -98,7 +125,14 @@ describe('the title covers', () => {
       assert.ok(DESCRIBED_SLUGS.includes(entry.slug), `${entry.slug} has a cover but no card describing it`)
       assert.equal(cardFor(entry.slug)?.art, entry.path)
     }
-    assert.equal(titleArt('ninety-days-after'), null)
-    assert.equal(cardFor('ninety-days-after')?.art, null)
+    // Every described slug now has a cover, which was not true while *Ninety Days After* had
+    // none. The assertion that used to stand here — `titleArt('ninety-days-after') === null` —
+    // was recording the gap, so it is replaced by the check that the gap is closed for ALL of
+    // them rather than deleted and forgotten.
+    for (const slug of DESCRIBED_SLUGS) {
+      assert.ok(titleArt(slug), `${slug} is described on the register with no cover`)
+    }
+    assert.equal(titleArt('no-such-game'), null)
+    assert.equal(cardFor('no-such-game'), null)
   })
 })

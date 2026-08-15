@@ -46,6 +46,8 @@ const player = read('src/pages/player.tsx')
 const inventory = read('src/pages/inventory.tsx')
 const entitlements = read('src/pages/entitlements.tsx')
 const title = read('src/pages/title.tsx')
+const play = read('src/pages/play.tsx')
+const world = read('src/pages/world.tsx')
 const notFound = read('src/pages/not-found.tsx')
 const shell = read('src/components/shell.tsx')
 
@@ -55,6 +57,11 @@ const PAGES: ReadonlyArray<[string, string]> = [
   ['inventory', inventory],
   ['entitlements', entitlements],
   ['title', title],
+  // The two *Ninety Days After* screens. They are held to every rule above — four states, no `/v1`
+  // path outside `src/lib/`, no route name shown to a reader — because the rules are about what a
+  // page may do, and a page that reaches a DIFFERENT service is not an exception to any of them.
+  ['play', play],
+  ['world', world],
 ]
 
 describe('every screen distinguishes the four states', () => {

@@ -1,0 +1,140 @@
+{
+  "$comment": "The pictures Ninety Days After is PLAYED with: six terrain tiles, six resource icons, the game's sign and the roundel on it. Unlike the covers under /art/titles/, these are not re-encoded here — they are byte-identical copies of files the game's own repository already derives for its own browser client (ninety-days-after, apps/game/public/assets, produced by art/build.mjs from the 1024² masters in apps/game/art). test/nda-art.test.ts compares the bytes against that checkout rather than merely recording a checksum. The catalogue that names them is src/art/nda.ts; nothing else in this repository spells these paths.",
+  "sourceRepo": "ninety-days-after",
+  "sourceDir": "apps/game/public/assets",
+  "derivation": "ninety-days-after: node art/build.mjs (sips resize, cwebp encode)",
+  "provider": "openai-gpt-image",
+  "providerLabel": "OpenAI GPT Image (1, 1.5 and 2), driven by the manifest pipeline in asset-forge",
+  "disclosure": "Every image here is AI-generated. The 1024² masters were produced by asset-forge; the WebP files served here were derived from them upstream, in the game repository's own art build, and that build is where the C2PA chunk and the invisible watermark were lost. Each entry names the master it descends from as well as the derived file it is a copy of.",
+  "licence": "cloudsforge-generated: commercial use permitted; AI-generated, C2PA provenance retained by the master",
+  "c2pa": "not retained by the derivative",
+  "assetCount": 14,
+  "assets": [
+    {
+      "key": "terrain:wilderness",
+      "name": "Wilderness",
+      "path": "/art/nda/tile-wilderness.webp",
+      "size": "160x160",
+      "sourceFile": "tile-wilderness.webp",
+      "sha256": "080c1739e711b4a3b72937b5a23845fce93c8643e8d84ed5a247c9a2bb5fbdfa",
+      "masterFile": "apps/game/art/tile-wilderness.png"
+    },
+    {
+      "key": "terrain:forest",
+      "name": "Forest",
+      "path": "/art/nda/tile-forest.webp",
+      "size": "160x160",
+      "sourceFile": "tile-forest.webp",
+      "sha256": "a392bdbe1da3b1d44e1f53a8ba0d13898ca9928dc111d8c747c4b0d8b2928d55",
+      "masterFile": "apps/game/art/tile-forest.png"
+    },
+    {
+      "key": "terrain:ruins",
+      "name": "Ruins",
+      "path": "/art/nda/tile-ruins.webp",
+      "size": "160x160",
+      "sourceFile": "tile-ruins.webp",
+      "sha256": "41f0295a2d00871edd3c8d98d5cabf1ac4b517100638177e639631e35c0f8adf",
+      "masterFile": "apps/game/art/tile-ruins.png"
+    },
+    {
+      "key": "terrain:water",
+      "name": "Water",
+      "path": "/art/nda/tile-water.webp",
+      "size": "160x160",
+      "sourceFile": "tile-water.webp",
+      "sha256": "bb5b40a8f1f9acf65cfac18b9a5dc456de3a1acacbb54e0218c95ac335214ba0",
+      "masterFile": "apps/game/art/tile-water.png"
+    },
+    {
+      "key": "terrain:road",
+      "name": "Road",
+      "path": "/art/nda/tile-road.webp",
+      "size": "160x160",
+      "sourceFile": "tile-road.webp",
+      "sha256": "62400c12a14da225cb08196a22b3a2ac5c6f1844a83d9fee3a0241b6964f87fd",
+      "masterFile": "apps/game/art/tile-road.png"
+    },
+    {
+      "key": "terrain:homestead",
+      "name": "Homestead",
+      "path": "/art/nda/tile-homestead.webp",
+      "size": "160x160",
+      "sourceFile": "tile-homestead.webp",
+      "sha256": "7aab83c452b09fc7104735aba29d24dfa95cd44ab7d0ef2a5a5147e30fb845af",
+      "masterFile": "apps/game/art/tile-homestead.png"
+    },
+    {
+      "key": "resource:food",
+      "name": "Food",
+      "path": "/art/nda/resource-food.webp",
+      "size": "96x96",
+      "sourceFile": "icon-food.webp",
+      "sha256": "d50b4bf7d65cf9f80b6e09a3b1cf2b042513192848310ca856d426b0fad32bf3",
+      "masterFile": "apps/game/art/icon-food.png"
+    },
+    {
+      "key": "resource:water",
+      "name": "Water",
+      "path": "/art/nda/resource-water.webp",
+      "size": "96x96",
+      "sourceFile": "icon-water.webp",
+      "sha256": "ccb46326a60f5d402d71395092ef5ff85482f1029a18ebe99b7134ffcb0563de",
+      "masterFile": "apps/game/art/icon-water.png"
+    },
+    {
+      "key": "resource:materials",
+      "name": "Materials",
+      "path": "/art/nda/resource-materials.webp",
+      "size": "96x96",
+      "sourceFile": "icon-materials.webp",
+      "sha256": "23a892d4dd1779d9f8fa673a005e5f7546e63b5099ebddcacdcfd7d1b002eca7",
+      "masterFile": "apps/game/art/icon-materials.png"
+    },
+    {
+      "key": "resource:fuel",
+      "name": "Fuel",
+      "path": "/art/nda/resource-fuel.webp",
+      "size": "96x96",
+      "sourceFile": "icon-fuel.webp",
+      "sha256": "accf256581030962e32ecdf515532c1fbf442637f9bc70ece049ae10e4564561",
+      "masterFile": "apps/game/art/icon-fuel.png"
+    },
+    {
+      "key": "resource:medicine",
+      "name": "Medicine",
+      "path": "/art/nda/resource-medicine.webp",
+      "size": "96x96",
+      "sourceFile": "icon-medicine.webp",
+      "sha256": "b1e12714d1284b044f452d24ec53cd832b088c54e8d8476a12329e14ef0825e1",
+      "masterFile": "apps/game/art/icon-medicine.png"
+    },
+    {
+      "key": "resource:seeds",
+      "name": "Seeds",
+      "path": "/art/nda/resource-seeds.webp",
+      "size": "96x96",
+      "sourceFile": "icon-seeds.webp",
+      "sha256": "3e042a9d6cfc333f99ade9cd895dc892d3faf23d4f1bde23cabcf41626dfdc9d",
+      "masterFile": "apps/game/art/icon-seeds.png"
+    },
+    {
+      "key": "emblem",
+      "name": "The roundel",
+      "path": "/art/nda/emblem.webp",
+      "size": "256x256",
+      "sourceFile": "logo.webp",
+      "sha256": "a65b6d17d9fcdf416c5cd2c72831bb5ddbdd450b83daef9bebd73969dcba3f15",
+      "masterFile": "apps/game/art/logo.png"
+    },
+    {
+      "key": "wordmark",
+      "name": "Ninety Days After",
+      "path": "/art/nda/wordmark.webp",
+      "size": "768x209",
+      "sourceFile": "wordmark.webp",
+      "sha256": "bf0f0df4dca1ea1eb1876da89b9b0f6c374cc01cb0df4c2aab3efa1d1bfdf320",
+      "masterFile": "apps/game/art/wordmark.png"
+    }
+  ]
+}
