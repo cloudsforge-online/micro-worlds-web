@@ -63,6 +63,7 @@ function codeOf(source: string): string {
 
 const platform = read('src/pages/platform.tsx')
 const platformCode = codeOf(platform)
+const titleCode = codeOf(read('src/pages/title.tsx'))
 const entitlementsCode = codeOf(read('src/pages/entitlements.tsx'))
 const gapComponentCode = codeOf(read('src/components/gap.tsx'))
 
@@ -334,15 +335,46 @@ describe('a title that cannot be sold to is marked as such', () => {
     assert.equal(of('retired'), false)
   })
 
-  it('is said on the registry row', () => {
-    assert.match(platformCode, /isSellable/)
-    assert.match(platformCode, /would\s+never be delivered/)
+  /*
+   * ════════════════════════════════════════════════════════════════════════════════════════════
+   * THESE TWO ASSERTIONS USED TO READ `platformCode`, AND THE FACTS THEY GUARD HAVE MOVED.
+   *
+   * The front page printed both sentences under every game on the shelf, which is how Emberkin —
+   * a finished, serving client — came to be rendered as a picture and three grey refusals with no
+   * way in. The shelf now spends one line per game on whether there IS a way in; everything about
+   * whether a PURCHASE aimed at that game could be delivered is on the game's own page, where the
+   * decision to spend is actually made.
+   *
+   * So the tests follow the facts rather than the file. What must not change is that a reader is
+   * told before they pay, and `src/pages/title.tsx` is where "before they pay" now is — it is the
+   * page the shelf's "the platform's file on it" link goes to, and it is one hop from every game.
+   * ════════════════════════════════════════════════════════════════════════════════════════════
+   */
+  it('is said on the title’s own page, before anybody could buy anything for it', () => {
+    assert.match(titleCode, /isSellable/, 'the title page does not consult isSellable')
+    assert.match(
+      titleCode,
+      /nothing bought could be handed over/,
+      'the title page does not say WHY an unsellable game cannot be bought for',
+    )
   })
 
   it('says a title declaring no capabilities will not be asked for anything', () => {
     // The bridge checks capabilities before calling (`worlds/src/provisioning.ts`), so a
-    // title with none is one whose every purchase ends undeliverable. Saying it on the row is
-    // cheaper than saying it after somebody has paid.
-    assert.match(platformCode, /nothing it can be asked to do/)
+    // title with none is one whose every purchase ends undeliverable. Saying it on the title's
+    // page is cheaper than saying it after somebody has paid.
+    assert.match(titleCode, /what it can be asked to do/)
+    assert.match(
+      titleCode,
+      /no way to hand anything over/,
+      'the consequence of declaring nothing is not stated',
+    )
+  })
+
+  it('the shelf still says whether there is a way in, and stops there', () => {
+    // The other half of the move, asserted from the other side: the front page must not grow the
+    // delivery caveats back, and it must still answer the one question a visitor to it is asking.
+    assert.doesNotMatch(platformCode, /isSellable/, 'the shelf is arguing about money again')
+    assert.match(platformCode, /Not open to play/, 'the shelf no longer says when a game is shut')
   })
 })

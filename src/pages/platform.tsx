@@ -2,49 +2,62 @@
  * The index. **The games first, then the platform they run on.**
  *
  * ══════════════════════════════════════════════════════════════════════════════════════════════
- * WHAT THIS PAGE USED TO BE, AND WHY IT CHANGED
+ * WHAT THIS PAGE USED TO BE, AND WHY IT CHANGED — TWICE
  *
- * It opened with six panels about what the platform OWNS, and put the register of games below
- * them. The argument was sound and is preserved further down this file: Forge Worlds owns the
- * title registry, one shared account, inventory, achievements, seasons and the entitlement bridge,
- * and a front page made of game cards would say the platform IS its games — the category error the
- * registry exists to end.
+ * **First**, it opened with six panels about what the platform OWNS and put the register of games
+ * below them. The argument was sound and is preserved further down this file: Forge Worlds owns
+ * the title registry, one shared account, inventory, achievements, seasons and the entitlement
+ * bridge, and a front page made of game cards would say the platform IS its games — the category
+ * error the registry exists to end. It was also written when the register was EMPTY, so the choice
+ * cost nothing. With three games in it the owner reported the consequence in the plainest possible
+ * terms, and the order was inverted.
  *
- * It was also written when the register was EMPTY, so the choice cost nothing: there were no games
- * to lead with. Now there are three, and the owner has reported the consequence in the plainest
- * possible terms — "we suppose to have 3 games but no one is visible or accessible on forge
- * worlds". Both halves of that were true. Nothing had ever registered a title, so the register
- * answered `{"titles":[]}` and the page rendered the finding; and even with rows in it the page
- * offered no way to REACH a game, because a row linked only to `/titles/<id>` — achievements and
- * seasons, which is a record about a game rather than a door into it.
+ * **Second, and this pass**: inverting the order was necessary and was not sufficient. The games
+ * came first but they came as REGISTER ROWS — a bordered box each, a thumbnail in a fixed 26rem
+ * column, and beneath the name up to three separate grey sentences explaining what the platform
+ * could not do about that game. Emberkin, a finished client serving at its own host, was rendered
+ * as: no button, "Not open to play while it is draft.", "This game declares nothing it can be
+ * asked to do, so nothing bought for it could be handed over.", and "▲ Nothing can be bought for
+ * this game while it is draft". Three refusals and no door, for a game you can play right now.
  *
- * So the order is inverted and the row has grown a way in. What is kept from the old argument is
- * the part that was actually about honesty: the `<h1>` still names the PLATFORM and never a game,
- * and everything the platform looks after is still on this page, immediately under the games.
+ * ── WHAT REPLACED IT ──────────────────────────────────────────────────────────────────────────
+ *
+ * A shelf of POSTERS. Each game's own art is the ground, at the full width of the page, with the
+ * name, one line and the way in laid over the bottom of it; the game's own colour — read off that
+ * picture in `src/art/titles.ts`, never a design token — lights the eyebrow and the rule above the
+ * name. Three games, three pictures, three different lights, which is the answer to a page that
+ * had been reported as "continuous tiles of the same colour and pattern".
+ *
+ * **The caveats did not get deleted; they moved.** Every sentence above is a fact about DELIVERY —
+ * whether a purchase aimed at that game could be handed over — and it belongs where somebody is
+ * deciding to spend, which is the title's own page. `src/pages/title.tsx` now opens with the
+ * register's file on the game and states all of it. What stays on the poster is the one thing a
+ * visitor is asking here: whether there is a way in, and if not, why not, in ONE sentence.
  *
  * ── THE REGISTER IS STILL THE AUTHORITY ON WHICH GAMES EXIST ──────────────────────────────────
  *
- * Every entry below is a row from `GET /v1/titles`. This page adds a sentence and an address from
+ * Every poster below is a row from `GET /v1/titles`. This page adds a line and an address from
  * `lib/catalogue.ts` where it has one, and renders the row regardless where it does not — a title
- * an administrator registers tomorrow appears here tomorrow. The empty case is unchanged and still
- * renders `EMPTY_REGISTRY_GAP` rather than a spinner: a fresh deployment has registered nothing,
- * and `{"titles":[]}` is the whole of the answer rather than a stage on the way to one.
+ * an administrator registers tomorrow appears here tomorrow, with its slug on it and without a
+ * picture. The empty case is unchanged and still renders `EMPTY_REGISTRY_GAP` rather than a
+ * spinner: a fresh deployment has registered nothing, and `{"titles":[]}` is the whole of the
+ * answer rather than a stage on the way to one.
  * ══════════════════════════════════════════════════════════════════════════════════════════════
  */
+import type { CSSProperties } from 'react'
 import { useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { Failed, Loading } from '../components/states.tsx'
 import { GapNotice } from '../components/gap.tsx'
 import { StateBadge } from '../components/tone.tsx'
 import { cardFor } from '../lib/catalogue.ts'
-import { capabilityMeaning, titleTone } from '../lib/format.ts'
+import { titleTone } from '../lib/format.ts'
 import { useResource } from '../lib/resource.ts'
 import { viewedSurfaceUrl } from '../lib/viewed.ts'
 import {
   EMPTY_REGISTRY_GAP,
   TITLE_BRIDGE_GAP,
   isOpenToPlay,
-  isSellable,
   listTitles,
   type Title,
 } from '../lib/worlds.ts'
@@ -146,16 +159,22 @@ export function PlatformPage() {
         )}
 
         {registry.state === 'ok' && registry.data !== null && (
-          <ul className="ww-reg">
+          <ul className="ww-shelf__list">
             {registry.data.titles.map((title) => (
-              <TitleEntry key={title.id} title={title} />
+              <TitlePlate key={title.id} title={title} />
             ))}
           </ul>
         )}
       </section>
 
-      <section className="ww-panel" aria-label="What Forge Worlds owns">
-        <h2 className="ww-panel__title">What the platform holds for you</h2>
+      {/*
+        NOT A `.ww-panel`. The six facts below are already a ruled ledger rather than six cards;
+        wrapping the ledger in a bordered, filled box put the box back and made the section compete
+        with the shelf above it for the same visual weight. A heading with a rule under it — the
+        same one the shelf uses — says "a section" without saying "a container".
+      */}
+      <section className="ww-ledger" aria-label="What Forge Worlds owns">
+        <h2 className="ww-shelf__title">What the platform holds for you</h2>
         <div className="ww-owns">
           {OWNS.map((item) => (
             <article className="ww-owns__item" key={item.heading}>
@@ -165,21 +184,16 @@ export function PlatformPage() {
           ))}
         </div>
         {/*
-          KEPT, AND CUT TO ONE LINE. The no-pay-to-win rule is the one sentence on this page a
-          player has a right to before they spend anything; the three-places-enforced detail that
-          used to follow it was writing for engineers and is in the repository.
+          TWO SENTENCES, AND BOTH EARN THEIR PLACE. The first is the no-pay-to-win rule, which is
+          the one thing on this page a player has a right to before they spend anything. The second
+          used to be a panel of its own, headed "Built on the rest of CloudsForge", carrying this
+          and nothing else — a border and a heading around a single sentence.
         */}
-        <p className="ww-panel__note">
-          Nothing on sale makes you better at a game — only how you look, what you skip, or what
-          you get into. Anything that would give you an advantage is yours alone and never resold.
-        </p>
-      </section>
-
-      <section className="ww-panel" aria-label="What Forge Worlds is built on">
-        <h2 className="ww-panel__title">Built on the rest of CloudsForge</h2>
-        <p className="ww-panel__subtitle">
-          Same account as your wallet. Season rewards land in the same ledger as every other
-          movement of money here, on Forge Network — our own Ethereum-compatible chain.
+        <p className="ww-ledger__note">
+          Nothing on sale makes you better at a game — only how you look, what you skip, or what you
+          get into. Anything that would give you an advantage is yours alone and never resold. It is
+          the same account as your wallet, and season rewards land in the same ledger as every other
+          movement of money here, on Forge Network.
         </p>
       </section>
 
@@ -198,17 +212,25 @@ export function PlatformPage() {
 }
 
 /**
- * One game, as an entry in the register.
+ * One game, as a poster.
  *
- * The three parts are a spine, a picture and the entry itself, and the spine is the one that needs
- * explaining. It carries the SLUG, set down the left edge — and the slug is not decoration here:
- * it is the entitlement scope id, the value `worlds/src/titles.ts` constrains to a URL-safe shape
- * precisely because everything the platform keys on a game is keyed on it. Putting it on the entry
- * is the register saying, in its own vocabulary, that these rows are records rather than adverts.
- * `aria-hidden` because the name above it already says which game this is; a screen reader reading
- * "emberkin, Emberkin" learns nothing the second time.
+ * ── WHY THE ART IS THE GROUND AND NOT A THUMBNAIL ─────────────────────────────────────────────
+ *
+ * The previous entry gave the cover a fixed 26rem column beside a body of text, which made every
+ * game the same shape: a rectangle of picture, then a wall of grey. The three covers are the only
+ * things on this page that are actually different from one another, so they are what the page is
+ * now made of. The copy sits over the bottom of each one, on a scrim dark enough to hold it.
+ *
+ * ── THE SLUG IS STILL ON IT ───────────────────────────────────────────────────────────────────
+ *
+ * Top-left, in the mono face, and it is not ornament: the slug is the entitlement scope id — the
+ * value `worlds/src/titles.ts` constrains to a URL-safe shape precisely because everything the
+ * platform keys on a game is keyed on it. It used to run down a rotated spine, which was the same
+ * argument made in a way that stopped working on a phone. `aria-hidden` because the name below it
+ * already says which game this is; a screen reader reading "emberkin, Emberkin" learns nothing the
+ * second time.
  */
-function TitleEntry({ title }: { title: Title }) {
+function TitlePlate({ title }: { title: Title }) {
   const tone = titleTone(title.status)
   const card = cardFor(title.slug)
   // Two conditions, and both are real. The register decides whether a game is open at all, and the
@@ -221,118 +243,91 @@ function TitleEntry({ title }: { title: Title }) {
   // with the router, without a reload. A card sets one or neither.
   const playable = open && (card?.surface != null || card?.play != null)
 
+  /*
+   * The game's own colour, from its own picture, as a custom property the stylesheet spends.
+   *
+   * Inline because it is per-ROW data joined at render time, and a stylesheet cannot hold a rule
+   * per slug without becoming a second register that has to be edited every time an administrator
+   * adds a game. A title with no art sets nothing and `.ww-plate` falls back to `--cf-accent`,
+   * which is what the `??` in the CSS is for — an undefined custom property invalidates the whole
+   * declaration rather than falling back, so the fallback is written there and not here.
+   */
+  const lit = card?.accent != null ? ({ '--ww-plate-accent': card.accent } as CSSProperties) : undefined
+
   return (
-    <li className={`ww-reg__entry${playable ? ' ww-reg__entry--playable' : ''}`}>
-      <p className="ww-reg__spine cf-num" aria-hidden="true">
+    <li className={`ww-plate${playable ? ' ww-plate--open' : ''}`} style={lit}>
+      {card?.art != null ? (
+        <img
+          className="ww-plate__art"
+          src={card.art}
+          alt=""
+          width={900}
+          height={472}
+          loading="lazy"
+          decoding="async"
+        />
+      ) : (
+        /*
+         * A title this page has never been taught about. A flat sunken ground and never a broken
+         * image: all three registered games have a cover, so this is reached only by a fourth
+         * title an administrator registers — which is exactly the case the register is built to
+         * survive, and it must still produce a poster with a name and a slug on it.
+         */
+        <div className="ww-plate__art ww-plate__art--none" aria-hidden="true" />
+      )}
+      <div className="ww-plate__scrim" aria-hidden="true" />
+
+      <p className="ww-plate__slug cf-num" aria-hidden="true">
         {title.slug}
       </p>
-
-      <div className="ww-reg__art">
-        {card?.art != null ? (
-          <img
-            className="ww-reg__cover"
-            src={card.art}
-            alt=""
-            width={900}
-            height={472}
-            loading="lazy"
-            decoding="async"
-          />
-        ) : (
-          <div className="ww-reg__cover ww-reg__cover--none" aria-hidden="true" />
-        )}
+      <div className="ww-plate__state">
+        <StateBadge tone={tone} />
       </div>
 
-      <div className="ww-reg__body">
-        <div className="ww-reg__head">
-          <h3 className="ww-reg__name">{title.name}</h3>
-          <StateBadge tone={tone} />
-        </div>
-        {card !== null && <p className="ww-reg__kind">{card.kind}</p>}
-        <p className="ww-reg__blurb">{card?.blurb ?? tone.meaning}</p>
+      <div className="ww-plate__copy">
+        {card !== null && <p className="ww-plate__kind">{card.kind}</p>}
+        <h3 className="ww-plate__name">{title.name}</h3>
+        <p className="ww-plate__hook">{card?.hook ?? tone.meaning}</p>
 
-        <div className="ww-reg__actions">
+        <div className="ww-plate__actions">
           {open && card?.play != null ? (
-            <Link className="cf-btn" to={card.play}>
+            <Link className="ww-plate__play" to={card.play}>
               Play {title.name}
             </Link>
           ) : open && card?.surface != null ? (
-            <a className="cf-btn" href={viewedSurfaceUrl(card.surface)}>
+            <a className="ww-plate__play" href={viewedSurfaceUrl(card.surface)}>
               Play {title.name}
             </a>
-          ) : null}
-          <Link className="cf-btn ww-btn-quiet" to={`/titles/${title.id}`}>
-            Achievements and seasons
+          ) : (
+            /*
+             * WHY THERE IS NO WAY IN, WHEN THERE IS NO WAY IN — one sentence, in the place the
+             * button would have been, so a reader looking for the door finds the reason there is
+             * none rather than nothing at all. Promising either is on its way would be the thing
+             * this estate does not do.
+             *
+             * The middle branch used to be *Ninety Days After*'s, in those words, and it was true
+             * for as long as `micro-nda` served the game with nothing rendering it. `/play`
+             * renders it now, so the sentence is kept for the case it describes rather than for
+             * the game it was written about: a registered title this bundle has never heard of.
+             */
+            <p className="ww-plate__shut">
+              {!open
+                ? `Not open to play — the register has it as ${tone.word.toLowerCase()}.`
+                : card === null
+                  ? 'The register lists this game, but nothing here knows where to send you.'
+                  : 'Built and running, with no screen of its own to send you to yet.'}
+            </p>
+          )}
+          {/*
+            THE REGISTER'S FILE ON THE GAME, and the second half of the caveat move described at the
+            top of this file. Achievements, seasons, the capabilities it declares and whether
+            anything can be sold against it are all on the other side of this link.
+          */}
+          <Link className="ww-plate__more" to={`/titles/${title.id}`}>
+            The platform&rsquo;s file on it
           </Link>
         </div>
-
-        {/*
-          WHY THERE IS NO WAY IN, WHEN THERE IS NO WAY IN — and the reasons are not one sentence.
-          Promising either is on its way would be the thing this estate does not do.
-
-          The middle branch used to be *Ninety Days After*'s, in those words, and it was true for as
-          long as `micro-nda` served the game with nothing rendering it. `/play` renders it now, so
-          the sentence is kept for the case it describes rather than for the game it was written
-          about: a registered title this bundle has never heard of, and a catalogued one that has
-          neither a surface nor a route.
-        */}
-        {!playable && (
-          <p className="ww-reg__shut">
-            {!open
-              ? `Not open to play while it is ${tone.word.toLowerCase()}.`
-              : card === null
-                ? 'The register lists this game, but nothing here knows where to send you. It was ' +
-                  'registered after this page was last taught about it.'
-                : 'This game is built and running — the platform reaches it, and it answers. It ' +
-                  'has no screen yet, so there is nowhere to send you. Nothing you do here is ' +
-                  'waiting on it.'}
-          </p>
-        )}
-
-        {title.capabilities.length > 0 ? (
-          <ul className="ww-caps">
-            {title.capabilities.map((capability) => (
-              <li className="ww-cap" key={capability}>
-                <span className="ww-cap__meaning">{capabilityMeaning(capability)}</span>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          /*
-            THE BRIDGE CHECKS CAPABILITIES BEFORE IT CALLS (`worlds/src/provisioning.ts`), so a
-            title declaring none is one whose every purchase ends undeliverable. Saying it on the
-            row costs nothing; saying it after somebody has paid costs them.
-          */
-          <p className="ww-reg__shut">
-            This game declares nothing it can be asked to do, so nothing bought for it could be
-            handed over.
-          </p>
-        )}
-
-        {!isSellable(title) && (
-          <p className="ww-note ww-note--warn">
-            <span className="ww-note__icon" aria-hidden="true">
-              ▲
-            </span>
-            {/* One flex item, not three — see `.ww-note__body` in styles.css. Interleaving text with
-                a <code> inside a flex container laid the status out on the wrong line. */}
-            <span className="ww-note__body">
-              Nothing can be bought for this game while it is {tone.word.toLowerCase()}, because a
-              purchase aimed here would never be delivered.
-            </span>
-          </p>
-        )}
       </div>
     </li>
   )
 }
-
-/*
- * A `NinetyDays` DEVICE STOOD HERE — ninety cells, one per day — and it is gone because the thing
- * it stood in for arrived. *Ninety Days After* had no picture in this bundle, and a grey rectangle
- * beside two photographs reads as a page that failed to load, so the register drew the game's rules
- * instead. The game's own art is now vendored (`src/art/nda.ts`, and a cover in `src/art/titles.ts`
- * cropped from the master), every described slug has a cover, and `test/titles.test.ts` asserts
- * that rather than recording the gap. The `--none` branch below is what remains for the case that
- * is still real: a title this page has never been taught about.
- */

@@ -49,6 +49,16 @@ import { titleArt } from '../art/titles.ts'
 export interface TitleCard {
   /** The kind of game, in three or four words — the first thing a visitor wants. */
   readonly kind: string
+  /**
+   * The one line that goes ON the poster, over the game's own art.
+   *
+   * Separate from `blurb`, and the split is the whole reason it exists. `blurb` is three sentences
+   * — right on a page somebody has already chosen to open, wrong laid over a picture, where a
+   * paragraph is a grey block that hides the art it is standing on and gets skipped. The register
+   * shelf spends one line per game, so each of these has to carry the one concrete thing that
+   * makes the game different from the other two, and nothing else.
+   */
+  readonly hook: string
   /** What it is, in a sentence a player can act on. Never a feature list. */
   readonly blurb: string
   /**
@@ -81,14 +91,26 @@ export interface TitleCard {
    * repeated the string would fork that contract the first time the art was re-encoded.
    */
   readonly art: string | null
+  /**
+   * The colour READ OFF this game's own cover, or null when it has no cover.
+   *
+   * Joined from `src/art/titles.ts` for the same reason `art` is, and it is the one colour on this
+   * surface that is deliberately not a design token: `#e8622c` is the ember in Emberkin's sky,
+   * `#8f7ae8` the violet in Aetherholm's cloud, `#c8863a` the dusk behind the homestead. A token
+   * would make all three games the same shade of moss, which is precisely the "continuous tiles of
+   * the same colour" the shelf was rebuilt to stop being. It is spent on the eyebrow and a short
+   * rule over a near-black scrim, where `test/titles.test.ts` holds each one to 4.5:1.
+   */
+  readonly accent: string | null
 }
 
-/** A card as it is WRITTEN. The cover is joined on by slug, so it is absent here. */
-type CardCopy = Omit<TitleCard, 'art'>
+/** A card as it is WRITTEN. The cover and its accent are joined on by slug, so both are absent. */
+type CardCopy = Omit<TitleCard, 'art' | 'accent'>
 
 const CARDS: Readonly<Record<string, CardCopy>> = {
   emberkin: {
     kind: 'Monster-collecting RPG',
+    hook: 'A bond deepens with use, so the team you finish with is one you made rather than one you picked.',
     blurb:
       'Find kin, bond with them and fight alongside them. A bond deepens with use and changes what ' +
       'the pair can do together, so the team you end with is one you made rather than one you ' +
@@ -98,6 +120,7 @@ const CARDS: Readonly<Record<string, CardCopy>> = {
   },
   aetherholm: {
     kind: 'Sky-island strategy',
+    hook: 'Hold islands above the cloud. The wind has a direction, and it decides who your neighbours really are.',
     blurb:
       'Hold islands above the cloud, build them up and sail between them. The wind has a direction ' +
       'and it decides who your neighbours really are. Seasons run on a seed, so every one of them ' +
@@ -107,6 +130,7 @@ const CARDS: Readonly<Record<string, CardCopy>> = {
   },
   'ninety-days-after': {
     kind: 'Survival strategy',
+    hook: 'Six actions a day, one homestead, and a clock that resolves whether or not you were watching.',
     blurb:
       'Ninety days after everything stopped. Hold a homestead, work the land around it and queue ' +
       'what your people will attempt tomorrow — then the day resolves for everyone at once and you ' +
@@ -121,7 +145,8 @@ const CARDS: Readonly<Record<string, CardCopy>> = {
 export function cardFor(slug: string): TitleCard | null {
   const copy = Object.prototype.hasOwnProperty.call(CARDS, slug) ? (CARDS[slug] ?? null) : null
   if (copy === null) return null
-  return { ...copy, art: titleArt(slug)?.path ?? null }
+  const art = titleArt(slug)
+  return { ...copy, art: art?.path ?? null, accent: art?.accent ?? null }
 }
 
 /** Every slug this page can describe. Exported for the test that keeps it honest. */

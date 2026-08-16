@@ -100,12 +100,24 @@ describe('a screen whose question can change re-asks it', () => {
     assert.equal(withId.length, 1, 'exactly one entitlements resource is keyed by the address id')
   })
 
-  it('the title page passes the id to BOTH of its questions', () => {
-    const both = calls('title')
-    assert.equal(both.length, 2, `the title page makes ${both.length} requests`)
-    for (const call of both) {
-      assert.match(call, /\[id\]/, 'a title-page resource is not keyed by the address id')
-    }
+  it('the title page passes the id to BOTH of its per-title questions', () => {
+    /*
+     * THREE RESOURCES, AND EXACTLY TWO OF THEM ARE KEYED ON THE ADDRESS.
+     *
+     * The achievements and the seasons are asked FOR this title, so navigating from one title to
+     * another inside the same route must re-ask both — the failure this whole describe block
+     * exists to catch is the second title's page showing the first one's rows.
+     *
+     * The register is the third, and it is deliberately not keyed: `GET /v1/titles` takes no id
+     * (there is no `GET /v1/titles/:id` — `src/lib/worlds.ts` enumerates every route the service
+     * registers) and answers the same list whichever title is being read. Keying it on the id
+     * would re-fetch the identical list on every navigation. The row is picked out of that list in
+     * the component, so a changing id still changes the heading.
+     */
+    const all = calls('title')
+    const keyed = all.filter((c) => /\[id\]/.test(c))
+    assert.equal(keyed.length, 2, `the title page keys ${keyed.length} resources on the address id`)
+    assert.equal(all.length, 3, `the title page makes ${all.length} requests`)
   })
 
   it('no page passes `load` itself as a dependency', () => {
