@@ -625,159 +625,475 @@ body {
 }
 
 /*
- * `.ww-reg` is the front page's rendering of the SAME rows `.ww-title` renders elsewhere, and the
- * two are deliberately not one class. `.ww-title` is a record: a name, a status, a slug, the
- * capabilities, and a link to the platform's file on it. `.ww-reg__entry` is a door: a picture,
- * a sentence, and a way in. Merging them would mean one of the two surfaces got the wrong half —
- * a title page with cover art it does not need, or a front page with no way to reach a game,
- * which is the defect this block exists to end.
+ * ══════════════════════════════════════════════════════════════════════════════════════════════
+ * `.ww-plate` — ONE GAME, AS A POSTER. It replaced `.ww-reg__entry`, which was a register row.
  *
- * Three columns, and the first is the argument. The SLUG runs down the left edge of every entry,
- * set in the mono face and rotated. It is not ornament: the slug is the entitlement scope id
- * (`worlds/src/titles.ts` constrains its shape for exactly that reason), so it is the one
- * string on the card that the platform itself keys on. A shelf of games with their machine names
- * printed on the spine is what a REGISTER looks like, and it is the thing that keeps this page
- * from reading as a storefront.
+ * The row was a bordered box holding a thumbnail in a fixed 26rem column, a rotated slug on a
+ * spine, and beneath the name up to three separate grey sentences about what the platform could
+ * not do for that game. Three of those boxes, stacked, is the shape the owner has reported on
+ * every surface in this estate in the same words: continuous tiles of the same colour and the same
+ * pattern. The covers were the only part of that page that differed between one game and the next,
+ * and they were the part it gave the least room to.
+ *
+ * So the picture IS the entry now. Full page width, its own aspect ratio, and the name, one line
+ * and the way in laid over the bottom of it. The three sentences moved to the title page, where
+ * somebody deciding to spend money will read them; what is left on the poster is whether there is
+ * a door.
+ *
+ * ── WHY THIS BLOCK SPENDS RAW RAMP TOKENS AND ONE COLOUR THAT IS NOT A TOKEN AT ALL ───────────
+ *
+ * Everything else in this file uses the SEMANTIC layer — `--cf-fg`, `--cf-bg-raised` — which
+ * resolves per colour scheme, and that is right for text on a page whose ground follows the
+ * reader's system. It is wrong for text on a PHOTOGRAPH. The photograph does not get lighter when
+ * the reader's display does, so a plate whose ink followed the scheme would put ash-coloured type
+ * on a dark picture the moment somebody opened this page in a light environment. `--cf-bone` and
+ * `--cf-ash-950` are the RAW ramp (`ui/packages/ui/src/tokens.css`): substrate-scoped, and the
+ * same value in both schemes. They are the correct tokens for ink laid on art.
+ *
+ * `--ww-plate-accent` is the one value here that is not a token by design. It is set inline per
+ * plate by `pages/platform.tsx` from `src/art/titles.ts` — the hue each cover was PAINTED around,
+ * catalogued beside the checksum of the file it was read from. Ember `#e8622c`, Aetherholm
+ * `#8f7ae8`, the dusk behind the homestead `#c8863a`; 5.87:1, 5.78:1 and 6.55:1 on the scrim's
+ * deepest point. A token in its place would light all three games the same, which is the defect.
+ * The `var(…, var(--cf-accent))` fallback is written HERE and not at the call site because an
+ * undefined custom property invalidates the whole declaration at computed-value time rather than
+ * falling back — the failure mode this file's header already records for `var(--cf-nope)`.
+ * ══════════════════════════════════════════════════════════════════════════════════════════════
  */
 
-.ww-reg {
+.ww-shelf__list {
   list-style: none;
   margin: var(--cf-space-lg) 0 0;
   padding: 0;
   display: grid;
-  gap: var(--cf-space-lg);
+  gap: var(--cf-space-2xl);
 }
 
-.ww-reg__entry {
-  display: grid;
-  /* spine · art · body. The art column is fixed so every cover lands on the same left edge and
-     the names below them line up; the body takes what is left. Widened from 18rem: with the
-     preamble gone the shelf is what the page spends its space on, and a cover big enough to be
-     read as a picture rather than a thumbnail is the whole point of putting it first. */
-  grid-template-columns: auto minmax(0, 26rem) 1fr;
-  gap: var(--cf-space-xl);
-  align-items: start;
-  padding: var(--cf-space-lg);
-  border: 1px solid var(--cf-line);
-  border-radius: var(--cf-radius-sm);
-  background: var(--cf-bg-raised);
+.ww-plate {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  border-radius: var(--cf-radius);
+  /* The covers are 900x472 and are shown UNCROPPED at ordinary widths, which is the point of
+     giving them the whole column. The cap is what stops a 1200px page turning each one into a
+     612px slab: past it `object-fit: cover` trims the top and bottom evenly, and every cover in
+     `src/art/titles.ts` is centre-weighted key art that survives that. */
+  aspect-ratio: 900 / 472;
+  max-block-size: 30rem;
+  background: var(--cf-bg-sunken);
+  /* The ink on a plate is constant, because what it is laid on is. See the block comment above. */
+  color: var(--cf-bone);
+  isolation: isolate;
+}
+
+.ww-plate__art {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+/* A title this page has never been taught about: a flat ground, never a broken-image icon. */
+.ww-plate__art--none {
+  background: var(--cf-bg-sunken);
 }
 
 /*
- * The one entry you can walk into gets the accent edge, and nothing else on the card does.
- * A status badge says what the register holds; this says what YOU can do about it, which is a
- * different question and the one a visitor is actually asking.
+ * TWO GRADIENTS, NOT ONE, AND THE TOP ONE IS NOT DECORATION.
+ *
+ * The bottom band carries the name, the line and the button; the top band carries the slug and the
+ * status badge. Both are text on an arbitrary photograph, so both need their own ground. A single
+ * bottom-up wash would leave the badge sitting on whatever the sky happens to be — which for
+ * Aetherholm is a bright cloud, and the word LIVE would have vanished into it.
+ *
+ * The middle is left alone on purpose: a scrim over the whole picture would make three dark
+ * rectangles out of three different paintings, which is the thing being fixed.
  */
-.ww-reg__entry--playable {
-  border-left: 3px solid var(--cf-accent);
+.ww-plate__scrim {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      to top,
+      color-mix(in srgb, var(--cf-ash-950) 94%, transparent) 0%,
+      color-mix(in srgb, var(--cf-ash-950) 78%, transparent) 22%,
+      transparent 62%
+    ),
+    linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--cf-ash-950) 62%, transparent) 0%,
+      transparent 26%
+    );
 }
 
-.ww-reg__spine {
+.ww-plate__slug,
+.ww-plate__state {
+  position: absolute;
+  /* Not `--cf-space-xl`: the plate's own inset is larger than the page rhythm because it is
+     measured against a picture rather than against other blocks of text. 1.25rem. */
+  inset-block-start: 1.25rem;
+}
+
+.ww-plate__slug {
+  inset-inline-start: 1.25rem;
   margin: 0;
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
   font-size: var(--cf-text-2xs);
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--cf-fg-mute);
-  /* Aligned to the top of the art beside it rather than centred down the whole card: the entries
-     are different heights, and a spine that floated with the text would make a ragged left edge
-     out of the one column whose job is to be a straight one. */
-  align-self: stretch;
-  border-right: 1px solid var(--cf-line);
-  padding-right: var(--cf-space-xs);
+  color: color-mix(in srgb, var(--cf-bone) 72%, transparent);
 }
 
-.ww-reg__art {
-  border-radius: var(--cf-radius-sm);
-  overflow: hidden;
-  background: var(--cf-bg-sunken);
-  border: 1px solid var(--cf-line);
+.ww-plate__state {
+  inset-inline-end: 1.25rem;
 }
 
-.ww-reg__cover {
-  display: block;
-  width: 100%;
-  height: auto;
-  aspect-ratio: 900 / 472;
-  object-fit: cover;
+.ww-plate__copy {
+  position: absolute;
+  inset-inline: 1.25rem;
+  inset-block-end: 1.25rem;
+  /* A reading measure, not a rhythm step: past about 54 characters the hook stops being one line
+     and starts being a paragraph laid on a picture, which is what this shelf replaced. */
+  max-inline-size: 54ch;
 }
 
 /*
- * A title this page has never been taught about. Sunken and empty, and never a broken-image icon.
+ * THE GAME'S OWN LIGHT, AND THE WHOLE OF WHERE IT IS SPENT.
  *
- * All three games the register knows have a cover now, so this is reached only by a fourth title
- * registered by an administrator — which is exactly the case the register is built to survive.
+ * The eyebrow and a short rule above the name. Not the button — a solid fill in three different
+ * hues would put the one control on the page at three different contrast ratios, and the button is
+ * the thing that must be unmistakable on every plate. Restraint here is what makes the colour read
+ * as the game's rather than as this page's.
  */
-.ww-reg__cover--none {
-  background: var(--cf-bg-sunken);
-  aspect-ratio: 900 / 472;
+.ww-plate__kind {
+  margin: 0 0 var(--cf-space-sm);
+  padding-block-start: var(--cf-space-sm);
+  border-block-start: 2px solid var(--ww-plate-accent, var(--cf-accent));
+  /* The rule is the width of the eyebrow, not of the column: a full-width line under a picture
+     reads as a divider between two things, and there is only one thing here. */
+  inline-size: fit-content;
+  font-size: var(--cf-text-2xs);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ww-plate-accent, var(--cf-accent));
 }
 
-.ww-reg__body {
-  min-width: 0;
+.ww-plate__name {
+  margin: 0;
+  font-family: var(--cf-font-display);
+  /* The display step, and the largest type this app sets. A poster whose title is the same size as
+     a section heading is a card. */
+  font-size: var(--cf-text-3xl);
+  line-height: 1.05;
+  letter-spacing: -0.015em;
+  color: var(--cf-bone);
 }
 
-.ww-reg__head {
+.ww-plate__hook {
+  margin: var(--cf-space-sm) 0 var(--cf-space-lg);
+  font-size: var(--cf-text-md);
+  line-height: 1.5;
+  color: color-mix(in srgb, var(--cf-bone) 86%, transparent);
+}
+
+.ww-plate__actions {
   display: flex;
-  gap: var(--cf-space-md);
+  gap: var(--cf-space-xl);
   align-items: center;
   flex-wrap: wrap;
 }
 
-.ww-reg__name {
+/*
+ * THE ONE CONTROL, AND IT IS NOT A `.cf-btn`.
+ *
+ * `.cf-btn` is a ghost: transparent ground, `--cf-fg-dim` label. It is right everywhere else in
+ * this app and it is nearly invisible on a photograph. This is the estate's solid-call-to-action
+ * geometry with the plate's own ink and ground swapped in — bone on ash-950, about 17:1, which
+ * holds over any cover the register ever carries.
+ */
+.ww-plate__play {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: var(--cf-space-sm) var(--cf-space-xl);
+  border: 1px solid var(--cf-bone);
+  border-radius: var(--cf-radius-sm);
+  background: var(--cf-bone);
+  color: var(--cf-ash-950);
+  font-family: var(--cf-font-mono);
+  font-size: var(--cf-text-sm);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  text-decoration: none;
+  transition:
+    background-color var(--cf-speed) var(--cf-ease),
+    border-color var(--cf-speed) var(--cf-ease);
+}
+
+.ww-plate__play:hover {
+  background: color-mix(in srgb, var(--cf-bone) 82%, var(--ww-plate-accent, var(--cf-accent)));
+  border-color: color-mix(in srgb, var(--cf-bone) 82%, var(--ww-plate-accent, var(--cf-accent)));
+}
+
+.ww-plate__more {
+  color: color-mix(in srgb, var(--cf-bone) 78%, transparent);
+  font-size: var(--cf-text-sm);
+  text-decoration: none;
+  border-block-end: 1px solid color-mix(in srgb, var(--cf-bone) 34%, transparent);
+}
+
+.ww-plate__more:hover {
+  color: var(--cf-bone);
+  border-block-end-color: var(--cf-bone);
+}
+
+/* Why there is no way in, standing where the button would be. Never italic-absent: this is a fact
+   about the estate, not a missing value. */
+.ww-plate__shut {
   margin: 0;
-  font-family: var(--cf-font-display);
-  font-size: var(--cf-text-xl);
-  color: var(--cf-fg);
-}
-
-.ww-reg__kind {
-  margin: var(--cf-space-2xs) 0 0;
-  font-size: var(--cf-text-2xs);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--cf-accent-text);
-}
-
-.ww-reg__blurb {
-  margin: var(--cf-space-sm) 0 var(--cf-space-md);
-  color: var(--cf-fg-dim);
+  max-inline-size: 46ch;
   font-size: var(--cf-text-sm);
-  line-height: 1.65;
-}
-
-.ww-reg__actions {
-  display: flex;
-  gap: var(--cf-space-sm);
-  flex-wrap: wrap;
-  margin-bottom: var(--cf-space-md);
-}
-
-/* Why there is no way in. Dimmed, but never italic-absent: this is a fact about the estate, not
-   a missing value. */
-.ww-reg__shut {
-  margin: 0 0 var(--cf-space-md);
-  font-size: var(--cf-text-sm);
-  color: var(--cf-fg-mute);
-  line-height: 1.6;
+  line-height: 1.5;
+  color: color-mix(in srgb, var(--cf-bone) 76%, transparent);
 }
 
 /*
- * One breakpoint, and it drops the spine rather than shrinking it.
+ * ONE BREAKPOINT, AND IT CHANGES THE SHAPE RATHER THAN SHRINKING IT.
  *
- * A rotated line of type in a narrow column is the first thing that stops working on a phone: it
- * either wraps into two vertical lines or forces the card wider than the screen. The slug is
- * still on the page — it is the entry's `key` and it is on the title page — so losing it here
- * costs a reader nothing they cannot get one tap away.
+ * Below 52rem a 900x472 plate is about 330px tall and the copy block is taller than the space
+ * under it, so the text would overrun the picture. The plate stops being an overlay and becomes a
+ * picture with the copy beneath it — the same order, the same content, laid out the way a narrow
+ * column can hold. The ground under the copy is `--cf-ash-950` so the ink stays the plate's ink
+ * and the two halves read as one object.
  */
 @media (max-width: 52rem) {
-  .ww-reg__entry {
-    grid-template-columns: 1fr;
+  .ww-plate {
+    aspect-ratio: auto;
+    max-block-size: none;
+    background: var(--cf-ash-950);
   }
 
-  .ww-reg__spine {
+  .ww-plate__art {
+    position: static;
+    display: block;
+    aspect-ratio: 900 / 472;
+    block-size: auto;
+  }
+
+  .ww-plate__scrim {
+    /* The picture is no longer behind the text, so there is nothing to hold it off. The top band
+       would still be doing its job for the slug and the badge, but it is 26% of a picture that is
+       now the whole plate — a dark wash over a third of the art for two small labels. */
     display: none;
+  }
+
+  .ww-plate__slug,
+  .ww-plate__state {
+    position: static;
+  }
+
+  .ww-plate__copy {
+    position: static;
+    max-inline-size: none;
+    padding: var(--cf-space-xl) 1.25rem 1.25rem;
+  }
+
+  .ww-plate__slug {
+    padding: var(--cf-space-lg) 1.25rem 0;
+  }
+
+  .ww-plate__state {
+    display: block;
+    padding: var(--cf-space-sm) 1.25rem 0;
+  }
+}
+
+/* ------------------- the ledger under the shelf --------------------- */
+
+/*
+ * WHAT THE PLATFORM HOLDS, AS A SECTION RATHER THAN AS A PANEL.
+ *
+ * `.ww-owns` (line 484) was already a ruled ledger rather than six cards — that fix is recorded
+ * beside it. It was still wrapped in a `.ww-panel`, which is a border, a fill and a radius, so the
+ * ledger sat inside a box after all and the section carried the same visual weight as the shelf of
+ * games above it. It gets the shelf's own heading treatment instead: a rule under two or three
+ * words, and no container.
+ */
+.ww-ledger {
+  margin: 0 0 var(--cf-space-3xl);
+}
+
+.ww-ledger__note {
+  margin: var(--cf-space-xl) 0 0;
+  max-width: 68ch;
+  color: var(--cf-fg-dim);
+  font-size: var(--cf-text-sm);
+  line-height: 1.6;
+}
+
+
+/* ------------------- the register's file on a game ------------------ */
+
+/*
+ * ══════════════════════════════════════════════════════════════════════════════════════════════
+ * `.ww-file` — WHAT THE REGISTER HOLDS, AS A FILE RATHER THAN AS CARDS.
+ *
+ * These four rows are the sentences the front page used to stack under every game, and the reason
+ * they were unreadable there was never the words: it was that each one arrived as its own grey
+ * paragraph with nothing saying which question it was answering. A file answers questions. Label
+ * on the left in the utility face, answer on the right in the reading face, a hairline between
+ * each pair, and nothing drawn around the outside.
+ *
+ * NO PANEL. `.ww-panel` is a border, a fill and a radius; a box around a list of labelled facts is
+ * the "ugly text in boxes" this estate has been told about on four surfaces now. The rules ARE the
+ * structure. The one exception is `.ww-file__play`, which is a control and has to look like one.
+ * ══════════════════════════════════════════════════════════════════════════════════════════════
+ */
+
+.ww-file {
+  margin: 0 0 var(--cf-space-3xl);
+}
+
+.ww-file__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--cf-space-lg);
+  padding-block-end: var(--cf-space-lg);
+  border-block-end: 1px solid var(--cf-line-strong);
+}
+
+.ww-file__kind {
+  margin: 0 0 var(--cf-space-2xs);
+  font-size: var(--cf-text-sm);
+  color: var(--cf-fg);
+}
+
+.ww-file__slug {
+  margin: 0;
+  font-size: var(--cf-text-2xs);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--cf-fg-mute);
+}
+
+.ww-file__rows {
+  margin: 0;
+}
+
+/*
+ * The label column is fixed rather than `auto`, because four labels of four different widths would
+ * put four different left edges on the answers and the file would stop reading as a column.
+ */
+.ww-file__row {
+  display: grid;
+  grid-template-columns: 11rem 1fr;
+  gap: var(--cf-space-xl);
+  padding-block: var(--cf-space-lg);
+  border-block-end: 1px solid var(--cf-line);
+}
+
+.ww-file__label {
+  margin: 0;
+  font-family: var(--cf-font-mono);
+  font-size: var(--cf-text-2xs);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cf-fg-mute);
+  /* Optically aligned with the first line of the answer, which is set larger. */
+  padding-block-start: 0.2em;
+}
+
+.ww-file__value {
+  margin: 0;
+  max-inline-size: 62ch;
+  font-size: var(--cf-text-sm);
+  line-height: 1.6;
+  color: var(--cf-fg);
+}
+
+/* An answer that is an ABSENCE. Dimmed, never italic and never a dash: "nothing yet" is a fact
+   about the estate and it is spelled out in words. */
+.ww-file__none {
+  color: var(--cf-fg-dim);
+}
+
+.ww-file__caps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--cf-space-sm);
+}
+
+/*
+ * A capability is a PAIR: the word the service uses and what it means for the reader. Set as two
+ * lines rather than "private_world — Declares it will…" on one, because the raw token is the thing
+ * a support conversation will quote and it should be findable at a glance down the left edge.
+ */
+.ww-file__cap-name {
+  display: block;
+  font-size: var(--cf-text-2xs);
+  letter-spacing: 0.1em;
+  color: var(--cf-accent);
+}
+
+.ww-file__cap-meaning {
+  display: block;
+  color: var(--cf-fg-dim);
+}
+
+/*
+ * The one control on the file, and the only boxed thing in it. Solid, because on this page it is
+ * the action — everything above it is a fact somebody read on the way to deciding to press it.
+ */
+.ww-file__play {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  margin-block-start: var(--cf-space-xl);
+  padding: var(--cf-space-sm) var(--cf-space-xl);
+  border: 1px solid var(--cf-accent);
+  border-radius: var(--cf-radius-sm);
+  background: var(--cf-accent);
+  color: var(--cf-accent-text);
+  font-family: var(--cf-font-mono);
+  font-size: var(--cf-text-sm);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  text-decoration: none;
+  transition: opacity var(--cf-speed) var(--cf-ease);
+}
+
+.ww-file__play:hover {
+  opacity: 0.88;
+}
+
+/* The register could not be read, or has nothing at this address. One sentence, above the two
+   lists that do not depend on it, and never an alert: nothing here has failed for the reader. */
+.ww-file__unread {
+  margin: 0 0 var(--cf-space-3xl);
+  max-inline-size: 68ch;
+  padding-block-start: var(--cf-space-lg);
+  border-block-start: 1px solid var(--cf-line);
+  font-size: var(--cf-text-sm);
+  line-height: 1.6;
+  color: var(--cf-fg-dim);
+}
+
+@media (max-width: 40rem) {
+  .ww-file__row {
+    grid-template-columns: 1fr;
+    gap: var(--cf-space-xs);
+  }
+
+  .ww-file__label {
+    padding-block-start: 0;
   }
 }
 

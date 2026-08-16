@@ -1,6 +1,32 @@
 /**
  * One title: what it declares, what it can award, and the seasons it runs.
  *
+ * ══════════════════════════════════════════════════════════════════════════════════════════════
+ * THIS PAGE OPENS WITH THE REGISTER'S FILE ON THE GAME, AND THAT IS NEW
+ *
+ * Its heading used to be `shortId(id)` — eight hexadecimal characters — and the page never once
+ * said which game it was about. A reader arriving from the shelf saw `00000000` where the name
+ * should be, and had to infer the game from the achievements underneath it.
+ *
+ * It is also where the front page's caveats went. `src/pages/platform.tsx` used to print, under
+ * every game, up to three grey sentences about what the platform could not do about it — whether
+ * it was open to play, what it had declared it could be asked for, whether anything could be sold
+ * against it. All three are facts about DELIVERY, and delivery is a question somebody asks when
+ * they are deciding to spend, not when they are deciding what to play. The shelf keeps one
+ * sentence — is there a way in — and everything else is stated here, in full, in the file.
+ *
+ * ── THE REGISTER IS FETCHED, NOT PASSED ───────────────────────────────────────────────────────
+ *
+ * `GET /v1/titles` and not a router state object, because this route is linkable: the sitemap
+ * lists it, the shelf links to it, and somebody can paste `/titles/<uuid>` into a fresh tab. A
+ * page that only knew the game's name when it was navigated to from elsewhere would render the
+ * hexadecimal heading again for exactly the readers least able to guess what it meant.
+ *
+ * The register may not answer, and the id may not be in it. Both fall back to `shortId(id)` and
+ * the old lede: the two lists below are keyed on the id in the path and do not need the row, so a
+ * register that is down must not take the achievements and the seasons down with it.
+ * ══════════════════════════════════════════════════════════════════════════════════════════════
+ *
  * **Public**, because both routes behind it are: `GET /v1/titles/:id/achievements`
  * (`worlds/src/server.ts`) and `GET /v1/titles/:id/seasons` contain no
  * `await authenticate(ctx, deps)`. Putting this screen behind the session gate would send an
@@ -27,9 +53,18 @@ import { useCallback } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { Empty, Failed, Loading } from '../components/states.tsx'
 import { Fact, StateBadge } from '../components/tone.tsx'
-import { ember, seasonTone, shortId, timestamp } from '../lib/format.ts'
+import { cardFor } from '../lib/catalogue.ts'
+import { capabilityMeaning, ember, seasonTone, shortId, timestamp, titleTone } from '../lib/format.ts'
 import { useResource } from '../lib/resource.ts'
-import { listAchievements, listSeasons } from '../lib/worlds.ts'
+import { viewedSurfaceUrl } from '../lib/viewed.ts'
+import {
+  isOpenToPlay,
+  isSellable,
+  listAchievements,
+  listSeasons,
+  listTitles,
+  type Title,
+} from '../lib/worlds.ts'
 
 /**
  * Whether a reward is worth a sentence.
@@ -43,14 +78,159 @@ function paysReward(wei: string | undefined): boolean {
   return typeof wei === 'string' && /^\d+$/.test(wei.trim()) && BigInt(wei.trim()) > 0n
 }
 
+/**
+ * The register's file on one game — and the home of the three sentences the shelf used to print.
+ *
+ * ── WHAT IS HERE AND WHY EACH LINE IS ────────────────────────────────────────────────────────
+ *
+ * **Status**, as a badge with a glyph and a word beside a sentence saying what the status MEANS.
+ * `titleTone` writes that sentence, the same one the shelf reads, so the two surfaces cannot drift
+ * into describing `beta` differently.
+ *
+ * **Declares** — the capabilities, each with `capabilityMeaning` beside it. Not a chip cloud:
+ * `private_world` means nothing to a player, and the whole reason `capabilityMeaning` exists is
+ * that the raw token is an engineer's word. A title that declares NOTHING is the common case in
+ * this estate today and it says so in a sentence rather than rendering an empty row.
+ *
+ * **Can be sold to** — `isSellable`, and it is the one line on this page that is about money. A
+ * `draft` or `retired` game cannot take a purchase, because nothing would ever be handed over; a
+ * player who has read that here will not be surprised by a storefront that refuses them.
+ *
+ * **Owns** — the asset scopes, which is the answer to "what does an item bought here belong to".
+ *
+ * ── WHAT IS DELIBERATELY NOT HERE ────────────────────────────────────────────────────────────
+ *
+ * The service URL. `GET /v1/titles` does not put it on the wire (`worlds/src/server.ts` selects
+ * six columns and `serviceUrl` is not among them) and it should not: it is an in-cluster address,
+ * it is the address the provisioning bridge posts to, and publishing it invites requests at a
+ * service that expects only the platform.
+ */
+function TitleFile({ title, card }: { title: Title; card: ReturnType<typeof cardFor> }) {
+  const tone = titleTone(title.status)
+  const open = isOpenToPlay(title)
+  const sellable = isSellable(title)
+
+  return (
+    <section className="ww-file" aria-label="What the register holds about this game">
+      <div className="ww-file__head">
+        <div className="ww-file__id">
+          {card !== null && <p className="ww-file__kind">{card.kind}</p>}
+          <p className="ww-file__slug cf-num">{title.slug}</p>
+        </div>
+        <StateBadge tone={tone} />
+      </div>
+
+      <dl className="ww-file__rows">
+        <div className="ww-file__row">
+          <dt className="ww-file__label">Open to play</dt>
+          <dd className="ww-file__value">
+            {open ? 'Yes' : 'No'} — {tone.meaning}
+          </dd>
+        </div>
+
+        <div className="ww-file__row">
+          <dt className="ww-file__label">Declares</dt>
+          <dd className="ww-file__value">
+            {title.capabilities.length === 0 ? (
+              /*
+                THE COMMON CASE, AND IT IS NOT AN EMPTY LIST. Two of the three registered games
+                declare nothing at all. Rendering that as a blank would read as a page that failed
+                to load; it is a registration that has never been filled in, and the consequence —
+                nothing can be delivered against this game — is the part a buyer needs.
+              */
+              <span className="ww-file__none">
+                Nothing yet. Until this game declares what it can be asked to do, the platform has
+                no way to hand anything over to it.
+              </span>
+            ) : (
+              <ul className="ww-file__caps">
+                {title.capabilities.map((capability) => (
+                  <li className="ww-file__cap" key={capability}>
+                    <span className="ww-file__cap-name cf-num">{capability}</span>
+                    <span className="ww-file__cap-meaning">{capabilityMeaning(capability)}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </dd>
+        </div>
+
+        <div className="ww-file__row">
+          <dt className="ww-file__label">Can be sold to</dt>
+          <dd className="ww-file__value">
+            {sellable
+              ? 'Yes. A purchase aimed at this game is accepted, and the platform will try to deliver it.'
+              : `No. Nothing can be bought for this game while the register has it as ${tone.word.toLowerCase()}, because nothing bought could be handed over.`}
+          </dd>
+        </div>
+
+        <div className="ww-file__row">
+          <dt className="ww-file__label">Owns</dt>
+          <dd className="ww-file__value">
+            {title.assetScopes.length === 0 ? (
+              <span className="ww-file__none">No asset scope. Nothing in your bag is its.</span>
+            ) : (
+              <span className="cf-num">{title.assetScopes.join(' · ')}</span>
+            )}
+          </dd>
+        </div>
+      </dl>
+
+      {/*
+        THE DOOR, ON THIS PAGE TOO. Somebody who followed "the platform's file on it" from the
+        shelf and decided the game is for them should not have to go back to reach it. Same two
+        branches and the same conditions as the shelf's, for the same reason: `surface` is another
+        host resolved against the network being viewed, `play` is a route in this bundle.
+      */}
+      {open && card?.play != null && (
+        <Link className="ww-file__play" to={card.play}>
+          Play {title.name}
+        </Link>
+      )}
+      {open && card?.play == null && card?.surface != null && (
+        <a className="ww-file__play" href={viewedSurfaceUrl(card.surface)}>
+          Play {title.name}
+        </a>
+      )}
+    </section>
+  )
+}
+
 export function TitlePage() {
   const { id = '' } = useParams<{ id: string }>()
 
+  const loadRegister = useCallback(
+    async (signal: AbortSignal) => listTitles({ includeRetired: true, signal }),
+    [],
+  )
   const loadAchievements = useCallback(
     async (signal: AbortSignal) => listAchievements(id, signal),
     [id],
   )
   const loadSeasons = useCallback(async (signal: AbortSignal) => listSeasons(id, signal), [id])
+
+  /*
+   * The register, read whole and searched here.
+   *
+   * There is no `GET /v1/titles/:id` — `src/lib/worlds.ts` enumerates every route the service
+   * registers and the register is only ever served as a list. Filtering a list of three rows in
+   * the browser is not the cost it would look like on a larger registry, and inventing a route
+   * this app then had to be right about is the failure mode that file was written to end.
+   *
+   * `includeRetired` is on. A retired game's file is exactly the page somebody follows a stale
+   * link to, and answering it with a hexadecimal heading — because the default response excludes
+   * the row — would be the register hiding the one fact the reader came for.
+   */
+  const register = useResource(
+    loadRegister,
+    (data) => data.titles.length,
+    'The register could not be read, so this page cannot say which game it is about.',
+  )
+  const title: Title | null = register.data?.titles.find((row) => row.id === id) ?? null
+  // What this app can say about the game beyond what the register holds — a sentence and a way in.
+  // Null for a title registered after this bundle was built, which is the case `lib/catalogue.ts`
+  // is written to survive rather than the case it treats as an error.
+  const card = title === null ? null : cardFor(title.slug)
 
   const achievements = useResource(
     loadAchievements,
@@ -73,13 +253,51 @@ export function TitlePage() {
 ← The platform
           </Link>
         </p>
-        <h1 className="ww-head__title cf-num">{shortId(id)}</h1>
+        {/*
+          THE NAME WHEN THE REGISTER ANSWERED, THE ID WHEN IT DID NOT.
+
+          `shortId` is not a fallback anybody would choose; it is what an unlinkable page is left
+          with. The two lists below are keyed on the id in the path rather than on this row, so a
+          register that is unreachable costs the heading and nothing else.
+        */}
+        {title === null ? (
+          <h1 className="ww-head__title cf-num">{shortId(id)}</h1>
+        ) : (
+          <h1 className="ww-head__title">{title.name}</h1>
+        )}
         <p className="ww-head__lede">
-          The game itself lives in the title: its worlds, its rules, its moment-to-moment play.
-          Forge Worlds keeps only the parts that have to outlast a season — the achievements this
-          title reports, and the seasons it runs against money the platform has set aside.
+          {card?.blurb ??
+            'The game itself lives in the title: its worlds, its rules, its moment-to-moment play. ' +
+              'Forge Worlds keeps only the parts that have to outlast a season — the achievements ' +
+              'this title reports, and the seasons it runs against money the platform has set aside.'}
         </p>
       </header>
+
+      {/*
+        THE REGISTER'S FILE ON THIS GAME.
+
+        Rendered only when there is a row to render it from. Not a skeleton and not an error box:
+        the register failing is stated once, quietly, and the page carries on with the two lists
+        that do not depend on it.
+      */}
+      {title !== null && <TitleFile title={title} card={card} />}
+      {(register.state === 'failed' || register.state === 'forbidden') && (
+        <p className="ww-file__unread">
+          The register did not answer, so what this game declares and whether it is open to play are
+          not on this page. The achievements and seasons below come from the title itself and are
+          unaffected.
+        </p>
+      )}
+      {(register.state === 'ok' || register.state === 'empty') && title === null && (
+        <p className="ww-file__unread">
+          The register has no game under this address. The link that brought you here is older than
+          the register, or the address was mistyped.{' '}
+          <Link className="ww-link" to="/">
+            Every game we run is on the platform page
+          </Link>
+          .
+        </p>
+      )}
 
       <section className="ww-panel" aria-label="Achievements this title defines">
         <h2 className="ww-panel__title">Achievements</h2>
