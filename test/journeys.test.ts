@@ -41,7 +41,7 @@ import { PlatformPage } from '../src/pages/platform.tsx'
 import { PlayerPage } from '../src/pages/player.tsx'
 import { TitlePage } from '../src/pages/title.tsx'
 
-const ORIGIN = 'https://worlds.cloudsforge.online'
+const ORIGIN = 'https://cloudsforge.online/worlds'
 const at = (p: string) => fileURLToPath(new URL(`../${p}`, import.meta.url))
 
 const page = (element: ReactElement, path: string): ReactElement =>
@@ -638,7 +638,7 @@ describe('BJ-WORLDS-404 — an unowned address answers 404', () => {
     .join('\n')
 
   it('BJ-WORLDS-404 T2: nginx serves the shell through error_page 404, never try_files', () => {
-    assert.match(directives, /error_page\s+404\s+\/index\.html/)
+    assert.match(directives, /error_page\s+404\s+\/worlds\/index\.html/)
     assert.doesNotMatch(directives, /try_files\s+\$uri\s+(\$uri\/\s+)?\/index\.html/)
   })
 

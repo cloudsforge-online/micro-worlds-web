@@ -46,7 +46,7 @@ const read = (file: string): string => readFileSync(new URL(`../${file}`, import
 
 /** The production host table, as `cloudsforgeHosts()` derives it from an apex hostname. */
 function production(): CloudsForgeHosts {
-  installWindow('https://worlds.cloudsforge.online/')
+  installWindow('https://cloudsforge.online/worlds/')
   const hosts = cloudsforgeHosts()
   removeWindow()
   return hosts
@@ -57,12 +57,15 @@ describe('the surface this app IS', () => {
     assert.equal(PRODUCT, 'worlds')
   })
 
-  it('is registered as a product, in the switcher, with its own subdomain', () => {
+  it('is registered as a product, in the switcher, at a folder on the apex', () => {
     const surface = SURFACES.find((s) => s.key === PRODUCT)
     assert.ok(surface, 'worlds is not in the surface registry')
     assert.equal(surface.kind, 'product')
     assert.equal(surface.inSwitcher, true)
-    assert.equal(surface.subdomain, 'worlds')
+    // Wave 3e: `<apex>/worlds`. Still a product and still in the switcher — what changed is where
+    // it is served, not what it is.
+    assert.equal(surface.subdomain, '')
+    assert.equal(surface.basePath, '/worlds')
     assert.equal(surface.name, 'Forge Worlds')
   })
 
@@ -105,7 +108,7 @@ describe('the API base is an origin comparison, never a flag', () => {
 
   it('is absolute in production, because the bundle and the API are two hosts', () => {
     assert.equal(
-      resolveApiBase('https://worlds.cloudsforge.online', hosts, API_SURFACE),
+      resolveApiBase('https://cloudsforge.online/worlds', hosts, API_SURFACE),
       'https://api.cloudsforge.online',
     )
   })
@@ -122,7 +125,7 @@ describe('the API base is an origin comparison, never a flag', () => {
   })
 
   it('resolves from the window on every call, so one image serves every environment', () => {
-    installWindow('https://worlds.cloudsforge.online/entitlements')
+    installWindow('https://cloudsforge.online/worlds/entitlements')
     assert.equal(apiBase(), 'https://api.cloudsforge.online')
     removeWindow()
 
@@ -190,8 +193,10 @@ describe('the placement warning', () => {
   const hosts = production()
 
   it('accepts this surface’s own origin', () => {
+    // The ORIGIN is the apex — a folder has no origin of its own — and the hostname beside it is
+    // the same apex, which is what `cloudsforgeHosts()` derived the estate from.
     assert.equal(
-      isRegisteredPlacement('https://worlds.cloudsforge.online', 'worlds.cloudsforge.online', hosts),
+      isRegisteredPlacement('https://cloudsforge.online', 'cloudsforge.online', hosts),
       true,
     )
   })

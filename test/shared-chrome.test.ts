@@ -48,7 +48,7 @@ import * as fx from './fixtures.ts'
 import { withScreen, type Screen } from './dom.ts'
 
 /** The address this surface is served from, so `cloudsforgeHosts()` resolves the real apex. */
-const ORIGIN = 'https://worlds.cloudsforge.online'
+const ORIGIN = 'https://cloudsforge.online/worlds'
 
 /** The one request the public index makes. */
 const REGISTRY = { 'GET /v1/titles': { body: { titles: [fx.title()] } } } as const
@@ -238,12 +238,16 @@ test('the head follows the address rather than staying on the shell’s title', 
     const content = (selector: string): string =>
       s.document.head.querySelector(selector)?.getAttribute('content') ?? ''
 
-    // Composed against the serving origin, never a hostname typed into the bundle.
+    // Composed against the serving origin, never a hostname typed into the bundle — and WITHOUT a
+    // trailing slash even though the page was opened with one. `/worlds/` and `/worlds` are both
+    // served (the 301 from the retired hostname lands on the first), which is exactly why the
+    // canonical has to pick ONE: a trailing slash is the classic way one page acquires two
+    // addresses and splits its own indexing between them.
     assert.equal(
       s.document.head.querySelector('link[rel="canonical"]')?.getAttribute('href'),
-      `${ORIGIN}/`,
+      ORIGIN,
     )
-    assert.equal(content('meta[property="og:url"]'), `${ORIGIN}/`)
+    assert.equal(content('meta[property="og:url"]'), ORIGIN)
     assert.equal(content('meta[property="og:image"]'), `${ORIGIN}/og-1200x630.png`)
 
     // Public and invited: the platform page is the address a stranger arrives at, and nginx.conf

@@ -340,7 +340,14 @@ function tabbablesIn(doc: Document): Element[] {
 }
 
 export async function mount(element: ReactElement, options: MountOptions = {}): Promise<Screen> {
-  const url = options.url ?? 'https://market.cloudsforge.online/'
+  // THE APEX PLUS THIS SURFACE'S MOUNT, since wave 3e. `BrowserRouter basename='/worlds'` renders
+  // NOTHING when the address does not start with the mount — not an error, an empty tree — so a
+  // default outside it would make every scenario here assert against a blank page.
+  //
+  // (It read `https://market.cloudsforge.online/` until now, which was a copy-paste from the
+  // repository this harness was cut from and had been wrong in a quiet way the whole time: every
+  // scenario ran on another product's hostname. Nothing depended on it, which is why it survived.)
+  const url = options.url ?? 'https://cloudsforge.online/worlds'
   const win = new Window({ url })
   const doc = win.document as unknown as Document
 
