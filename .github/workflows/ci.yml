@@ -857,21 +857,33 @@ jobs:
             esac
           }
 
-          asset=$(curl -s http://127.0.0.1:8080/ | grep -oE '/assets/[^"]+\.js' | head -1)
-          for target in "http://127.0.0.1:8080/" "http://127.0.0.1:8080/inventory" "http://127.0.0.1:8080$asset"; do
-            [ -n "$asset" ] || [ "$target" != "http://127.0.0.1:8080" ] || continue
+          # ── TAKE THE SRC AS VITE WROTE IT, NOT A SUBSTRING OF IT ────────────────────────────
+          #
+          # `grep -oE '/assets/…'` finds the right text in the WRONG PLACE once the bundle is a
+          # folder: vite emits `src="/worlds/assets/index-x.js"`, and `-o` restarts at successive
+          # offsets so a leading `/` is not an anchor. The probe would then ask for the unmounted
+          # path, get `location /`'s correct 404, and report its `no-store` as the asset's
+          # Cache-Control. Fixed in micro-trade-web and micro-pool-web first, on this same line.
+          shell_html=$(curl -s "http://127.0.0.1:8080$BASE" || true)
+          asset=$(tr '<' '\n' <<<"$shell_html" | sed -n 's/.* src="\([^"]*\.js\)".*/\1/p' | head -1)
+          case "$asset" in
+            "$BASE"/*) : ;;
+            *) echo "::error::the shell's asset is '$asset', which does not start with $BASE"; exit 1 ;;
+          esac
+          for target in "http://127.0.0.1:8080$BASE" "http://127.0.0.1:8080$BASE/inventory" "http://127.0.0.1:8080$asset"; do
+            [ -n "$asset" ] || [ "$target" != "http://127.0.0.1:8080$BASE" ] || continue
             check "$target" X-Content-Type-Options "nosniff" "$target"
             # SAMEORIGIN, not DENY: this is a public product surface with legitimate embeds inside
             # Hub. The operator console is the one that uses DENY, and for a stated reason.
             check "$target" X-Frame-Options "SAMEORIGIN" "$target"
             check "$target" Referrer-Policy "strict-origin" "$target"
           done
-          check "http://127.0.0.1:8080/" Cache-Control "no-store" "the shell"
-          check "http://127.0.0.1:8080/inventory" Cache-Control "no-store" "an enumerated route"
+          check "http://127.0.0.1:8080$BASE" Cache-Control "no-store" "the shell"
+          check "http://127.0.0.1:8080$BASE/inventory" Cache-Control "no-store" "an enumerated route"
           [ -n "$asset" ] && check "http://127.0.0.1:8080$asset" Cache-Control "immutable" "a hashed asset"
 
           # This surface must NOT be kept out of an index: its title pages exist to be found.
-          robots=$(curl -sI http://127.0.0.1:8080/ | tr -d '\r' | grep -ci '^X-Robots-Tag:' || true)
+          robots=$(curl -sI "http://127.0.0.1:8080$BASE" | tr -d '\r' | grep -ci '^X-Robots-Tag:' || true)
           [ "${robots:-0}" = "0" ] || { echo "::error::this public surface sends X-Robots-Tag"; fail=1; }
 
           # ════════════════════════════════════════════════════════════════════════════════════
@@ -884,7 +896,7 @@ jobs:
           # missing asset would also blank the link preview on every shared title page.
           # ════════════════════════════════════════════════════════════════════════════════════
           for asset in favicon-32x32.png favicon-192x192.png favicon-512x512.png og-1200x630.png; do
-            code=$(curl -s -m 5 -o /dev/null -w '%{http_code}' "http://127.0.0.1:8080/$asset" || true)
+            code=$(curl -s -m 5 -o /dev/null -w '%{http_code}' "http://127.0.0.1:8080$BASE/$asset" || true)
             [ "$code" = "200" ] || { echo "::error::/$asset returned $code from the image"; fail=1; }
           done
 
@@ -893,12 +905,12 @@ jobs:
           # the app shell with a 200, and this probe is the only thing in the estate that can tell
           # the difference between a served picture and a served apology.
           for piece in crest-rank1 crest-rank4 field-storm charge-spire; do
-            code=$(curl -s -m 5 -o /dev/null -w '%{http_code}' "http://127.0.0.1:8080/art/heraldry/$piece-512x512.png" || true)
-            [ "$code" = "200" ] || { echo "::error::/art/heraldry/$piece returned $code from the image"; fail=1; }
+            code=$(curl -s -m 5 -o /dev/null -w '%{http_code}' "http://127.0.0.1:8080$BASE/art/heraldry/$piece-512x512.png" || true)
+            [ "$code" = "200" ] || { echo "::error::$BASE/art/heraldry/$piece returned $code from the image"; fail=1; }
           done
-          gone=$(curl -s -m 5 -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/art/heraldry/crest-rank9-512x512.png || true)
+          gone=$(curl -s -m 5 -o /dev/null -w '%{http_code}' "http://127.0.0.1:8080$BASE/art/heraldry/crest-rank9-512x512.png" || true)
           [ "$gone" = "404" ] || { echo "::error::a missing picture answered $gone, not 404"; fail=1; }
-          check "http://127.0.0.1:8080/art/heraldry/crest-rank1-512x512.png" Cache-Control "immutable" "a heraldry piece"
+          check "http://127.0.0.1:8080$BASE/art/heraldry/crest-rank1-512x512.png" Cache-Control "immutable" "a heraldry piece"
 
           docker rm -f ci-worlds-web >/dev/null 2>&1 || true
           exit $fail
