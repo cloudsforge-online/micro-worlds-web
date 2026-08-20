@@ -43,7 +43,7 @@ const directives = nginx
 
 /** The alternation inside nginx's enumerated `location ~ ^/(…)` block. */
 function nginxPaths(): string[] {
-  const match = /location\s+~\s+\^\/\(([^)]+)\)/.exec(directives)
+  const match = /location\s+~\s+\^\/worlds\/\(([^)]+)\)/.exec(directives)
   assert.ok(match, 'nginx.conf has no enumerated route block')
   return (match[1] ?? '').split('|').map((p) => p.trim())
 }
@@ -242,8 +242,12 @@ describe('nginx serves exactly the routes that exist', () => {
     }
   })
 
-  it('serves the index', () => {
-    assert.match(directives, /location = \/\s*\{/)
+  it('serves the index, in both of its spellings', () => {
+    // `/worlds/` is an address this surface did not used to have. On its own hostname the root was
+    // `/` and nothing else normalised onto it; as a folder, the 301 from the retired hostname lands
+    // on the trailing-slash form, and so does any link that carries one.
+    assert.match(directives, /location = \/worlds\s*\{/)
+    assert.match(directives, /location = \/worlds\/\s*\{/)
   })
 
   it('does NOT use the SPA 200-fallback', () => {
@@ -252,12 +256,15 @@ describe('nginx serves exactly the routes that exist', () => {
   })
 
   it('keeps the honest 404 through error_page', () => {
-    assert.match(directives, /error_page 404 \/index\.html/)
+    // `/worlds/index.html`: the shell moved into the folder with the bundle, and the old literal
+    // would name a file the document root no longer holds — nginx would then serve its own error
+    // page rather than the app's not-found screen, which is the half of this rule that matters.
+    assert.match(directives, /error_page 404 \/worlds\/index\.html/)
   })
 
   it('404s a missing asset rather than serving the shell for it', () => {
     // A JavaScript request answered with HTML fails with a syntax error naming the wrong file.
-    assert.match(directives, /location \/assets\/\s*\{\s*try_files \$uri =404/)
+    assert.match(directives, /location \/worlds\/assets\/\s*\{\s*try_files \$uri =404/)
   })
 
   it('sets the three security headers at the server level', () => {
@@ -280,7 +287,7 @@ describe('nginx serves exactly the routes that exist', () => {
 
   it('restates the security headers in EVERY location that sets Cache-Control', () => {
     // nginx's add_header is all-or-nothing per level: a location that declares ANY add_header
-    // inherits NONE from its parent. The template's `location /assets/` stripped nosniff from
+    // inherits NONE from its parent. The template's `location /worlds/assets/` stripped nosniff from
     // every hashed script in every frontend cut from it.
     const blocks = directives.split(/location\s/).slice(1)
     for (const block of blocks) {
@@ -304,12 +311,12 @@ describe('nginx serves exactly the routes that exist', () => {
   })
 
   it('never caches the shell', () => {
-    const root = /location = \/\s*\{([^}]*)\}/.exec(directives)?.[1] ?? ''
+    const root = /location = \/worlds\s*\{([^}]*)\}/.exec(directives)?.[1] ?? ''
     assert.match(root, /Cache-Control "no-store"/)
   })
 
   it('caches hashed assets immutably', () => {
-    const assets = /location \/assets\/\s*\{([^}]*)\}/.exec(directives)?.[1] ?? ''
+    const assets = /location \/worlds\/assets\/\s*\{([^}]*)\}/.exec(directives)?.[1] ?? ''
     assert.match(assets, /immutable/)
   })
 })

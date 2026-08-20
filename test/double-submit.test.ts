@@ -43,7 +43,7 @@ import { AuthProvider } from '../src/lib/auth.tsx'
 import { InventoryPage } from '../src/pages/inventory.tsx'
 import { PlayerPage } from '../src/pages/player.tsx'
 
-const ORIGIN = 'https://worlds.cloudsforge.online'
+const ORIGIN = 'https://cloudsforge.online/worlds'
 
 const page = (element: ReactElement, path: string): ReactElement =>
   h(MemoryRouter, { initialEntries: [path] }, h(AuthProvider, null, element) as ReactElement)

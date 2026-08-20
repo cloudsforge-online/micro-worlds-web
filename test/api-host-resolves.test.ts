@@ -53,8 +53,8 @@ afterEach(removeWindow)
 
 /** Both networks the estate serves. The testnet fault was identical and separately measured. */
 const NETWORKS = [
-  { label: 'mainnet', page: 'https://worlds.cloudsforge.online/' },
-  { label: 'testnet', page: 'https://worlds-testnet.cloudsforge.online/' },
+  { label: 'mainnet', page: 'https://cloudsforge.online/worlds/' },
+  { label: 'testnet', page: 'https://testnet.cloudsforge.online/worlds/' },
 ] as const
 
 /** Whether a hostname has an address record. The whole point of the file: no stub, no config. */

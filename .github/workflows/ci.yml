@@ -550,7 +550,10 @@ jobs:
             echo "::error::unknown paths must 404; serve the shell through error_page 404 /index.html"
             exit 1
           fi
-          grep -q 'error_page 404 /index.html' <<<"$directives"
+          # `/worlds/index.html` since wave 3e: the shell moved into the folder with the bundle, so
+          # the old literal would name a file the document root no longer holds and nginx would
+          # serve its own error page instead of the app's not-found screen.
+          grep -q 'error_page 404 /worlds/index.html' <<<"$directives"
           echo "ok: unknown paths answer 404"
 
       - name: The auth callback is redeemed before the app renders
@@ -787,29 +790,46 @@ jobs:
       - name: The image serves the app, 404s what it does not own, and sends the headers it promises
         run: |
           set -uo pipefail
+          # WHERE THIS BUNDLE LIVES INSIDE ITS OWN CONTAINER. `/worlds`, wave 3e. Prepended to each
+          # probe rather than written into them, so the routes below stay ROUTER paths — the same
+          # separation `src/lib/routes.ts` draws — and the mount is stated once.
+          BASE=/worlds
           docker run -d --name ci-worlds-web -p 127.0.0.1:8080:8080 worlds-web:ci
           for _ in $(seq 1 30); do
-            code=$(curl -s -m 5 -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/ || true)
+            code=$(curl -s -m 5 -o /dev/null -w '%{http_code}' "http://127.0.0.1:8080$BASE" || true)
             [ "$code" = "200" ] && break
             sleep 1
           done
-          [ "${code:-}" = "200" ] || { echo "::error::the image returned ${code:-no answer} for /"; docker logs --tail 60 ci-worlds-web; exit 1; }
+          [ "${code:-}" = "200" ] || { echo "::error::the image returned ${code:-no answer} for $BASE"; docker logs --tail 60 ci-worlds-web; exit 1; }
+
+          # AND THE ORIGIN ROOT MUST BE EMPTY. Behind the gateway neither address reaches this
+          # container — both belong to micro-site — so these are invisible in production and
+          # immediate under `docker run`, which is where a wrong `base:` or a wrong `COPY`
+          # destination shows up first. An image built for `/worlds` but copied to the document root
+          # answers 200 on `/` and would shadow the marketing site the moment it deployed.
+          for at_root in / /robots.txt; do
+            got=$(curl -s -m 5 -o /dev/null -w '%{http_code}' "http://127.0.0.1:8080$at_root" || true)
+            [ "$got" = "404" ] || { echo "::error::mounted at $BASE and still answering $got for $at_root"; exit 1; }
+          done
+          # And the trailing-slash front door, which the 301 from the retired hostname lands on.
+          slash=$(curl -s -m 5 -o /dev/null -w '%{http_code}' "http://127.0.0.1:8080$BASE/" || true)
+          [ "$slash" = "200" ] || { echo "::error::$BASE/ returned $slash"; exit 1; }
 
           fail=0
 
           # A route this app OWNS must survive a hard refresh. The path is DEEP_LINK_PATH in
           # src/lib/routes.ts, and test/routes.test.ts checks this file against it.
-          deep=$(curl -s -m 5 -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/entitlements/5c1d2e3f-4a5b-4c6d-8e7f-9a0b1c2d3e4f || true)
+          deep=$(curl -s -m 5 -o /dev/null -w '%{http_code}' "http://127.0.0.1:8080$BASE/entitlements/5c1d2e3f-4a5b-4c6d-8e7f-9a0b1c2d3e4f" || true)
           [ "$deep" = "200" ] || { echo "::error::an owned route returned $deep — it must be served the shell"; fail=1; }
 
           # The public title page, which is an address people are SENT. Same requirement.
-          shared=$(curl -s -m 5 -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/titles/5c1d2e3f-4a5b-4c6d-8e7f-9a0b1c2d3e4f || true)
+          shared=$(curl -s -m 5 -o /dev/null -w '%{http_code}' "http://127.0.0.1:8080$BASE/titles/5c1d2e3f-4a5b-4c6d-8e7f-9a0b1c2d3e4f" || true)
           [ "$shared" = "200" ] || { echo "::error::a shared title page returned $shared"; fail=1; }
 
           # A route it does NOT own must answer 404 while still serving the shell, so the reader
           # gets a real page and the status line tells the truth. This is the assertion the org's
           # reusable image job cannot make, because it requires a 200 for any deep link.
-          unknown=$(curl -s -m 5 -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/nope/not/a/route || true)
+          unknown=$(curl -s -m 5 -o /dev/null -w '%{http_code}' "http://127.0.0.1:8080$BASE/nope/not/a/route" || true)
           [ "$unknown" = "404" ] || { echo "::error::an unknown address returned $unknown; it must be 404"; fail=1; }
           # NOT A PIPE INTO `grep -q` — the hazard this file already avoids with here-strings
           # elsewhere, on the one check that still had it. grep -q exits at its first match and
@@ -822,7 +842,7 @@ jobs:
           # micro-hub-web#16 then failed here twice in a row with the build green in the same run.
           # Measured 2026-08-10 — micro-org#347. Capturing first leaves no pipe to close early, and
           # `case` is an exact glob rather than a regex.
-          shell_404=$(curl -s -m 5 http://127.0.0.1:8080/nope/not/a/route || true)
+          shell_404=$(curl -s -m 5 "http://127.0.0.1:8080$BASE/nope/not/a/route" || true)
           case "$shell_404" in
             *'<div id="root">'*) ;;
             *) echo "::error::the 404 did not serve the app shell"; fail=1 ;;
@@ -837,21 +857,33 @@ jobs:
             esac
           }
 
-          asset=$(curl -s http://127.0.0.1:8080/ | grep -oE '/assets/[^"]+\.js' | head -1)
-          for target in "http://127.0.0.1:8080/" "http://127.0.0.1:8080/inventory" "http://127.0.0.1:8080$asset"; do
-            [ -n "$asset" ] || [ "$target" != "http://127.0.0.1:8080" ] || continue
+          # ── TAKE THE SRC AS VITE WROTE IT, NOT A SUBSTRING OF IT ────────────────────────────
+          #
+          # `grep -oE '/assets/…'` finds the right text in the WRONG PLACE once the bundle is a
+          # folder: vite emits `src="/worlds/assets/index-x.js"`, and `-o` restarts at successive
+          # offsets so a leading `/` is not an anchor. The probe would then ask for the unmounted
+          # path, get `location /`'s correct 404, and report its `no-store` as the asset's
+          # Cache-Control. Fixed in micro-trade-web and micro-pool-web first, on this same line.
+          shell_html=$(curl -s "http://127.0.0.1:8080$BASE" || true)
+          asset=$(tr '<' '\n' <<<"$shell_html" | sed -n 's/.* src="\([^"]*\.js\)".*/\1/p' | head -1)
+          case "$asset" in
+            "$BASE"/*) : ;;
+            *) echo "::error::the shell's asset is '$asset', which does not start with $BASE"; exit 1 ;;
+          esac
+          for target in "http://127.0.0.1:8080$BASE" "http://127.0.0.1:8080$BASE/inventory" "http://127.0.0.1:8080$asset"; do
+            [ -n "$asset" ] || [ "$target" != "http://127.0.0.1:8080$BASE" ] || continue
             check "$target" X-Content-Type-Options "nosniff" "$target"
             # SAMEORIGIN, not DENY: this is a public product surface with legitimate embeds inside
             # Hub. The operator console is the one that uses DENY, and for a stated reason.
             check "$target" X-Frame-Options "SAMEORIGIN" "$target"
             check "$target" Referrer-Policy "strict-origin" "$target"
           done
-          check "http://127.0.0.1:8080/" Cache-Control "no-store" "the shell"
-          check "http://127.0.0.1:8080/inventory" Cache-Control "no-store" "an enumerated route"
+          check "http://127.0.0.1:8080$BASE" Cache-Control "no-store" "the shell"
+          check "http://127.0.0.1:8080$BASE/inventory" Cache-Control "no-store" "an enumerated route"
           [ -n "$asset" ] && check "http://127.0.0.1:8080$asset" Cache-Control "immutable" "a hashed asset"
 
           # This surface must NOT be kept out of an index: its title pages exist to be found.
-          robots=$(curl -sI http://127.0.0.1:8080/ | tr -d '\r' | grep -ci '^X-Robots-Tag:' || true)
+          robots=$(curl -sI "http://127.0.0.1:8080$BASE" | tr -d '\r' | grep -ci '^X-Robots-Tag:' || true)
           [ "${robots:-0}" = "0" ] || { echo "::error::this public surface sends X-Robots-Tag"; fail=1; }
 
           # ════════════════════════════════════════════════════════════════════════════════════
@@ -864,7 +896,7 @@ jobs:
           # missing asset would also blank the link preview on every shared title page.
           # ════════════════════════════════════════════════════════════════════════════════════
           for asset in favicon-32x32.png favicon-192x192.png favicon-512x512.png og-1200x630.png; do
-            code=$(curl -s -m 5 -o /dev/null -w '%{http_code}' "http://127.0.0.1:8080/$asset" || true)
+            code=$(curl -s -m 5 -o /dev/null -w '%{http_code}' "http://127.0.0.1:8080$BASE/$asset" || true)
             [ "$code" = "200" ] || { echo "::error::/$asset returned $code from the image"; fail=1; }
           done
 
@@ -873,12 +905,12 @@ jobs:
           # the app shell with a 200, and this probe is the only thing in the estate that can tell
           # the difference between a served picture and a served apology.
           for piece in crest-rank1 crest-rank4 field-storm charge-spire; do
-            code=$(curl -s -m 5 -o /dev/null -w '%{http_code}' "http://127.0.0.1:8080/art/heraldry/$piece-512x512.png" || true)
-            [ "$code" = "200" ] || { echo "::error::/art/heraldry/$piece returned $code from the image"; fail=1; }
+            code=$(curl -s -m 5 -o /dev/null -w '%{http_code}' "http://127.0.0.1:8080$BASE/art/heraldry/$piece-512x512.png" || true)
+            [ "$code" = "200" ] || { echo "::error::$BASE/art/heraldry/$piece returned $code from the image"; fail=1; }
           done
-          gone=$(curl -s -m 5 -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/art/heraldry/crest-rank9-512x512.png || true)
+          gone=$(curl -s -m 5 -o /dev/null -w '%{http_code}' "http://127.0.0.1:8080$BASE/art/heraldry/crest-rank9-512x512.png" || true)
           [ "$gone" = "404" ] || { echo "::error::a missing picture answered $gone, not 404"; fail=1; }
-          check "http://127.0.0.1:8080/art/heraldry/crest-rank1-512x512.png" Cache-Control "immutable" "a heraldry piece"
+          check "http://127.0.0.1:8080$BASE/art/heraldry/crest-rank1-512x512.png" Cache-Control "immutable" "a heraldry piece"
 
           docker rm -f ci-worlds-web >/dev/null 2>&1 || true
           exit $fail

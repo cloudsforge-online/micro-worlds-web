@@ -22,7 +22,7 @@ import { apiBase } from '../src/lib/hosts.ts'
 import { setViewedNetwork, viewedNetwork } from '../src/lib/viewed.ts'
 
 /** A real address on this surface, on the mainnet estate. */
-const PAGE = 'https://worlds.cloudsforge.online/'
+const PAGE = 'https://cloudsforge.online/worlds/'
 /** A development address: no sibling estate exists, so nothing here can point anywhere. */
 const DEV = 'http://localhost:5173/'
 

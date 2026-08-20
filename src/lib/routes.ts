@@ -40,6 +40,43 @@ export interface AppRoute {
   readonly public: boolean
 }
 
+/**
+ * ── WHERE THIS BUNDLE IS MOUNTED ─────────────────────────────────────────────────────────────
+ *
+ * Forge Worlds used to be a hostname. It is a FOLDER on the apex now: `/worlds`, wave 3e of the
+ * consolidation argued in micro-deploy `docs/apex-consolidation.md`.
+ *
+ *   A ROUTER PATH is what `react-router` matches, relative to the mount: `titles`. Everything in
+ *     `ROUTES` below and every `<Link to>`. `basename` in `src/app.tsx` puts the prefix back.
+ *
+ *   A PUBLIC PATH is what the address bar shows and what a crawler is handed: `/worlds/titles`.
+ *     Every `<loc>` in the sitemap and every `location` in `nginx.conf`.
+ *
+ * `publicPath()` is the one crossing and the only place `BASE` is concatenated.
+ *
+ * ── THE API DID NOT MOVE, BECAUSE IT WAS NEVER HERE ──────────────────────────────────────────
+ *
+ * Every wave since 3a has had to remount an API under its mount. This one does not: `API_SURFACE`
+ * in `lib/hosts.ts` is `api`, not `worlds` — the service is served on `api.<apex>` and this
+ * bundle's requests are ABSOLUTE and cross-origin by design. There are no relative `/v1` calls to
+ * break, so there is nothing for the gateway to strip. See that file's header for why the two
+ * keys are deliberately different.
+ *
+ * ── AND THE THREE TITLES NEST UNDER THIS ────────────────────────────────────────────────────
+ *
+ * `emberkin`, `aetherholm` and `tessera` become `<apex>/worlds/<title>` in their own wave. This
+ * repository composes their addresses from the registry (`viewedSurfaceUrl` via `lib/catalogue.ts`
+ * `surface`), so nothing here has to change when they do — which is the whole reason those links
+ * were never written down as hostnames.
+ */
+export const BASE = '/worlds'
+
+/** A router path as a public one. No trailing slash: the catalogue is `/worlds`, not `/worlds/`. */
+export function publicPath(path: string): string {
+  const rooted = path.startsWith('/') ? path : `/${path}`
+  return rooted === '/' ? BASE : `${BASE}${rooted}`
+}
+
 export const ROUTES: readonly AppRoute[] = [
   // ────────────────────────────────────────────────────────────────────────────────────────────
   // THE INDEX IS THE PLATFORM, NOT A GAME, AND NOT A LIST OF TWO GAMES.

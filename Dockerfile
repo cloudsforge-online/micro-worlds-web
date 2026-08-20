@@ -65,7 +65,10 @@ RUN sed -i "s|name=\"cf-release\" content=\"dev\"|name=\"cf-release\" content=\"
 FROM nginxinc/nginx-unprivileged:1.27-alpine AS runtime
 
 COPY nginx.conf /etc/nginx/conf.d/default.conf
-COPY --from=build /app/dist /usr/share/nginx/html
+# Into a folder, because the surface is one — `/worlds`, matching `base:` in vite.config.ts and
+# every `location` in nginx.conf. A bundle built for `/worlds/assets/…` and copied to the document
+# root 404s on every asset while `GET /` answers 200 with a shell that cannot start.
+COPY --from=build /app/dist /usr/share/nginx/html/worlds
 
 EXPOSE 8080
 

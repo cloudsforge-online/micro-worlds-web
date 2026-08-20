@@ -21,6 +21,8 @@
  * (`worlds/src/server.ts`).
  */
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
+
+import { BASE } from './lib/routes.ts'
 import { ScrollToTop } from './components/scroll-to-top.tsx'
 import { AppShell } from './components/shell.tsx'
 import { AuthProvider, ProtectedRoute } from './lib/auth.tsx'
@@ -38,7 +40,7 @@ export function App() {
   const unregistered = !placementIsKnown()
 
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={BASE}>
       <ScrollToTop />
       <AuthProvider>
         <Routes>

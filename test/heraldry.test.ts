@@ -442,8 +442,8 @@ describe('the inventory screen actually renders it', () => {
      * That is the shape of the defect this change exists to close.
      */
     const conf = read('nginx.conf')
-    assert.match(conf, /location \/art\/ \{/)
-    assert.match(conf, /location \/art\/ \{[\s\S]*?try_files \$uri =404;/)
+    assert.match(conf, /location \/worlds\/art\/ \{/)
+    assert.match(conf, /location \/worlds\/art\/ \{[\s\S]*?try_files \$uri =404;/)
   })
 
   it('copies public/ into the image, or none of this reaches a browser', () => {
