@@ -39,6 +39,7 @@ import { describe, it } from 'node:test'
 import { HERALDRY } from '../src/art/heraldry.ts'
 import { TITLE_ART } from '../src/art/titles.ts'
 import { NDA_ART } from '../src/art/nda.ts'
+import { BASE } from '../src/lib/routes.ts'
 import {
   CHARGES,
   CREST_TIERS,
@@ -151,17 +152,30 @@ describe('every rank a sealed season can mint has a banner', () => {
     assert.deepEqual(unrendered, [], `no banner: ${unrendered.join(', ')}`)
   })
 
-  it('points every layer at a file that is actually on disk', () => {
+  it('points every layer at a file that is actually on disk, under the mount', () => {
+    /*
+     * A layer is a BROWSER URL, and this bundle is served from `<apex>/worlds` — so it carries the
+     * mount, and the file it names is `public/` plus the path with the mount taken back off.
+     *
+     * Both halves are asserted, and the first half is the one that matters: until `heraldryPart()`
+     * composed the mount, these URLs resolved at the APEX root and every banner was a broken
+     * picture in production. This test passed throughout, because the unmounted string it built
+     * matched the file on disk exactly — it was checking the catalogue against itself. Requiring
+     * the mount is what makes it see the difference between a path and a URL.
+     */
     const missing: string[] = []
+    const unmounted: string[] = []
     for (const season of SEASONS) {
       for (let rank = 1; rank <= 6; rank += 1) {
         const banner = bannerFor(`cf:aetherholm:heraldry:${season}:rank:${rank}`)
         assert.ok(banner)
         for (const layer of [banner.field, banner.charge, banner.crest]) {
-          if (!existsSync(at(`public${layer}`))) missing.push(layer)
+          if (!layer.startsWith(`${BASE}/`)) unmounted.push(layer)
+          else if (!existsSync(at(`public${layer.slice(BASE.length)}`))) missing.push(layer)
         }
       }
     }
+    assert.deepEqual([...new Set(unmounted)], [], `not served from ${BASE}: ${unmounted.join(', ')}`)
     assert.deepEqual([...new Set(missing)], [], `resolved but not on disk: ${missing.join(', ')}`)
   })
 })

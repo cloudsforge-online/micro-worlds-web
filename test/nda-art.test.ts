@@ -37,6 +37,7 @@ import {
   terrainArt,
 } from '../src/art/nda.ts'
 import { RESOURCES, type Terrain } from '../src/lib/nda.ts'
+import { BASE } from '../src/lib/routes.ts'
 
 const here = fileURLToPath(new URL('.', import.meta.url))
 const at = (rel: string) => join(here, '..', rel)
@@ -74,15 +75,26 @@ describe('the Ninety Days After art set', () => {
   })
 
   it('draws all six terrains and all six resources — a blank tile reads as a fault', () => {
+    /*
+     * `terrainArt`/`resourceArt` return BROWSER URLs and this bundle is served from `<apex>/worlds`,
+     * so each one carries the mount and the file it names is `public/` plus the rest. `onDisk()`
+     * asserts the mount first: without it these URLs resolved at the apex root and every tile on the
+     * board was blank in production, while this test passed because it checked the unmounted string
+     * against the file it came from. See `test/heraldry.test.ts` for the same pairing.
+     */
+    const onDisk = (url: string, what: string): void => {
+      assert.ok(url.startsWith(`${BASE}/`), `${what} is not served from ${BASE}: ${url}`)
+      assert.ok(existsSync(at(`public${url.slice(BASE.length)}`)), `${what} is not on disk`)
+    }
     for (const terrain of TERRAINS) {
       const path = terrainArt(terrain)
       assert.ok(path, `${terrain} has no picture`)
-      assert.ok(existsSync(at(`public${path}`)), `${terrain}'s picture is not on disk`)
+      onDisk(path, `${terrain}'s picture`)
     }
     for (const resource of RESOURCES) {
       const path = resourceArt(resource)
       assert.ok(path, `${resource} has no icon`)
-      assert.ok(existsSync(at(`public${path}`)), `${resource}'s icon is not on disk`)
+      onDisk(path, `${resource}'s icon`)
     }
     // The other direction. A seventh terrain picture with no terrain to attach to is dead weight
     // that looks like coverage.

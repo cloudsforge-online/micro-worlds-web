@@ -35,6 +35,7 @@
  * ══════════════════════════════════════════════════════════════════════════════════════════════
  */
 import type { ResourceKey, Terrain } from '../lib/nda.ts'
+import { publicPath } from '../lib/routes.ts'
 
 export interface NdaArt {
   /** What this picture IS, in the game's own vocabulary. Unique across the set. */
@@ -185,8 +186,26 @@ export const NDA_ART: readonly NdaArt[] = [
   },
 ]
 
-/** Every path, by key, resolved once. A miss is a programming error, not a runtime state. */
-const BY_KEY: ReadonlyMap<string, string> = new Map(NDA_ART.map((e) => [e.key, e.path]))
+/**
+ * Every path, by key, resolved once — and MOUNTED here, which is the whole reason this map is not
+ * just `NDA_ART`.
+ *
+ * The table above spells the path nginx serves the file from, `/art/nda/...`, and it has to keep
+ * spelling exactly that: `test/heraldry.test.ts` cross-references every catalogue against the files
+ * really present under `public/art/`, so a mount baked into the table would make every entry read
+ * as an orphan. But this bundle is served from `<apex>/worlds` since the apex consolidation, and a
+ * browser handed `/art/nda/wordmark.webp` asks the APEX for it, not this surface — vite rewrites
+ * `src=` in `index.html` and static imports, and never a string literal in a module like the one
+ * above.
+ *
+ * So the mount is composed at the boundary where a path stops being a catalogue entry and becomes a
+ * URL a browser will fetch. `publicPath('/art/nda/wordmark.webp')` is `/worlds/art/nda/wordmark.webp`,
+ * which is the `location /worlds/art/` block in `nginx.conf` — the one whose `try_files ... =404`
+ * makes a missing picture 404 rather than fall through to the app shell with a 200.
+ */
+const BY_KEY: ReadonlyMap<string, string> = new Map(
+  NDA_ART.map((e) => [e.key, publicPath(e.path)]),
+)
 
 /**
  * The picture for a terrain.

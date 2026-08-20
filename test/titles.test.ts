@@ -23,6 +23,7 @@ import { fileURLToPath } from 'node:url'
 import { describe, it } from 'node:test'
 import { TITLE_ART, TITLE_ART_DERIVATION, titleArt } from '../src/art/titles.ts'
 import { DESCRIBED_SLUGS, cardFor } from '../src/lib/catalogue.ts'
+import { BASE } from '../src/lib/routes.ts'
 
 const here = fileURLToPath(new URL('.', import.meta.url))
 const at = (rel: string) => join(here, '..', rel)
@@ -123,7 +124,11 @@ describe('the title covers', () => {
     // different name changes one file. This asserts the join actually produces the cover.
     for (const entry of TITLE_ART) {
       assert.ok(DESCRIBED_SLUGS.includes(entry.slug), `${entry.slug} has a cover but no card describing it`)
-      assert.equal(cardFor(entry.slug)?.art, entry.path)
+      // MOUNTED on the way out. `TITLE_ART` spells the path nginx serves the file from — which is
+      // what `test/heraldry.test.ts` cross-references against `public/art/` — and `titleArt()`
+      // prepends `<apex>/worlds` because a card's `art` is an `<img src>`, not a catalogue key.
+      // Comparing the two raw would assert exactly the bug: a cover requested from the apex root.
+      assert.equal(cardFor(entry.slug)?.art, `${BASE}${entry.path}`)
     }
     // Every described slug now has a cover, which was not true while *Ninety Days After* had
     // none. The assertion that used to stand here — `titleArt('ninety-days-after') === null` —

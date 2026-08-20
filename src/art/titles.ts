@@ -40,6 +40,8 @@
  * ══════════════════════════════════════════════════════════════════════════════════════════════
  */
 
+import { publicPath } from '../lib/routes.ts'
+
 export interface TitleArt {
   /** The registered title slug this cover belongs to. */
   readonly slug: string
@@ -108,7 +110,15 @@ export const TITLE_ART: readonly TitleArt[] = [
   },
 ]
 
-/** The cover for a registered slug, or null when that game has none drawn yet. */
+/**
+ * The cover for a registered slug, or null when that game has none drawn yet.
+ *
+ * The returned `path` is MOUNTED, and `TITLE_ART` above is not: the table spells the path nginx
+ * serves the file from so `test/heraldry.test.ts` can cross-reference it against `public/art/`,
+ * while a browser served this bundle from `<apex>/worlds` needs `/worlds/art/titles/...`. See the
+ * long note on `BY_KEY` in `src/art/nda.ts` — same boundary, same reason.
+ */
 export function titleArt(slug: string): TitleArt | null {
-  return TITLE_ART.find((entry) => entry.slug === slug) ?? null
+  const entry = TITLE_ART.find((e) => e.slug === slug)
+  return entry ? { ...entry, path: publicPath(entry.path) } : null
 }
