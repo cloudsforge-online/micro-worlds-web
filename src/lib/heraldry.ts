@@ -46,6 +46,7 @@
  * `micro-emberkin-web/src/lib/art.ts`'s, inherited twice now.
  */
 import { HERALDRY, type HeraldryEntry } from '../art/heraldry.ts'
+import { publicPath } from './routes.ts'
 
 /** Indexed once at module load. Sixteen entries, scanned per inventory row, is silly. */
 const bySlug = new Map<string, HeraldryEntry>()
@@ -117,9 +118,17 @@ export function crestFor(rank: number): string | null {
   return `crest-rank${Math.min(rank, CREST_TIERS)}`
 }
 
-/** The picture for one named piece — a field, a charge or a crest. `null` if the set has none. */
+/**
+ * The picture for one named piece — a field, a charge or a crest. `null` if the set has none.
+ *
+ * MOUNTED here, not in `src/art/heraldry.ts`: that file is generated and re-rendered byte for byte
+ * by `test/heraldry.test.ts`, and its paths are cross-referenced against the files under
+ * `public/art/`. This is the boundary where a catalogue entry becomes a URL, so this is where
+ * `<apex>/worlds` gets prepended. See the note on `BY_KEY` in `src/art/nda.ts`.
+ */
 export function heraldryPart(slug: string): string | null {
-  return bySlug.get(slug)?.path ?? null
+  const path = bySlug.get(slug)?.path
+  return path === undefined ? null : publicPath(path)
 }
 
 /** The hue a piece was PAINTED around, from the manifest. Art direction, never a UI palette. */
