@@ -40,7 +40,6 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { describe, it } from 'node:test'
 import { ENV_LABELS } from '@cloudsforge/ui'
-import { robotsTxt } from '@cloudsforge/ui/sitemap'
 import { SITEMAP_PATHS, pageMetaFor } from '../src/lib/meta.ts'
 import { ROUTES, publicPath } from '../src/lib/routes.ts'
 
